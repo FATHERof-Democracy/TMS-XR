@@ -6,10 +6,12 @@
 
   <title>IV Cannulation Master</title>
 
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
 
   <script>
     let currentStep = 1;
+    let score = 0;
 
     AFRAME.registerComponent('cannulation-logic', {
 
@@ -19,91 +21,109 @@
 
         const setup = () => {
 
-          const instructions =
-            document.querySelector('#step-text');
+          const instructions = document.querySelector('#step-text');
+          const scoreText = document.querySelector('#score-text');
 
-          const swab =
-            document.querySelector('#swab');
+          const swab = document.querySelector('#swab');
+          const tourniquet = document.querySelector('#tourniquet');
+          const vein = document.querySelector('#vein');
+          const catheter = document.querySelector('#catheter');
 
-          const tourniquet =
-            document.querySelector('#tourniquet');
-
-          const vein =
-            document.querySelector('#vein');
-
-          /*
-           STEP 1
-           Look at the swab
-          */
-
+          // STEP 1 — Prepare the site
           swab.addEventListener('click', function () {
 
             if (currentStep === 1) {
 
+              score += 20;
               currentStep = 2;
 
               instructions.setAttribute(
                 'value',
-                'GOOD! Site prepared. STEP 2: Look at the blue tourniquet.'
+                'STEP 2: Apply the tourniquet. Look at the BLUE ring.'
               );
 
-              swab.setAttribute(
-                'color',
-                '#777777'
-              );
+              swab.setAttribute('color', '#777777');
 
+              scoreText.setAttribute(
+                'value',
+                'SCORE: ' + score
+              );
             }
 
           });
 
 
-          /*
-           STEP 2
-           Look at tourniquet
-          */
-
+          // STEP 2 — Apply tourniquet
           tourniquet.addEventListener('click', function () {
 
             if (currentStep === 2) {
 
+              score += 20;
               currentStep = 3;
 
               instructions.setAttribute(
                 'value',
-                'GOOD! Tourniquet applied. STEP 3: Identify the highlighted vein.'
+                'STEP 3: Identify the highlighted vein.'
               );
 
-              vein.setAttribute(
-                'visible',
-                'true'
-              );
+              vein.setAttribute('visible', 'true');
 
+              tourniquet.setAttribute('color', '#777777');
+
+              scoreText.setAttribute(
+                'value',
+                'SCORE: ' + score
+              );
             }
 
           });
 
 
-          /*
-           STEP 3
-           Look at vein
-          */
-
+          // STEP 3 — Identify vein
           vein.addEventListener('click', function () {
 
             if (currentStep === 3) {
 
+              score += 20;
               currentStep = 4;
 
               instructions.setAttribute(
                 'value',
-                'SUCCESS! Vein identified. Cannulation step unlocked.'
+                'STEP 4: Insert the IV cannula at the highlighted site.'
               );
 
-              vein.setAttribute(
-                'color',
-                '#00ff00'
+              vein.setAttribute('color', '#00ff00');
+
+              catheter.setAttribute('visible', 'true');
+
+              scoreText.setAttribute(
+                'value',
+                'SCORE: ' + score
+              );
+            }
+
+          });
+
+
+          // STEP 4 — Cannulation
+          catheter.addEventListener('click', function () {
+
+            if (currentStep === 4) {
+
+              score += 40;
+              currentStep = 5;
+
+              instructions.setAttribute(
+                'value',
+                '🎉 SUCCESS! Cannulation completed correctly.'
               );
 
+              catheter.setAttribute('color', '#00ff00');
+
+              scoreText.setAttribute(
+                'value',
+                'FINAL SCORE: ' + score + '/100'
+              );
             }
 
           });
@@ -112,16 +132,9 @@
 
 
         if (scene.hasLoaded) {
-
           setup();
-
         } else {
-
-          scene.addEventListener(
-            'loaded',
-            setup
-          );
-
+          scene.addEventListener('loaded', setup);
         }
 
       }
@@ -129,7 +142,6 @@
     });
 
   </script>
-
 </head>
 
 
@@ -138,33 +150,39 @@
 <a-scene cannulation-logic>
 
   <!-- Background -->
-
   <a-sky color="#dfeff5"></a-sky>
 
 
-  <!-- Title -->
-
+  <!-- TITLE -->
   <a-text
     value="IV CANNULATION SIMULATOR"
-    position="-1.7 2.5 -3"
+    position="-1.8 2.6 -3"
     width="4"
     color="#111111">
   </a-text>
 
 
-  <!-- Instructions -->
-
+  <!-- INSTRUCTIONS -->
   <a-text
     id="step-text"
-    value="STEP 1: Look at the green swab"
-    position="-1.5 2.1 -3"
-    width="3.5"
+    value="STEP 1: Look at the GREEN swab."
+    position="-1.8 2.2 -3"
+    width="4"
     color="#111111">
   </a-text>
 
 
-  <!-- Table -->
+  <!-- SCORE -->
+  <a-text
+    id="score-text"
+    value="SCORE: 0"
+    position="1.2 2.6 -3"
+    width="2"
+    color="#111111">
+  </a-text>
 
+
+  <!-- MEDICAL TABLE -->
   <a-box
     position="0 0.8 -2"
     width="2.5"
@@ -174,8 +192,7 @@
   </a-box>
 
 
-  <!-- Arm -->
-
+  <!-- ARM -->
   <a-cylinder
     position="0 1.0 -2"
     radius="0.18"
@@ -185,8 +202,7 @@
   </a-cylinder>
 
 
-  <!-- GREEN ALCOHOL SWAB -->
-
+  <!-- GREEN SWAB -->
   <a-box
     id="swab"
     class="clickable"
@@ -199,20 +215,18 @@
 
 
   <!-- BLUE TOURNIQUET -->
-
   <a-torus
     id="tourniquet"
     class="clickable"
     position="-0.3 1.0 -2"
-    radius="0.18"
+    radius="0.20"
     radius-tubular="0.025"
     rotation="0 90 0"
     color="#0066ff">
   </a-torus>
 
 
-  <!-- HIDDEN VEIN -->
-
+  <!-- VEIN -->
   <a-cylinder
     id="vein"
     class="clickable"
@@ -225,8 +239,20 @@
   </a-cylinder>
 
 
-  <!-- CAMERA -->
+  <!-- IV CATHETER -->
+  <a-cone
+    id="catheter"
+    class="clickable"
+    position="0.15 1.18 -1.65"
+    radius-bottom="0.035"
+    height="0.35"
+    rotation="90 0 0"
+    color="#ffcc00"
+    visible="false">
+  </a-cone>
 
+
+  <!-- CAMERA -->
   <a-camera position="0 1.6 0">
 
     <a-cursor
@@ -237,7 +263,6 @@
     </a-cursor>
 
   </a-camera>
-
 
 </a-scene>
 
