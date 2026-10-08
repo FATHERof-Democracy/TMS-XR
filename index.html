@@ -75,7 +75,10 @@ instructions.setAttribute(
 'STEP 3 | IDENTIFY THE HIGHLIGHTED VEIN'
 );
 
-vein.setAttribute('visible','true');
+vein.setAttribute(
+'visible',
+'true'
+);
 
 tourniquet.setAttribute(
 'color',
@@ -165,18 +168,13 @@ needleTip.setAttribute(
 );
 
 
-/* FLASHBACK */
+/* BLOOD FLASHBACK */
 
 setTimeout(() => {
 
 flashback.setAttribute(
 'visible',
 'true'
-);
-
-flashback.setAttribute(
-'animation__flash',
-'property: scale; from: 0.2 0.2 0.2; to: 1 1 1; dur: 350'
 );
 
 instructions.setAttribute(
@@ -187,7 +185,7 @@ instructions.setAttribute(
 },900);
 
 
-/* WITHDRAW NEEDLE */
+/* NEEDLE WITHDRAWAL */
 
 setTimeout(() => {
 
@@ -226,11 +224,6 @@ bloodTube.setAttribute(
 blood.setAttribute(
 'visible',
 'true'
-);
-
-blood.setAttribute(
-'animation__fill',
-'property: scale; from: 1 0.2 1; to: 1 1 1; dur: 1000'
 );
 
 instructions.setAttribute(
@@ -286,12 +279,9 @@ color="#ffffff">
 </a-light>
 
 
-<!-- BACKGROUND -->
+<!-- ENVIRONMENT -->
 
 <a-sky color="#dcecf2"></a-sky>
-
-
-<!-- TABLE -->
 
 <a-plane
 position="0 0 -3"
@@ -302,7 +292,7 @@ color="#d5dfe3">
 </a-plane>
 
 
-<!-- MEDICAL TRAY -->
+<!-- TRAY -->
 
 <a-box
 position="0 0.82 -2.2"
@@ -330,9 +320,6 @@ height="1.7"
 rotation="0 0 90"
 color="#d39a7b">
 </a-cylinder>
-
-
-<!-- ELBOW -->
 
 <a-sphere
 position="-0.85 1.05 -2.2"
@@ -406,7 +393,7 @@ visible="false">
 </a-cylinder>
 
 
-<!-- GREEN SWAB -->
+<!-- SWAB -->
 
 <a-box
 id="swab"
@@ -419,15 +406,17 @@ color="#00dd55">
 </a-box>
 
 
-<!-- CANNULA -->
+<!-- ================================================= -->
+<!-- CANNULA - ANGLED TOWARD THE VEIN -->
+<!-- ================================================= -->
 
 <a-cylinder
 id="catheter"
 class="clickable"
-position="0.05 1.30 -1.70"
-radius="0.055"
-height="0.50"
-rotation="90 0 0"
+position="0.05 1.30 -1.72"
+radius="0.045"
+height="0.42"
+rotation="78 0 0"
 color="#ffd000"
 visible="false">
 </a-cylinder>
@@ -436,22 +425,24 @@ visible="false">
 <!-- CANNULA HUB -->
 
 <a-cylinder
-position="0.05 1.30 -1.42"
-radius="0.11"
-height="0.16"
-rotation="90 0 0"
+position="0.05 1.30 -1.47"
+radius="0.09"
+height="0.13"
+rotation="78 0 0"
 color="#eeb400">
 </a-cylinder>
 
 
-<!-- NEEDLE -->
+<!-- ================================================= -->
+<!-- NEEDLE - SAME ANGLE AS CANNULA -->
+<!-- ================================================= -->
 
 <a-cylinder
 id="needle"
-position="0.05 1.30 -1.92"
-radius="0.014"
-height="0.70"
-rotation="90 0 0"
+position="0.05 1.30 -1.91"
+radius="0.012"
+height="0.55"
+rotation="78 0 0"
 color="#c5cdd1"
 visible="false">
 </a-cylinder>
@@ -461,17 +452,17 @@ visible="false">
 
 <a-cone
 id="needle-tip"
-position="0.05 1.30 -2.28"
-radius-bottom="0.028"
+position="0.05 1.30 -2.18"
+radius-bottom="0.025"
 radius-top="0"
-height="0.14"
-rotation="90 0 0"
+height="0.12"
+rotation="78 0 0"
 color="#aeb7bb"
 visible="false">
 </a-cone>
 
 
-<!-- SYRINGE - MOVED AWAY FROM HAND -->
+<!-- SYRINGE MOVED AWAY -->
 
 <a-cylinder
 position="1.55 1.22 -1.85"
@@ -487,14 +478,6 @@ radius="0.08"
 height="0.22"
 rotation="0 0 90"
 color="#aebbc0">
-</a-cylinder>
-
-<a-cylinder
-position="1.18 1.22 -1.85"
-radius="0.013"
-height="0.35"
-rotation="0 0 90"
-color="#b8c0c4">
 </a-cylinder>
 
 
@@ -527,9 +510,6 @@ height="0.48"
 color="#f5f7f8"
 visible="false">
 </a-cylinder>
-
-
-<!-- BLOOD TUBE CAP -->
 
 <a-cylinder
 position="1.55 1.48 -1.30"
@@ -595,12 +575,15 @@ color="#123047"
 align="center">
 </a-text>
 
+
+<!-- GAZE CURSOR -->
+
 <a-cursor
 fuse="true"
 fuse-timeout="1500"
 color="#ff3333"
 geometry="primitive:ring;radiusInner:0.012;radiusOuter:0.025"
-raycaster="objects:.clickable">
+raycaster="objects: .clickable">
 </a-cursor>
 
 </a-camera>
