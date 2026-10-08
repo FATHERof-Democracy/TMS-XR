@@ -4,516 +4,605 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>TMS-XR IV Cannulation Simulator</title>
+  <title>TMS-XR | IV Cannulation Simulator</title>
 
   <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
 
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-    }
-  </style>
+  <script>
+    let currentStep = 1;
+    let score = 0;
+
+    AFRAME.registerComponent('cannulation-logic', {
+
+      init: function () {
+
+        const setup = () => {
+
+          const instructions = document.querySelector('#step-text');
+          const scoreText = document.querySelector('#score-text');
+
+          const swab = document.querySelector('#swab');
+          const tourniquet = document.querySelector('#tourniquet');
+          const vein = document.querySelector('#vein');
+
+          const catheter = document.querySelector('#catheter');
+          const needle = document.querySelector('#needle');
+          const needleTip = document.querySelector('#needle-tip');
+
+          const bloodTube = document.querySelector('#blood-tube');
+          const blood = document.querySelector('#blood');
+          const flashback = document.querySelector('#flashback');
+
+          const success = document.querySelector('#success');
+
+          /* STEP 1 */
+
+          swab.addEventListener('click', () => {
+
+            if (currentStep !== 1) return;
+
+            currentStep = 2;
+            score += 20;
+
+            instructions.setAttribute(
+              'value',
+              'STEP 2 | APPLY THE BLUE TOURNIQUET'
+            );
+
+            scoreText.setAttribute(
+              'value',
+              'SCORE: ' + score
+            );
+
+            swab.setAttribute('color', '#777777');
+          });
+
+
+          /* STEP 2 */
+
+          tourniquet.addEventListener('click', () => {
+
+            if (currentStep !== 2) return;
+
+            currentStep = 3;
+            score += 20;
+
+            instructions.setAttribute(
+              'value',
+              'STEP 3 | IDENTIFY THE HIGHLIGHTED VEIN'
+            );
+
+            vein.setAttribute(
+              'visible',
+              'true'
+            );
+
+            tourniquet.setAttribute(
+              'color',
+              '#777777'
+            );
+
+            scoreText.setAttribute(
+              'value',
+              'SCORE: ' + score
+            );
+          });
+
+
+          /* STEP 3 */
+
+          vein.addEventListener('click', () => {
+
+            if (currentStep !== 3) return;
+
+            currentStep = 4;
+            score += 20;
+
+            instructions.setAttribute(
+              'value',
+              'STEP 4 | INSERT THE CANNULA'
+            );
+
+            vein.setAttribute(
+              'color',
+              '#00ff66'
+            );
+
+            catheter.setAttribute(
+              'visible',
+              'true'
+            );
+
+            needle.setAttribute(
+              'visible',
+              'true'
+            );
+
+            needleTip.setAttribute(
+              'visible',
+              'true'
+            );
+
+            scoreText.setAttribute(
+              'value',
+              'SCORE: ' + score
+            );
+
+          });
+
+
+          /* STEP 4 */
+
+          catheter.addEventListener('click', () => {
+
+            if (currentStep !== 4) return;
+
+            currentStep = 5;
+            score += 40;
+
+            instructions.setAttribute(
+              'value',
+              'ACCESSING VEIN...'
+            );
+
+            scoreText.setAttribute(
+              'value',
+              'SCORE: ' + score
+            );
+
+            /*
+             * NEEDLE ADVANCES
+             */
+
+            needle.setAttribute(
+              'animation__advance',
+              'property: position; to: 0.10 1.31 -2.02; dur: 700; easing: easeInOutQuad'
+            );
+
+            needleTip.setAttribute(
+              'animation__advance',
+              'property: position; to: 0.10 1.31 -2.29; dur: 700; easing: easeInOutQuad'
+            );
+
+
+            /*
+             * BLOOD FLASHBACK
+             */
+
+            setTimeout(() => {
+
+              flashback.setAttribute(
+                'visible',
+                'true'
+              );
+
+              flashback.setAttribute(
+                'animation__flash',
+                'property: scale; from: 0.2 0.2 0.2; to: 1 1 1; dur: 350; easing: easeOutElastic'
+              );
+
+              instructions.setAttribute(
+                'value',
+                'BLOOD FLASHBACK | VEIN ENTERED'
+              );
+
+            }, 750);
+
+
+            /*
+             * CANNULA SUCCESS
+             */
+
+            setTimeout(() => {
+
+              catheter.setAttribute(
+                'color',
+                '#00ff66'
+              );
+
+              /*
+               * NEEDLE WITHDRAWAL
+               */
+
+              needle.setAttribute(
+                'animation__withdraw',
+                'property: position; to: 0.10 1.31 -1.55; dur: 700; easing: easeInOutQuad'
+              );
+
+              needleTip.setAttribute(
+                'animation__withdraw',
+                'property: position; to: 0.10 1.31 -1.82; dur: 700; easing: easeInOutQuad'
+              );
+
+              instructions.setAttribute(
+                'value',
+                'CANNULA IN PLACE | COLLECT BLOOD'
+              );
+
+            }, 1500);
+
+
+            /*
+             * BLOOD COLLECTION
+             */
+
+            setTimeout(() => {
+
+              bloodTube.setAttribute(
+                'visible',
+                'true'
+              );
+
+              blood.setAttribute(
+                'visible',
+                'true'
+              );
+
+              blood.setAttribute(
+                'animation__fill',
+                'property: scale; from: 1 0.2 1; to: 1 1 1; dur: 1000; easing: easeOutQuad'
+              );
+
+              instructions.setAttribute(
+                'value',
+                'SUCCESS | SIMULATION COMPLETE'
+              );
+
+              success.setAttribute(
+                'visible',
+                'true'
+              );
+
+              scoreText.setAttribute(
+                'value',
+                'FINAL SCORE: ' + score + '/100'
+              );
+
+            }, 2400);
+
+          });
+
+        };
+
+        if (this.el.hasLoaded) {
+          setup();
+        } else {
+          this.el.addEventListener('loaded', setup);
+        }
+
+      }
+
+    });
+  </script>
 </head>
+
 
 <body>
 
-<a-scene background="color: #dcecf2">
+<a-scene
+  cannulation-logic
+  background="color: #dcecf2"
+>
 
   <!-- LIGHTING -->
-  <a-entity light="type: ambient; intensity: 1.2"></a-entity>
 
-  <a-entity
-    light="type: directional; intensity: 1.5"
-    position="-2 4 3">
-  </a-entity>
+  <a-light
+    type="ambient"
+    intensity="1.6"
+    color="#ffffff">
+  </a-light>
 
-  <!-- FLOOR -->
+  <a-light
+    type="directional"
+    intensity="1.3"
+    position="-3 5 4"
+    color="#ffffff">
+  </a-light>
+
+
+  <!-- ENVIRONMENT -->
+
+  <a-sky color="#dcecf2"></a-sky>
+
   <a-plane
-    position="0 0 -2"
+    position="0 0 -3"
     rotation="-90 0 0"
-    width="8"
-    height="8"
-    color="#eef3f5">
+    width="12"
+    height="12"
+    color="#d5dfe3">
   </a-plane>
 
 
-  <!-- ================= CAMERA ================= -->
+  <!-- MEDICAL TRAY -->
 
-  <a-entity camera
-            position="0 1.62 0"
-            rotation="-3 0 0">
-
-    <!-- INSTRUCTIONS -->
-    <a-text
-      value="TMS-XR | IV CANNULATION"
-      position="0 0.35 -1.5"
-      align="center"
-      width="2.8"
-      color="#003b5c">
-    </a-text>
-
-    <a-text
-      id="instruction"
-      value="STEP 1 | CLEAN THE INSERTION SITE"
-      position="0 0.08 -1.5"
-      align="center"
-      width="2.4"
-      color="#111111">
-    </a-text>
-
-    <!-- SCORE -->
-    <a-text
-      id="score"
-      value="SCORE: 0 / 100"
-      position="0 -0.18 -1.5"
-      align="center"
-      width="1.8"
-      color="#006633">
-    </a-text>
-
-    <!-- GAZE CURSOR -->
-    <a-cursor
-      fuse="true"
-      fuse-timeout="1500"
-      color="#ff2222"
-      geometry="primitive:ring; radiusInner:0.012; radiusOuter:0.028"
-      raycaster="objects: .clickable">
-    </a-cursor>
-
-  </a-entity>
-
-
-  <!-- ================= PROCEDURE AREA ================= -->
-
-  <!-- TRAY -->
   <a-box
-    position="0 0.72 -2"
-    width="3.2"
-    height="0.12"
+    position="0 0.82 -2.2"
+    width="3.8"
+    height="0.18"
     depth="1.8"
-    color="#c7d0d5">
+    color="#f8fafb">
   </a-box>
 
   <a-box
-    position="0 0.79 -2"
-    width="3"
-    height="0.05"
-    depth="1.6"
-    color="#f7f7f7">
+    position="0 0.70 -2.2"
+    width="3.8"
+    height="0.08"
+    depth="1.8"
+    color="#9aa7ad">
   </a-box>
 
 
-  <!-- ================= ARM ================= -->
+  <!-- ARM -->
 
   <a-cylinder
-    position="0 1.05 -2"
-    radius="0.42"
-    height="2.2"
+    position="0 1.05 -2.2"
+    radius="0.23"
+    height="1.65"
     rotation="0 0 90"
-    color="#d69b72">
+    color="#d39a7b">
   </a-cylinder>
 
-  <!-- ELBOW -->
+  <a-cylinder
+    position="-0.78 1.05 -2.2"
+    radius="0.29"
+    height="0.65"
+    rotation="0 0 90"
+    color="#d39a7b">
+  </a-cylinder>
+
   <a-sphere
-    position="0.55 1.05 -2"
-    radius="0.43"
-    color="#d69b72">
+    position="-0.42 1.05 -2.2"
+    radius="0.27"
+    color="#d39a7b">
   </a-sphere>
 
-
   <!-- HAND -->
-  <a-box
-    position="1.05 1.05 -2"
-    width="0.75"
-    height="0.5"
-    depth="0.75"
-    color="#d69b72">
-  </a-box>
-
-  <!-- FINGERS -->
-  <a-box
-    position="1.42 1.18 -2"
-    width="0.42"
-    height="0.13"
-    depth="0.13"
-    color="#d69b72">
-  </a-box>
 
   <a-box
-    position="1.42 1.05 -2"
-    width="0.42"
-    height="0.13"
-    depth="0.13"
-    color="#d69b72">
-  </a-box>
-
-  <a-box
-    position="1.42 0.92 -2"
-    width="0.42"
-    height="0.13"
-    depth="0.13"
-    color="#d69b72">
+    position="1.02 1.05 -2.2"
+    width="0.55"
+    height="0.25"
+    depth="0.45"
+    color="#d39a7b">
   </a-box>
 
 
-  <!-- ================= TOURNIQUET ================= -->
+  <!-- TOURNIQUET -->
 
   <a-torus
     id="tourniquet"
     class="clickable"
-    position="0.05 1.28 -1.86"
-    radius="0.43"
+    position="-0.30 1.05 -2.2"
+    radius="0.27"
     radius-tubular="0.045"
-    rotation="90 0 0"
-    color="#1464d2"
-    visible="false">
+    rotation="0 90 0"
+    color="#005eff">
   </a-torus>
 
 
-  <!-- ================= VEIN ================= -->
+  <!-- VEIN -->
 
   <a-cylinder
     id="vein"
     class="clickable"
-    position="0.05 1.28 -1.55"
-    radius="0.035"
-    height="0.5"
-    rotation="90 0 0"
-    color="#246bce"
+    position="0.10 1.28 -2.02"
+    radius="0.045"
+    height="0.55"
+    rotation="0 0 90"
+    color="#329bd3"
     visible="false">
   </a-cylinder>
 
 
-  <!-- ================= SWAB ================= -->
+  <!-- ALCOHOL SWAB -->
 
-  <!-- LARGE CLICK TARGET -->
-  <a-box
-    id="swabTarget"
-    class="clickable"
-    position="0 1.38 -1.65"
-    width="0.85"
-    height="0.55"
-    depth="0.35"
-    material="color:#00ff66; opacity:0.08; transparent:true">
-  </a-box>
-
-  <!-- VISIBLE SWAB -->
   <a-box
     id="swab"
-    position="0 1.38 -1.65"
-    width="0.32"
-    height="0.12"
-    depth="0.20"
-    rotation="0 0 -15"
+    class="clickable"
+    position="1.15 1.08 -1.45"
+    width="0.28"
+    height="0.08"
+    depth="0.12"
     color="#00dd55">
   </a-box>
 
-  <!-- SWAB HANDLE -->
-  <a-cylinder
-    position="0 1.51 -1.65"
-    radius="0.025"
-    height="0.28"
-    rotation="0 0 -15"
-    color="#ffffff">
-  </a-cylinder>
 
-
-  <!-- ================= CANNULA ================= -->
+  <!-- CANNULA -->
 
   <a-cylinder
     id="catheter"
     class="clickable"
-    position="0.05 1.30 -1.72"
+    position="0.10 1.31 -1.72"
     radius="0.045"
     height="0.42"
-    rotation="78 0 0"
+    rotation="90 0 0"
     color="#ffd000"
     visible="false">
   </a-cylinder>
 
+
   <!-- CANNULA HUB -->
+
   <a-cylinder
-    id="hub"
-    position="0.05 1.13 -1.58"
+    position="0.10 1.31 -1.48"
     radius="0.09"
-    height="0.16"
-    rotation="78 0 0"
-    color="#ffffff"
-    visible="false">
+    height="0.13"
+    rotation="90 0 0"
+    color="#eeb400">
   </a-cylinder>
 
 
-  <!-- ================= NEEDLE ================= -->
+  <!-- NEEDLE -->
 
   <a-cylinder
     id="needle"
-    position="0.05 1.30 -1.91"
+    position="0.10 1.31 -1.93"
     radius="0.012"
     height="0.55"
-    rotation="78 0 0"
+    rotation="90 0 0"
     color="#c5cdd1"
     visible="false">
   </a-cylinder>
 
 
   <!-- NEEDLE TIP -->
-  <a-sphere
-    id="needleTip"
-    position="0.05 1.30 -2.17"
-    radius="0.018"
-    color="#eeeeee"
+
+  <a-cone
+    id="needle-tip"
+    position="0.10 1.31 -2.21"
+    radius-bottom="0.025"
+    radius-top="0"
+    height="0.12"
+    rotation="90 0 0"
+    color="#aeb7bb"
     visible="false">
-  </a-sphere>
+  </a-cone>
 
 
-  <!-- ================= SYRINGE ================= -->
+  <!-- SYRINGE -->
 
   <a-cylinder
-    id="syringe"
-    position="1.15 1.65 -1.8"
-    radius="0.08"
+    position="1.0 1.18 -1.75"
+    radius="0.09"
     height="0.55"
     rotation="0 0 90"
-    color="#ffffff"
-    visible="false">
+    color="#edf5f7">
   </a-cylinder>
 
   <a-cylinder
-    id="syringeTip"
-    position="0.87 1.65 -1.8"
-    radius="0.025"
-    height="0.15"
+    position="1.32 1.18 -1.75"
+    radius="0.075"
+    height="0.22"
     rotation="0 0 90"
-    color="#cccccc"
-    visible="false">
+    color="#aebbc0">
   </a-cylinder>
-
-
-  <!-- ================= FLASHBACK ================= -->
-
-  <a-sphere
-    id="flashback"
-    position="0.05 1.30 -2.12"
-    radius="0.055"
-    color="#cc0000"
-    visible="false">
-  </a-sphere>
-
-
-  <!-- ================= BLOOD COLLECTION ================= -->
 
   <a-cylinder
-    id="bloodTube"
-    position="1.15 0.98 -1.9"
-    radius="0.12"
-    height="0.55"
-    color="#eeeeee"
+    position="0.38 1.18 -1.75"
+    radius="0.012"
+    height="0.40"
+    rotation="0 0 90"
+    color="#b8c0c4">
+  </a-cylinder>
+
+
+  <!-- BLOOD COLLECTION TRAY -->
+
+  <a-box
+    position="1.0 0.94 -1.45"
+    width="1.1"
+    height="0.07"
+    depth="0.75"
+    color="#aebbc0">
+  </a-box>
+
+  <a-box
+    position="1.0 0.98 -1.45"
+    width="0.95"
+    height="0.025"
+    depth="0.60"
+    color="#e7edef">
+  </a-box>
+
+
+  <!-- BLOOD TUBE -->
+
+  <a-cylinder
+    id="blood-tube"
+    position="1.35 1.18 -1.45"
+    radius="0.065"
+    height="0.45"
+    color="#f5f7f8"
     visible="false">
   </a-cylinder>
+
+  <a-cylinder
+    position="1.35 1.42 -1.45"
+    radius="0.075"
+    height="0.07"
+    color="#c92727"
+    visible="false">
+  </a-cylinder>
+
+
+  <!-- BLOOD -->
 
   <a-cylinder
     id="blood"
-    position="1.15 0.80 -1.9"
-    radius="0.095"
-    height="0.20"
-    color="#b30000"
-    visible="false">
-  </a-cylinder>
-
-  <a-cylinder
-    id="tubeCap"
-    position="1.15 1.27 -1.9"
-    radius="0.13"
-    height="0.08"
-    color="#444444"
+    position="1.35 1.02 -1.45"
+    radius="0.055"
+    height="0.18"
+    color="#9e1717"
     visible="false">
   </a-cylinder>
 
 
-  <!-- ================= SUCCESS ================= -->
+  <!-- BLOOD FLASHBACK -->
+
+  <a-sphere
+    id="flashback"
+    position="0.10 1.31 -2.02"
+    radius="0.07"
+    color="#b00020"
+    visible="false">
+  </a-sphere>
+
+
+  <!-- CAMERA -->
+
+  <a-camera position="0 1.6 0">
+
+    <a-text
+      value="TMS-XR | IV CANNULATION"
+      position="-1.30 0.78 -1.5"
+      width="2.7"
+      color="#123047"
+      align="center">
+    </a-text>
+
+    <a-text
+      id="step-text"
+      value="STEP 1 | LOOK AT THE GREEN SWAB"
+      position="0 0.52 -1.5"
+      width="3.0"
+      color="#16252d"
+      align="center">
+    </a-text>
+
+    <a-text
+      id="score-text"
+      value="SCORE: 0"
+      position="1.05 0.78 -1.5"
+      width="1.0"
+      color="#123047"
+      align="center">
+    </a-text>
+
+    <!-- GAZE CURSOR -->
+
+    <a-cursor
+      fuse="true"
+      fuse-timeout="1500"
+      color="#ff3333"
+      geometry="primitive: ring; radiusInner: 0.012; radiusOuter: 0.025"
+      raycaster="objects: .clickable">
+    </a-cursor>
+
+  </a-camera>
+
+
+  <!-- SUCCESS -->
 
   <a-text
     id="success"
-    value="✓ PROCEDURE COMPLETED"
-    position="0 1.95 -1.7"
-    align="center"
-    width="3"
-    color="#008844"
-    visible="false">
-  </a-text>
-
-  <a-text
-    id="finalScore"
-    value="FINAL SCORE: 100 / 100"
-    position="0 1.72 -1.7"
-    align="center"
+    value="PROCEDURE COMPLETE"
+    position="-1.25 1.75 -2.7"
     width="2.5"
-    color="#003b5c"
+    color="#087f5b"
+    align="center"
     visible="false">
   </a-text>
 
-
-  <!-- ================= LOGIC ================= -->
-
-  <script>
-
-    let step = 1;
-    let score = 0;
-
-    const instruction = document.querySelector("#instruction");
-    const scoreText = document.querySelector("#score");
-
-    const swabTarget = document.querySelector("#swabTarget");
-    const swab = document.querySelector("#swab");
-
-    const tourniquet = document.querySelector("#tourniquet");
-    const vein = document.querySelector("#vein");
-
-    const catheter = document.querySelector("#catheter");
-    const hub = document.querySelector("#hub");
-    const needle = document.querySelector("#needle");
-    const needleTip = document.querySelector("#needleTip");
-
-    const flashback = document.querySelector("#flashback");
-
-    const bloodTube = document.querySelector("#bloodTube");
-    const blood = document.querySelector("#blood");
-    const tubeCap = document.querySelector("#tubeCap");
-
-    const success = document.querySelector("#success");
-    const finalScore = document.querySelector("#finalScore");
-
-
-    function updateScore(points) {
-
-      score += points;
-
-      scoreText.setAttribute(
-        "value",
-        "SCORE: " + score + " / 100"
-      );
-    }
-
-
-    /* ================= STEP 1 ================= */
-
-    swabTarget.addEventListener("click", function () {
-
-      if (step !== 1) return;
-
-      step = 2;
-
-      updateScore(20);
-
-      swab.setAttribute("color", "#999999");
-
-      swabTarget.setAttribute(
-        "material",
-        "color:#999999; opacity:0.08; transparent:true"
-      );
-
-      instruction.setAttribute(
-        "value",
-        "STEP 2 | APPLY THE BLUE TOURNIQUET"
-      );
-
-      tourniquet.setAttribute("visible", true);
-
-    });
-
-
-    /* ================= STEP 2 ================= */
-
-    tourniquet.addEventListener("click", function () {
-
-      if (step !== 2) return;
-
-      step = 3;
-
-      updateScore(20);
-
-      instruction.setAttribute(
-        "value",
-        "STEP 3 | IDENTIFY THE HIGHLIGHTED VEIN"
-      );
-
-      vein.setAttribute("visible", true);
-
-    });
-
-
-    /* ================= STEP 3 ================= */
-
-    vein.addEventListener("click", function () {
-
-      if (step !== 3) return;
-
-      step = 4;
-
-      updateScore(20);
-
-      instruction.setAttribute(
-        "value",
-        "STEP 4 | INSERT THE CANNULA"
-      );
-
-      catheter.setAttribute("visible", true);
-      hub.setAttribute("visible", true);
-      needle.setAttribute("visible", true);
-      needleTip.setAttribute("visible", true);
-
-    });
-
-
-    /* ================= STEP 4 ================= */
-
-    catheter.addEventListener("click", function () {
-
-      if (step !== 4) return;
-
-      step = 5;
-
-      updateScore(40);
-
-      instruction.setAttribute(
-        "value",
-        "✓ CANNULA INSERTED | OBSERVE FLASHBACK"
-      );
-
-      flashback.setAttribute("visible", true);
-
-      setTimeout(function () {
-
-        flashback.setAttribute("visible", false);
-
-        instruction.setAttribute(
-          "value",
-          "BLOOD SAMPLE COLLECTION"
-        );
-
-        bloodTube.setAttribute("visible", true);
-        tubeCap.setAttribute("visible", true);
-        blood.setAttribute("visible", true);
-
-      }, 1500);
-
-
-      setTimeout(function () {
-
-        success.setAttribute("visible", true);
-        finalScore.setAttribute("visible", true);
-
-        instruction.setAttribute(
-          "value",
-          "PROCEDURE COMPLETE"
-        );
-
-      }, 3000);
-
-    });
-
-  </script>
 
 </a-scene>
 
