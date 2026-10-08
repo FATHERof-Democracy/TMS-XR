@@ -4,9 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>IV Cannulation Master</title>
+  <title>IV Cannulation Simulator</title>
 
-  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
 
   <script>
@@ -29,107 +28,98 @@
           const vein = document.querySelector('#vein');
           const catheter = document.querySelector('#catheter');
 
-          // STEP 1 — Prepare the site
-          swab.addEventListener('click', function () {
+          // STEP 1
+          swab.addEventListener('click', () => {
 
-            if (currentStep === 1) {
+            if (currentStep !== 1) return;
 
-              score += 20;
-              currentStep = 2;
+            currentStep = 2;
+            score += 20;
 
-              instructions.setAttribute(
-                'value',
-                'STEP 2: Apply the tourniquet. Look at the BLUE ring.'
-              );
+            instructions.setAttribute(
+              'value',
+              'STEP 2: Look at the BLUE tourniquet.'
+            );
 
-              swab.setAttribute('color', '#777777');
+            swab.setAttribute('color', '#777777');
 
-              scoreText.setAttribute(
-                'value',
-                'SCORE: ' + score
-              );
-            }
-
+            scoreText.setAttribute(
+              'value',
+              'SCORE: ' + score
+            );
           });
 
 
-          // STEP 2 — Apply tourniquet
-          tourniquet.addEventListener('click', function () {
+          // STEP 2
+          tourniquet.addEventListener('click', () => {
 
-            if (currentStep === 2) {
+            if (currentStep !== 2) return;
 
-              score += 20;
-              currentStep = 3;
+            currentStep = 3;
+            score += 20;
 
-              instructions.setAttribute(
-                'value',
-                'STEP 3: Identify the highlighted vein.'
-              );
+            instructions.setAttribute(
+              'value',
+              'STEP 3: Look at the highlighted VEIN.'
+            );
 
-              vein.setAttribute('visible', 'true');
+            vein.setAttribute('visible', 'true');
 
-              tourniquet.setAttribute('color', '#777777');
+            tourniquet.setAttribute('color', '#777777');
 
-              scoreText.setAttribute(
-                'value',
-                'SCORE: ' + score
-              );
-            }
-
+            scoreText.setAttribute(
+              'value',
+              'SCORE: ' + score
+            );
           });
 
 
-          // STEP 3 — Identify vein
-          vein.addEventListener('click', function () {
+          // STEP 3
+          vein.addEventListener('click', () => {
 
-            if (currentStep === 3) {
+            if (currentStep !== 3) return;
 
-              score += 20;
-              currentStep = 4;
+            currentStep = 4;
+            score += 20;
 
-              instructions.setAttribute(
-                'value',
-                'STEP 4: Insert the IV cannula at the highlighted site.'
-              );
+            instructions.setAttribute(
+              'value',
+              'STEP 4: Look at the YELLOW CANNULA to insert it.'
+            );
 
-              vein.setAttribute('color', '#00ff00');
+            vein.setAttribute('color', '#00ff00');
 
-              catheter.setAttribute('visible', 'true');
+            catheter.setAttribute('visible', 'true');
 
-              scoreText.setAttribute(
-                'value',
-                'SCORE: ' + score
-              );
-            }
-
+            scoreText.setAttribute(
+              'value',
+              'SCORE: ' + score
+            );
           });
 
 
-          // STEP 4 — Cannulation
-          catheter.addEventListener('click', function () {
+          // STEP 4
+          catheter.addEventListener('click', () => {
 
-            if (currentStep === 4) {
+            if (currentStep !== 4) return;
 
-              score += 40;
-              currentStep = 5;
+            currentStep = 5;
+            score += 40;
 
-              instructions.setAttribute(
-                'value',
-                '🎉 SUCCESS! Cannulation completed correctly.'
-              );
+            instructions.setAttribute(
+              'value',
+              'SUCCESS! Cannulation completed. 🎉'
+            );
 
-              catheter.setAttribute('color', '#00ff00');
+            catheter.setAttribute('color', '#00ff00');
 
-              scoreText.setAttribute(
-                'value',
-                'FINAL SCORE: ' + score + '/100'
-              );
-            }
-
+            scoreText.setAttribute(
+              'value',
+              'FINAL SCORE: ' + score + '/100'
+            );
           });
 
         };
-
 
         if (scene.hasLoaded) {
           setup();
@@ -140,7 +130,6 @@
       }
 
     });
-
   </script>
 </head>
 
@@ -149,7 +138,7 @@
 
 <a-scene cannulation-logic>
 
-  <!-- Background -->
+  <!-- BACKGROUND -->
   <a-sky color="#dfeff5"></a-sky>
 
 
@@ -182,7 +171,7 @@
   </a-text>
 
 
-  <!-- MEDICAL TABLE -->
+  <!-- TABLE -->
   <a-box
     position="0 0.8 -2"
     width="2.5"
@@ -231,7 +220,7 @@
     id="vein"
     class="clickable"
     position="0.15 1.18 -1.83"
-    radius="0.015"
+    radius="0.04"
     height="0.45"
     rotation="0 0 90"
     color="#4ba3e3"
@@ -239,12 +228,12 @@
   </a-cylinder>
 
 
-  <!-- IV CATHETER -->
+  <!-- YELLOW CANNULA -->
   <a-cone
     id="catheter"
     class="clickable"
-    position="0.15 1.18 -1.65"
-    radius-bottom="0.035"
+    position="0.15 1.18 -1.55"
+    radius-bottom="0.05"
     height="0.35"
     rotation="90 0 0"
     color="#ffcc00"
