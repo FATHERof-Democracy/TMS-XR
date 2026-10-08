@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>IV Cannulation Master</title>
+
+  <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+
+  <script>
+    let currentStep = 1;
+
+    AFRAME.registerComponent('cannulation-logic', {
+
+      init: function () {
+
+        const scene = this.el;
+
+        const setup = () => {
+
+          const instructions =
+            document.querySelector('#step-text');
+
+          const swab =
+            document.querySelector('#swab');
+
+          const tourniquet =
+            document.querySelector('#tourniquet');
+
+          const vein =
+            document.querySelector('#vein');
+
+          /*
+           STEP 1
+           Look at the swab
+          */
+
+          swab.addEventListener('click', function () {
+
+            if (currentStep === 1) {
+
+              currentStep = 2;
+
+              instructions.setAttribute(
+                'value',
+                'GOOD! Site prepared. STEP 2: Look at the blue tourniquet.'
+              );
+
+              swab.setAttribute(
+                'color',
+                '#777777'
+              );
+
+            }
+
+          });
+
+
+          /*
+           STEP 2
+           Look at tourniquet
+          */
+
+          tourniquet.addEventListener('click', function () {
+
+            if (currentStep === 2) {
+
+              currentStep = 3;
+
+              instructions.setAttribute(
+                'value',
+                'GOOD! Tourniquet applied. STEP 3: Identify the highlighted vein.'
+              );
+
+              vein.setAttribute(
+                'visible',
+                'true'
+              );
+
+            }
+
+          });
+
+
+          /*
+           STEP 3
+           Look at vein
+          */
+
+          vein.addEventListener('click', function () {
+
+            if (currentStep === 3) {
+
+              currentStep = 4;
+
+              instructions.setAttribute(
+                'value',
+                'SUCCESS! Vein identified. Cannulation step unlocked.'
+              );
+
+              vein.setAttribute(
+                'color',
+                '#00ff00'
+              );
+
+            }
+
+          });
+
+        };
+
+
+        if (scene.hasLoaded) {
+
+          setup();
+
+        } else {
+
+          scene.addEventListener(
+            'loaded',
+            setup
+          );
+
+        }
+
+      }
+
+    });
+
+  </script>
+
+</head>
+
+
+<body>
+
+<a-scene cannulation-logic>
+
+  <!-- Background -->
+
+  <a-sky color="#dfeff5"></a-sky>
+
+
+  <!-- Title -->
+
+  <a-text
+    value="IV CANNULATION SIMULATOR"
+    position="-1.7 2.5 -3"
+    width="4"
+    color="#111111">
+  </a-text>
+
+
+  <!-- Instructions -->
+
+  <a-text
+    id="step-text"
+    value="STEP 1: Look at the green swab"
+    position="-1.5 2.1 -3"
+    width="3.5"
+    color="#111111">
+  </a-text>
+
+
+  <!-- Table -->
+
+  <a-box
+    position="0 0.8 -2"
+    width="2.5"
+    height="0.15"
+    depth="1.5"
+    color="#ffffff">
+  </a-box>
+
+
+  <!-- Arm -->
+
+  <a-cylinder
+    position="0 1.0 -2"
+    radius="0.18"
+    height="1.5"
+    rotation="0 0 90"
+    color="#d99b7c">
+  </a-cylinder>
+
+
+  <!-- GREEN ALCOHOL SWAB -->
+
+  <a-box
+    id="swab"
+    class="clickable"
+    position="0.8 0.95 -1.5"
+    width="0.2"
+    height="0.05"
+    depth="0.2"
+    color="#00ff00">
+  </a-box>
+
+
+  <!-- BLUE TOURNIQUET -->
+
+  <a-torus
+    id="tourniquet"
+    class="clickable"
+    position="-0.3 1.0 -2"
+    radius="0.18"
+    radius-tubular="0.025"
+    rotation="0 90 0"
+    color="#0066ff">
+  </a-torus>
+
+
+  <!-- HIDDEN VEIN -->
+
+  <a-cylinder
+    id="vein"
+    class="clickable"
+    position="0.15 1.18 -1.83"
+    radius="0.015"
+    height="0.45"
+    rotation="0 0 90"
+    color="#4ba3e3"
+    visible="false">
+  </a-cylinder>
+
+
+  <!-- CAMERA -->
+
+  <a-camera position="0 1.6 0">
+
+    <a-cursor
+      fuse="true"
+      fuse-timeout="1500"
+      color="red"
+      raycaster="objects: .clickable">
+    </a-cursor>
+
+  </a-camera>
+
+
+</a-scene>
+
+</body>
+</html>
