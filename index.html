@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>TMS-XR | Clinical Skills Simulator</title>
+  <title>TMS-XR | IV Cannulation Simulator</title>
 
   <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
 
@@ -27,11 +27,12 @@
           const tourniquet = document.querySelector('#tourniquet');
           const vein = document.querySelector('#vein');
           const catheter = document.querySelector('#catheter');
+
           const needle = document.querySelector('#needle');
           const bloodTube = document.querySelector('#blood-tube');
           const blood = document.querySelector('#blood');
 
-          const successPanel = document.querySelector('#success-panel');
+          const success = document.querySelector('#success');
 
           // STEP 1
           swab.addEventListener('click', () => {
@@ -50,7 +51,7 @@
 
             scoreText.setAttribute(
               'value',
-              'SCORE  ' + score
+              'SCORE: ' + score
             );
           });
 
@@ -74,7 +75,7 @@
 
             scoreText.setAttribute(
               'value',
-              'SCORE  ' + score
+              'SCORE: ' + score
             );
           });
 
@@ -99,7 +100,7 @@
 
             scoreText.setAttribute(
               'value',
-              'SCORE  ' + score
+              'SCORE: ' + score
             );
           });
 
@@ -114,7 +115,7 @@
 
             instructions.setAttribute(
               'value',
-              'SUCCESS  |  VENOUS ACCESS ACHIEVED'
+              'SUCCESS!  VENOUS ACCESS ACHIEVED'
             );
 
             catheter.setAttribute('color', '#00ff66');
@@ -123,11 +124,11 @@
             bloodTube.setAttribute('visible', 'true');
             blood.setAttribute('visible', 'true');
 
-            successPanel.setAttribute('visible', 'true');
+            success.setAttribute('visible', 'true');
 
             scoreText.setAttribute(
               'value',
-              'FINAL SCORE  ' + score + '/100'
+              'FINAL SCORE: ' + score + '/100'
             );
           });
 
@@ -138,9 +139,7 @@
         } else {
           scene.addEventListener('loaded', setup);
         }
-
       }
-
     });
   </script>
 </head>
@@ -153,9 +152,9 @@
   background="color: #dcecf2">
 
 
-  <!-- =============================== -->
+  <!-- ================================= -->
   <!-- LIGHTING -->
-  <!-- =============================== -->
+  <!-- ================================= -->
 
   <a-light
     type="ambient"
@@ -171,9 +170,9 @@
   </a-light>
 
 
-  <!-- =============================== -->
+  <!-- ================================= -->
   <!-- ENVIRONMENT -->
-  <!-- =============================== -->
+  <!-- ================================= -->
 
   <a-sky color="#dcecf2"></a-sky>
 
@@ -182,13 +181,13 @@
     rotation="-90 0 0"
     width="12"
     height="12"
-    color="#d6dfe3">
+    color="#d5dfe3">
   </a-plane>
 
 
-  <!-- =============================== -->
-  <!-- PROCEDURE TABLE -->
-  <!-- =============================== -->
+  <!-- ================================= -->
+  <!-- TABLE -->
+  <!-- ================================= -->
 
   <a-box
     position="0 0.82 -2.2"
@@ -225,26 +224,10 @@
     color="#647278">
   </a-box>
 
-  <a-box
-    position="-1.55 0.35 -1.55"
-    width="0.12"
-    height="0.7"
-    depth="0.12"
-    color="#647278">
-  </a-box>
 
-  <a-box
-    position="1.55 0.35 -1.55"
-    width="0.12"
-    height="0.7"
-    depth="0.12"
-    color="#647278">
-  </a-box>
-
-
-  <!-- =============================== -->
-  <!-- PATIENT ARM -->
-  <!-- =============================== -->
+  <!-- ================================= -->
+  <!-- ARM -->
+  <!-- ================================= -->
 
   <a-cylinder
     position="0 1.05 -2.2"
@@ -255,8 +238,6 @@
   </a-cylinder>
 
 
-  <!-- UPPER ARM -->
-
   <a-cylinder
     position="-0.78 1.05 -2.2"
     radius="0.29"
@@ -265,8 +246,6 @@
     color="#d39a7b">
   </a-cylinder>
 
-
-  <!-- ELBOW -->
 
   <a-sphere
     position="-0.42 1.05 -2.2"
@@ -286,9 +265,9 @@
   </a-box>
 
 
-  <!-- =============================== -->
-  <!-- BLUE TOURNIQUET -->
-  <!-- =============================== -->
+  <!-- ================================= -->
+  <!-- TOURNIQUET -->
+  <!-- ================================= -->
 
   <a-torus
     id="tourniquet"
@@ -301,9 +280,9 @@
   </a-torus>
 
 
-  <!-- =============================== -->
+  <!-- ================================= -->
   <!-- VEIN -->
-  <!-- =============================== -->
+  <!-- ================================= -->
 
   <a-cylinder
     id="vein"
@@ -317,9 +296,9 @@
   </a-cylinder>
 
 
-  <!-- =============================== -->
-  <!-- ANTISEPTIC SWAB -->
-  <!-- =============================== -->
+  <!-- ================================= -->
+  <!-- SWAB -->
+  <!-- ================================= -->
 
   <a-box
     id="swab"
@@ -332,17 +311,9 @@
   </a-box>
 
 
-  <a-text
-    value="SWAB"
-    position="0.92 1.27 -1.45"
-    width="0.7"
-    color="#183b2b">
-  </a-text>
-
-
-  <!-- =============================== -->
+  <!-- ================================= -->
   <!-- CANNULA -->
-  <!-- =============================== -->
+  <!-- ================================= -->
 
   <a-cylinder
     id="catheter"
@@ -367,25 +338,23 @@
   </a-cylinder>
 
 
-  <!-- =============================== -->
+  <!-- ================================= -->
   <!-- NEEDLE -->
-  <!-- =============================== -->
+  <!-- ================================= -->
 
   <a-cylinder
     id="needle"
-    position="0.10 1.31 -1.92"
+    position="0.10 1.31 -1.93"
     radius="0.012"
     height="0.55"
     rotation="90 0 0"
-    color="#c7cdd0"
+    color="#c5cdd1"
     visible="false">
   </a-cylinder>
 
 
-  <!-- NEEDLE TIP -->
-
   <a-cone
-    position="0.10 1.31 -2.20"
+    position="0.10 1.31 -2.21"
     radius-bottom="0.025"
     radius-top="0"
     height="0.12"
@@ -395,9 +364,9 @@
   </a-cone>
 
 
-  <!-- =============================== -->
+  <!-- ================================= -->
   <!-- SYRINGE -->
-  <!-- =============================== -->
+  <!-- ================================= -->
 
   <a-cylinder
     position="1.0 1.18 -1.75"
@@ -408,8 +377,6 @@
   </a-cylinder>
 
 
-  <!-- SYRINGE PLUNGER -->
-
   <a-cylinder
     position="1.32 1.18 -1.75"
     radius="0.075"
@@ -418,8 +385,6 @@
     color="#aebbc0">
   </a-cylinder>
 
-
-  <!-- SYRINGE TIP -->
 
   <a-cylinder
     position="0.38 1.18 -1.75"
@@ -430,17 +395,9 @@
   </a-cylinder>
 
 
-  <a-text
-    value="SYRINGE"
-    position="0.72 1.39 -1.75"
-    width="1.0"
-    color="#34454d">
-  </a-text>
-
-
-  <!-- =============================== -->
+  <!-- ================================= -->
   <!-- MEDICAL TRAY -->
-  <!-- =============================== -->
+  <!-- ================================= -->
 
   <a-box
     position="1.0 0.94 -1.45"
@@ -452,4 +409,160 @@
 
 
   <a-box
-    position="1.0 0.98 -1.45
+    position="1.0 0.98 -1.45"
+    width="0.95"
+    height="0.025"
+    depth="0.60"
+    color="#e7edef">
+  </a-box>
+
+
+  <!-- ================================= -->
+  <!-- BLOOD COLLECTION TUBE -->
+  <!-- ================================= -->
+
+  <a-cylinder
+    id="blood-tube"
+    position="1.35 1.18 -1.45"
+    radius="0.065"
+    height="0.45"
+    color="#f5f7f8"
+    visible="false">
+  </a-cylinder>
+
+
+  <a-cylinder
+    position="1.35 1.42 -1.45"
+    radius="0.075"
+    height="0.07"
+    color="#c92727"
+    visible="false">
+  </a-cylinder>
+
+
+  <a-cylinder
+    id="blood"
+    position="1.35 1.02 -1.45"
+    radius="0.055"
+    height="0.18"
+    color="#9e1717"
+    visible="false">
+  </a-cylinder>
+
+
+  <!-- ================================= -->
+  <!-- CAMERA / HUD -->
+  <!-- ================================= -->
+
+  <a-camera position="0 1.6 0">
+
+
+    <!-- TITLE BOARD -->
+
+    <a-plane
+      position="0 0.78 -2"
+      width="3.4"
+      height="0.28"
+      color="#123047">
+    </a-plane>
+
+
+    <a-text
+      value="TMS-XR  |  IV CANNULATION"
+      position="-1.35 0.785 -2.03"
+      width="2.7"
+      color="#ffffff"
+      align="center">
+    </a-text>
+
+
+    <!-- INSTRUCTION BOARD -->
+
+    <a-plane
+      position="0 0.50 -2"
+      width="3.4"
+      height="0.38"
+      color="#ffffff">
+    </a-plane>
+
+
+    <a-text
+      id="step-text"
+      value="STEP 1  |  LOOK AT THE GREEN SWAB"
+      position="-1.45 0.52 -2.04"
+      width="2.9"
+      color="#16252d"
+      align="center">
+    </a-text>
+
+
+    <!-- SCORE BOARD -->
+
+    <a-plane
+      position="1.12 0.18 -2"
+      width="1.0"
+      height="0.28"
+      color="#123047">
+    </a-plane>
+
+
+    <a-text
+      id="score-text"
+      value="SCORE: 0"
+      position="0.67 0.185 -2.04"
+      width="0.9"
+      color="#ffffff"
+      align="center">
+    </a-text>
+
+
+    <!-- ================================= -->
+    <!-- GAZE CURSOR -->
+    <!-- ================================= -->
+
+    <a-ring
+      position="0 0 -1.2"
+      radius-inner="0.018"
+      radius-outer="0.032"
+      color="#ff2222">
+    </a-ring>
+
+
+    <a-cursor
+      fuse="true"
+      fuse-timeout="1500"
+      color="#ff3333"
+      raycaster="objects: .clickable">
+    </a-cursor>
+
+
+  </a-camera>
+
+
+  <!-- ================================= -->
+  <!-- SUCCESS -->
+  <!-- ================================= -->
+
+  <a-plane
+    id="success"
+    position="0 1.75 -2.7"
+    width="3.0"
+    height="0.65"
+    color="#087f5b"
+    visible="false">
+  </a-plane>
+
+
+  <a-text
+    value="✓  PROCEDURE COMPLETE"
+    position="-1.2 1.78 -2.73"
+    width="2.4"
+    color="#ffffff"
+    visible="false">
+  </a-text>
+
+
+</a-scene>
+
+</body>
+</html>
