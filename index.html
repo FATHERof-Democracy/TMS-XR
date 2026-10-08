@@ -25,26 +25,25 @@ const scoreText = document.querySelector('#score-text');
 const swab = document.querySelector('#swab');
 const tourniquet = document.querySelector('#tourniquet');
 const vein = document.querySelector('#vein');
-
 const catheter = document.querySelector('#catheter');
 const needle = document.querySelector('#needle');
 const needleTip = document.querySelector('#needle-tip');
-
+const flashback = document.querySelector('#flashback');
 const bloodTube = document.querySelector('#blood-tube');
 const blood = document.querySelector('#blood');
-const flashback = document.querySelector('#flashback');
-
 const success = document.querySelector('#success');
 
 
-/* STEP 1 */
+/* CLEAN */
 
-swab.addEventListener('click', () => {
+swab.addEventListener('click', function () {
 
 if (currentStep !== 1) return;
 
 currentStep = 2;
 score += 20;
+
+swab.setAttribute('color','#888888');
 
 instructions.setAttribute(
 'value',
@@ -56,33 +55,25 @@ scoreText.setAttribute(
 'SCORE: ' + score
 );
 
-swab.setAttribute('color','#777777');
-
 });
 
 
-/* STEP 2 */
+/* TOURNIQUET */
 
-tourniquet.addEventListener('click', () => {
+tourniquet.addEventListener('click', function () {
 
 if (currentStep !== 2) return;
 
 currentStep = 3;
 score += 20;
 
+tourniquet.setAttribute('color','#777777');
+
+vein.setAttribute('visible','true');
+
 instructions.setAttribute(
 'value',
 'STEP 3 | IDENTIFY THE HIGHLIGHTED VEIN'
-);
-
-vein.setAttribute(
-'visible',
-'true'
-);
-
-tourniquet.setAttribute(
-'color',
-'#777777'
 );
 
 scoreText.setAttribute(
@@ -93,38 +84,24 @@ scoreText.setAttribute(
 });
 
 
-/* STEP 3 */
+/* VEIN */
 
-vein.addEventListener('click', () => {
+vein.addEventListener('click', function () {
 
 if (currentStep !== 3) return;
 
 currentStep = 4;
 score += 20;
 
+vein.setAttribute('color','#00ff66');
+
+catheter.setAttribute('visible','true');
+needle.setAttribute('visible','true');
+needleTip.setAttribute('visible','true');
+
 instructions.setAttribute(
 'value',
 'STEP 4 | INSERT THE CANNULA'
-);
-
-vein.setAttribute(
-'color',
-'#00ff66'
-);
-
-catheter.setAttribute(
-'visible',
-'true'
-);
-
-needle.setAttribute(
-'visible',
-'true'
-);
-
-needleTip.setAttribute(
-'visible',
-'true'
 );
 
 scoreText.setAttribute(
@@ -135,9 +112,9 @@ scoreText.setAttribute(
 });
 
 
-/* STEP 4 */
+/* CANNULA */
 
-catheter.addEventListener('click', () => {
+catheter.addEventListener('click', function () {
 
 if (currentStep !== 4) return;
 
@@ -155,27 +132,24 @@ scoreText.setAttribute(
 );
 
 
-/* NEEDLE ADVANCES */
+/* NEEDLE ADVANCE */
 
 needle.setAttribute(
-'animation__advance',
-'property: position; to: 0.05 1.27 -2.03; dur: 800; easing: easeInOutQuad'
+'animation',
+'property: position; to: 0.05 1.30 -2.02; dur: 800; easing: easeInOutQuad'
 );
 
 needleTip.setAttribute(
-'animation__advance',
-'property: position; to: 0.05 1.27 -2.25; dur: 800; easing: easeInOutQuad'
+'animation',
+'property: position; to: 0.05 1.30 -2.20; dur: 800; easing: easeInOutQuad'
 );
 
 
-/* BLOOD FLASHBACK */
+/* FLASHBACK */
 
-setTimeout(() => {
+setTimeout(function () {
 
-flashback.setAttribute(
-'visible',
-'true'
-);
+flashback.setAttribute('visible','true');
 
 instructions.setAttribute(
 'value',
@@ -185,24 +159,21 @@ instructions.setAttribute(
 },900);
 
 
-/* NEEDLE WITHDRAWAL */
+/* WITHDRAW NEEDLE */
 
-setTimeout(() => {
+setTimeout(function () {
 
 needle.setAttribute(
-'animation__withdraw',
-'property: position; to: 0.05 1.27 -1.55; dur: 700; easing: easeInOutQuad'
+'animation',
+'property: position; to: 0.05 1.30 -1.55; dur: 700; easing: easeInOutQuad'
 );
 
 needleTip.setAttribute(
-'animation__withdraw',
-'property: position; to: 0.05 1.27 -1.80; dur: 700; easing: easeInOutQuad'
+'animation',
+'property: position; to: 0.05 1.30 -1.78; dur: 700; easing: easeInOutQuad'
 );
 
-catheter.setAttribute(
-'color',
-'#00ff66'
-);
+catheter.setAttribute('color','#00ff66');
 
 instructions.setAttribute(
 'value',
@@ -212,29 +183,19 @@ instructions.setAttribute(
 },1700);
 
 
-/* BLOOD COLLECTION */
+/* BLOOD */
 
-setTimeout(() => {
+setTimeout(function () {
 
-bloodTube.setAttribute(
-'visible',
-'true'
-);
-
-blood.setAttribute(
-'visible',
-'true'
-);
+bloodTube.setAttribute('visible','true');
+blood.setAttribute('visible','true');
 
 instructions.setAttribute(
 'value',
 'SUCCESS | SIMULATION COMPLETE'
 );
 
-success.setAttribute(
-'visible',
-'true'
-);
+success.setAttribute('visible','true');
 
 scoreText.setAttribute(
 'value',
@@ -245,8 +206,11 @@ scoreText.setAttribute(
 
 };
 
-if (this.el.hasLoaded) setup();
-else this.el.addEventListener('loaded',setup);
+if (this.el.hasLoaded) {
+setup();
+} else {
+this.el.addEventListener('loaded',setup);
+}
 
 }
 
@@ -255,7 +219,6 @@ else this.el.addEventListener('loaded',setup);
 </script>
 </head>
 
-
 <body>
 
 <a-scene
@@ -263,7 +226,7 @@ cannulation-logic
 background="color:#dcecf2">
 
 
-<!-- LIGHT -->
+<!-- LIGHTING -->
 
 <a-light
 type="ambient"
@@ -278,10 +241,10 @@ position="-3 5 4"
 color="#ffffff">
 </a-light>
 
-
-<!-- ENVIRONMENT -->
-
 <a-sky color="#dcecf2"></a-sky>
+
+
+<!-- TABLE -->
 
 <a-plane
 position="0 0 -3"
@@ -320,6 +283,9 @@ height="1.7"
 rotation="0 0 90"
 color="#d39a7b">
 </a-cylinder>
+
+
+<!-- ELBOW -->
 
 <a-sphere
 position="-0.85 1.05 -2.2"
@@ -366,7 +332,7 @@ color="#d39a7b">
 </a-box>
 
 
-<!-- TOURNIQUET -->
+<!-- BLUE TOURNIQUET -->
 
 <a-torus
 id="tourniquet"
@@ -393,22 +359,35 @@ visible="false">
 </a-cylinder>
 
 
-<!-- SWAB -->
+<!-- ================================================= -->
+<!-- CLEANING SWAB -->
+<!-- NOW DIRECTLY ABOVE THE ARM -->
+<!-- ================================================= -->
 
 <a-box
 id="swab"
 class="clickable"
-position="1.55 1.08 -1.45"
-width="0.32"
+position="0.55 1.38 -1.82"
+width="0.30"
 height="0.09"
-depth="0.14"
+depth="0.18"
+rotation="0 0 -20"
 color="#00dd55">
 </a-box>
 
 
-<!-- ================================================= -->
-<!-- CANNULA - ANGLED TOWARD THE VEIN -->
-<!-- ================================================= -->
+<!-- SWAB HANDLE -->
+
+<a-cylinder
+position="0.55 1.46 -1.82"
+radius="0.025"
+height="0.25"
+rotation="0 0 -20"
+color="#ffffff">
+</a-cylinder>
+
+
+<!-- CANNULA -->
 
 <a-cylinder
 id="catheter"
@@ -433,9 +412,7 @@ color="#eeb400">
 </a-cylinder>
 
 
-<!-- ================================================= -->
-<!-- NEEDLE - SAME ANGLE AS CANNULA -->
-<!-- ================================================= -->
+<!-- NEEDLE -->
 
 <a-cylinder
 id="needle"
@@ -462,7 +439,7 @@ visible="false">
 </a-cone>
 
 
-<!-- SYRINGE MOVED AWAY -->
+<!-- SYRINGE -->
 
 <a-cylinder
 position="1.55 1.22 -1.85"
@@ -481,7 +458,7 @@ color="#aebbc0">
 </a-cylinder>
 
 
-<!-- BLOOD TRAY -->
+<!-- BLOOD COLLECTION TRAY -->
 
 <a-box
 position="1.25 0.95 -1.30"
