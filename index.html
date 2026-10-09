@@ -15,7 +15,7 @@
       margin: 0;
       font-family: Arial, Helvetica, sans-serif;
       background: #071827;
-      color: #fff;
+      color: white;
       overflow: hidden;
     }
 
@@ -25,13 +25,12 @@
       left: 0;
       width: 100%;
       z-index: 10;
-      padding: 12px 16px;
+      padding: 10px 15px;
       background: linear-gradient(110deg, #071827, #123b52);
       border-bottom: 1px solid #34728b;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 12px;
     }
 
     #brand {
@@ -44,14 +43,13 @@
 
     #subtitle {
       color: #b5d1dd;
-      font-size: 11px;
+      font-size: 10px;
       margin-top: 3px;
     }
 
     #scoreBox {
       text-align: right;
       font-weight: bold;
-      white-space: nowrap;
     }
 
     #score {
@@ -64,7 +62,7 @@
       width: 100%;
       background: #233d4d;
       position: fixed;
-      top: 64px;
+      top: 60px;
       z-index: 11;
     }
 
@@ -72,34 +70,35 @@
       width: 0%;
       height: 100%;
       background: linear-gradient(90deg, #36cfc9, #74f3b5);
-      transition: width .35s;
+      transition: width .3s;
     }
 
     #instruction {
       position: fixed;
       left: 50%;
-      bottom: 16px;
+      bottom: 12px;
       transform: translateX(-50%);
-      width: min(92%, 620px);
-      padding: 13px 17px;
+      width: min(94%, 620px);
+      padding: 12px 15px;
       border-radius: 15px;
-      background: rgba(5, 24, 38, .94);
+      background: rgba(5, 24, 38, .96);
       border: 1px solid rgba(91, 210, 226, .65);
       text-align: center;
       z-index: 12;
       box-shadow: 0 6px 28px rgba(0,0,0,.3);
+      pointer-events: none;
     }
 
     #stepTitle {
       color: #56e2e7;
       font-size: 11px;
-      letter-spacing: 1.4px;
+      letter-spacing: 1px;
       font-weight: 800;
       margin-bottom: 5px;
     }
 
     #stepText {
-      font-size: 15px;
+      font-size: 14px;
       line-height: 1.4;
     }
 
@@ -119,27 +118,27 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 22px;
+      padding: 20px;
       text-align: center;
     }
 
     .panel {
       width: min(100%, 510px);
-      padding: 30px 25px;
+      padding: 28px 22px;
       border: 1px solid #28576b;
-      background: rgba(6, 23, 36, .94);
+      background: rgba(6, 23, 36, .96);
       border-radius: 22px;
       box-shadow: 0 20px 70px rgba(0,0,0,.35);
     }
 
     .logoMark {
-      width: 65px;
-      height: 65px;
-      margin: 0 auto 18px;
+      width: 60px;
+      height: 60px;
+      margin: 0 auto 16px;
       display: grid;
       place-items: center;
-      border-radius: 18px;
-      font-size: 28px;
+      border-radius: 17px;
+      font-size: 26px;
       font-weight: 900;
       color: #04202b;
       background: linear-gradient(135deg, #48e2e8, #7df4b7);
@@ -154,9 +153,9 @@
 
     .description {
       color: #c0d5df;
-      line-height: 1.65;
+      line-height: 1.6;
       font-size: 14px;
-      margin: 12px 0 22px;
+      margin: 12px 0 20px;
     }
 
     .featureRow {
@@ -164,7 +163,7 @@
       gap: 8px;
       flex-wrap: wrap;
       justify-content: center;
-      margin-bottom: 22px;
+      margin-bottom: 20px;
     }
 
     .feature {
@@ -172,14 +171,13 @@
       border: 1px solid #315b6c;
       background: #102d40;
       border-radius: 30px;
-      padding: 8px 11px;
-      color: #d8edf4;
+      padding: 8px 10px;
     }
 
     button {
       border: 0;
       border-radius: 12px;
-      padding: 14px 22px;
+      padding: 14px 20px;
       font-weight: 800;
       font-size: 15px;
       cursor: pointer;
@@ -188,25 +186,16 @@
       width: 100%;
     }
 
-    button:active { transform: scale(.98); }
-
-    .secondary {
-      background: transparent;
-      border: 1px solid #3e7489;
-      color: white;
-      margin-top: 10px;
-    }
-
     .small {
       color: #8eafbd;
       font-size: 11px;
       line-height: 1.5;
-      margin-top: 17px;
+      margin-top: 15px;
     }
 
     #scene {
       position: fixed;
-      inset: 69px 0 0 0;
+      inset: 65px 0 0;
     }
 
     #results {
@@ -229,15 +218,14 @@
     .resultLine strong { color: #6ce8c4; }
 
     @media (max-width: 520px) {
-      #hud { padding: 10px 12px; }
       #brand { font-size: 16px; }
-      #subtitle { font-size: 10px; }
+      #subtitle { font-size: 9px; }
       #score { font-size: 20px; }
-      #progressOuter { top: 60px; }
-      #scene { top: 65px; }
-      #instruction { bottom: 10px; padding: 11px 12px; }
+      #progressOuter { top: 57px; }
+      #scene { top: 62px; }
+      #instruction { bottom: 8px; padding: 10px 12px; }
       #stepText { font-size: 13px; }
-      .panel { padding: 24px 18px; }
+      .panel { padding: 23px 17px; }
     }
   </style>
 </head>
@@ -259,7 +247,7 @@
   <div id="instruction">
     <div id="stepTitle">READY TO BEGIN</div>
     <div id="stepText">Start the simulation to begin.</div>
-    <div id="hint">Look at a selectable object to interact.</div>
+    <div id="hint">Look at an object to interact.</div>
   </div>
 
   <div id="screen">
@@ -271,8 +259,8 @@
       </div>
       <p class="description">
         Practise the sequence of peripheral IV cannulation in an interactive
-        3D environment. Identify the equipment, follow the procedure, and
-        receive feedback on your selections.
+        3D environment. Identify equipment, follow the sequence, and receive
+        feedback on your selections.
       </p>
       <div class="featureRow">
         <div class="feature">3D Clinical Scene</div>
@@ -289,9 +277,7 @@
     <div class="panel" id="resultPanel" style="display:none">
       <div class="logoMark">✓</div>
       <h1>Simulation <span>Complete</span></h1>
-      <p class="description" id="resultMessage">
-        You have completed the interactive sequence.
-      </p>
+      <p class="description" id="resultMessage"></p>
       <div id="results">
         <div class="resultLine"><span>Final score</span><strong id="finalScore">0/100</strong></div>
         <div class="resultLine"><span>Stages completed</span><strong id="finalStages">0/4</strong></div>
@@ -299,8 +285,7 @@
       </div>
       <button id="restartBtn">PRACTISE AGAIN</button>
       <div class="small">
-        This score reflects object selection and sequence only. It does not
-        measure actual cannulation skill or establish clinical competence.
+        The score measures object selection and sequence only, not clinical competence.
       </div>
     </div>
   </div>
@@ -308,31 +293,25 @@
   <div id="scene">
     <a-scene
       embedded
-      renderer="colorManagement: true; physicallyCorrectLights: true"
+      renderer="colorManagement: true"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
-      background="color: #dceaf0"
+      background="color: #e7f1f5"
       loading-screen="enabled: false">
 
-      <a-assets>
-        <a-mixin id="metal" material="color: #b9c8d0; metalness: 0.8; roughness: 0.23"></a-mixin>
-      </a-assets>
-
-      <!-- Soft clinical lighting -->
-      <a-entity light="type: ambient; intensity: 1.05; color: #dcefff"></a-entity>
+      <a-entity light="type: ambient; intensity: 1.15; color: #e8f5ff"></a-entity>
       <a-entity light="type: directional; intensity: 1.6; color: #ffffff"
                 position="-3 6 4"></a-entity>
-      <a-entity light="type: point; intensity: 0.65; color: #74d9ef"
+      <a-entity light="type: point; intensity: .65; color: #74d9ef"
                 position="2 3 -2"></a-entity>
 
-      <!-- Clinical room -->
       <a-sky color="#e7f1f5"></a-sky>
       <a-plane rotation="-90 0 0" width="18" height="18"
-               material="color: #cbd9df; roughness: 0.9"></a-plane>
+               material="color: #cbd9df; roughness: .9"></a-plane>
       <a-plane position="0 3 -4.5" width="12" height="6"
-               material="color: #eaf2f5; roughness: 1"></a-plane>
+               material="color: #eaf2f5"></a-plane>
 
-      <!-- Back wall details -->
+      <!-- Clinical wall sign -->
       <a-box position="-3 2.7 -4.42" width="1.7" height="1.1" depth=".08"
              material="color: #d4e4ea"></a-box>
       <a-box position="-3 2.7 -4.35" width="1.48" height=".9" depth=".02"
@@ -340,175 +319,170 @@
       <a-text value="CLINICAL SKILLS LAB" position="-3.68 2.78 -4.32"
               width="2.5" color="#1c5269"></a-text>
 
-      <!-- Workstation -->
-      <a-box position="0 0.76 -1.45" width="4.4" height=".18" depth="2.2"
+      <!-- Enlarged workstation -->
+      <a-box position="0 .76 -1.45" width="5.0" height=".20" depth="2.5"
              material="color: #f7fafb; roughness: .35"></a-box>
-      <a-box position="0 0.65 -1.45" width="4.5" height=".06" depth="2.28"
+      <a-box position="0 .64 -1.45" width="5.1" height=".07" depth="2.55"
              material="color: #8daab6; metalness: .45"></a-box>
 
-      <a-box position="-1.9 .34 -2.2" width=".09" height=".7" depth=".09"
+      <a-box position="-2.15 .34 -2.25" width=".10" height=".65" depth=".10"
              material="color: #7b929c; metalness: .7"></a-box>
-      <a-box position="1.9 .34 -2.2" width=".09" height=".7" depth=".09"
+      <a-box position="2.15 .34 -2.25" width=".10" height=".65" depth=".10"
              material="color: #7b929c; metalness: .7"></a-box>
-      <a-box position="-1.9 .34 -.7" width=".09" height=".7" depth=".09"
+      <a-box position="-2.15 .34 -.65" width=".10" height=".65" depth=".10"
              material="color: #7b929c; metalness: .7"></a-box>
-      <a-box position="1.9 .34 -.7" width=".09" height=".7" depth=".09"
+      <a-box position="2.15 .34 -.65" width=".10" height=".65" depth=".10"
              material="color: #7b929c; metalness: .7"></a-box>
 
-      <!-- Blue sterile drape -->
-      <a-box position="-.15 .875 -1.45" width="2.6" height=".035" depth="1.45"
+      <!-- Sterile drape -->
+      <a-box position="-.15 .875 -1.45" width="3.0" height=".04" depth="1.7"
              material="color: #c1e9ef; roughness: .85"></a-box>
 
       <!-- Arm support -->
-      <a-box position="-.25 .97 -1.35" width="2.45" height=".14" depth=".65"
-             material="color: #d2dce2" radius=".04"></a-box>
+      <a-box position="-.25 .97 -1.35" width="2.8" height=".15" depth=".75"
+             material="color: #d2dce2"></a-box>
 
-      <!-- Simulated forearm: tapered sections -->
+      <!-- Arm and hand -->
       <a-entity id="arm" position="-.2 1.08 -1.32" rotation="0 0 -4">
         <a-cylinder position="-.05 0 0" rotation="0 0 90"
-                    radius=".23" height="1.45"
+                    radius=".25" height="1.55"
                     material="color: #c99170; roughness: .8"></a-cylinder>
-        <a-sphere position=".65 0 0" scale=".38 .24 .27"
+        <a-sphere position=".65 0 0" scale=".40 .26 .29"
                   material="color: #d5a080; roughness: .78"></a-sphere>
 
-        <!-- Palm -->
-        <a-box position="1.02 .01 .005" width=".58" height=".13" depth=".4"
+        <a-box position="1.02 .01 .005" width=".62" height=".15" depth=".43"
                material="color: #d5a080; roughness: .8"
                rotation="0 0 -4"></a-box>
 
         <!-- Fingers -->
-        <a-entity id="fingers">
-          <a-cylinder position="1.30 .00 -.14" rotation="0 0 90"
-                      radius=".055" height=".37"
-                      material="color: #d5a080"></a-cylinder>
-          <a-sphere position="1.49 .00 -.14" scale=".07 .06 .065"
-                    material="color: #e4b398"></a-sphere>
+        <a-cylinder position="1.32 0 -.15" rotation="0 0 90"
+                    radius=".058" height=".39" material="color: #d5a080"></a-cylinder>
+        <a-sphere position="1.52 0 -.15" scale=".075 .065 .068"
+                  material="color: #e4b398"></a-sphere>
 
-          <a-cylinder position="1.34 .00 -.045" rotation="0 0 90"
-                      radius=".055" height=".40"
-                      material="color: #d5a080"></a-cylinder>
-          <a-sphere position="1.54 .00 -.045" scale=".07 .06 .065"
-                    material="color: #e4b398"></a-sphere>
+        <a-cylinder position="1.36 0 -.05" rotation="0 0 90"
+                    radius=".058" height=".42" material="color: #d5a080"></a-cylinder>
+        <a-sphere position="1.57 0 -.05" scale=".075 .065 .068"
+                  material="color: #e4b398"></a-sphere>
 
-          <a-cylinder position="1.34 .00 .055" rotation="0 0 90"
-                      radius=".052" height=".38"
-                      material="color: #d5a080"></a-cylinder>
-          <a-sphere position="1.53 .00 .055" scale=".07 .06 .065"
-                    material="color: #e4b398"></a-sphere>
+        <a-cylinder position="1.36 0 .055" rotation="0 0 90"
+                    radius=".055" height=".40" material="color: #d5a080"></a-cylinder>
+        <a-sphere position="1.56 0 .055" scale=".075 .065 .068"
+                  material="color: #e4b398"></a-sphere>
 
-          <a-cylinder position="1.29 .00 .15" rotation="0 0 90"
-                      radius=".05" height=".31"
-                      material="color: #d5a080"></a-cylinder>
-          <a-sphere position="1.45 .00 .15" scale=".065 .06 .06"
-                    material="color: #e4b398"></a-sphere>
-        </a-entity>
+        <a-cylinder position="1.31 0 .16" rotation="0 0 90"
+                    radius=".052" height=".34" material="color: #d5a080"></a-cylinder>
+        <a-sphere position="1.48 0 .16" scale=".07 .065 .065"
+                  material="color: #e4b398"></a-sphere>
 
-        <!-- Visible superficial vein -->
+        <!-- Superficial vein -->
         <a-cylinder id="vein" class="clickable"
-                    position="-.1 .235 -.005"
+                    position="-.1 .255 -.005"
                     rotation="0 0 90"
-                    radius=".024" height=".82"
-                    material="color: #2868a2; emissive: #123b7c; emissiveIntensity: .18"
-                    visible="true"></a-cylinder>
+                    radius=".027" height=".90"
+                    material="color: #2868a2; emissive: #123b7c; emissiveIntensity: .18">
+        </a-cylinder>
 
-        <a-cylinder position="-.1 .251 -.005"
+        <a-cylinder position="-.1 .275 -.005"
                     rotation="0 0 90"
-                    radius=".008" height=".7"
+                    radius=".009" height=".76"
                     material="color: #75a9d2"></a-cylinder>
 
         <!-- Tourniquet -->
         <a-box id="tourniquet" class="clickable"
-               position="-.59 .22 0"
-               width=".16" height=".045" depth=".48"
+               position="-.59 .24 0"
+               width=".19" height=".06" depth=".52"
                material="color: #087fba; roughness: .5"></a-box>
-        <a-box position="-.59 .246 0"
-               width=".08" height=".01" depth=".49"
+        <a-box position="-.59 .275 0"
+               width=".09" height=".012" depth=".53"
                material="color: #55bfe8"></a-box>
 
-        <!-- Cannula at the wrist, shown from viewer side -->
+        <!-- Enlarged cannula -->
         <a-entity id="cannula" class="clickable"
-                  position=".39 .265 .01" rotation="0 0 0" visible="true">
-          <a-cylinder rotation="0 0 90" radius=".035" height=".25"
+                  position=".39 .285 .01">
+          <a-cylinder rotation="0 0 90" radius=".043" height=".30"
                       material="color: #d9e5eb; metalness: .4; roughness: .25"></a-cylinder>
-          <a-cylinder position=".13 0 0" rotation="0 0 90"
-                      radius=".018" height=".17"
+          <a-cylinder position=".15 0 0" rotation="0 0 90"
+                      radius=".022" height=".20"
                       material="color: #b8c8d0; metalness: .85"></a-cylinder>
-          <a-box position="-.03 .04 0" width=".08" height=".06" depth=".09"
-                 material="color: #e1f7fa; opacity: .95"></a-box>
-          <a-box position="-.03 .075 0" width=".035" height=".018" depth=".05"
+          <a-box position="-.04 .05 0" width=".11" height=".075" depth=".11"
+                 material="color: #e1f7fa"></a-box>
+          <a-box position="-.04 .09 0" width=".045" height=".02" depth=".06"
                  material="color: #21b7b4"></a-box>
         </a-entity>
       </a-entity>
 
-      <!-- Equipment tray -->
-      <a-box position="1.15 .94 -1.25" width="1.05" height=".045" depth=".72"
+      <!-- Enlarged equipment tray -->
+      <a-box position="1.15 .94 -1.25" width="1.25" height=".05" depth=".85"
              material="color: #e7eef2; metalness: .4; roughness: .3"></a-box>
-      <a-box position="1.15 .965 -1.25" width=".98" height=".018" depth=".65"
+      <a-box position="1.15 .97 -1.25" width="1.17" height=".02" depth=".77"
              material="color: #b6cbd5; metalness: .3"></a-box>
 
-      <!-- Swab packet -->
-      <a-entity id="swab" class="clickable" position=".87 1.02 -1.25"
+      <!-- Swab target -->
+      <a-entity id="swab" class="clickable" position=".84 1.035 -1.25"
                 rotation="0 0 -12">
-        <a-box width=".27" height=".055" depth=".24"
+        <a-box width=".34" height=".065" depth=".29"
                material="color: #ffffff; roughness: .35"></a-box>
-        <a-box position="0 .03 0" width=".07" height=".009" depth=".24"
+        <a-box position="0 .035 0" width=".09" height=".012" depth=".29"
                material="color: #4ac4d6"></a-box>
         <a-text value="SWAB" align="center" color="#27556a"
-                position="0 .04 .13" rotation="-90 0 0" width=".6"></a-text>
+                position="0 .045 .15" rotation="-90 0 0" width=".7"></a-text>
       </a-entity>
 
       <!-- Syringe -->
-      <a-entity id="syringe" position="1.4 1.03 -1.26" rotation="0 0 -15">
-        <a-cylinder rotation="0 0 90" radius=".055" height=".36"
-                    material="color: #f9ffff; opacity: .88; metalness: .15"></a-cylinder>
-        <a-cylinder position="-.22 0 0" rotation="0 0 90"
-                    radius=".018" height=".12"
+      <a-entity id="syringe" position="1.43 1.04 -1.27" rotation="0 0 -15">
+        <a-cylinder rotation="0 0 90" radius=".065" height=".42"
+                    material="color: #f9ffff; opacity: .9"></a-cylinder>
+        <a-cylinder position="-.26 0 0" rotation="0 0 90"
+                    radius=".022" height=".14"
                     material="color: #d0dce1; metalness: .7"></a-cylinder>
-        <a-cylinder position=".22 0 0" rotation="0 0 90"
-                    radius=".035" height=".1"
+        <a-cylinder position=".26 0 0" rotation="0 0 90"
+                    radius=".04" height=".12"
                     material="color: #c9d5dc"></a-cylinder>
-        <a-cylinder position="0 0 0" rotation="0 0 90"
-                    radius=".038" height=".18"
+        <a-cylinder rotation="0 0 90" radius=".044" height=".22"
                     material="color: #9cdbe8; opacity: .8"></a-cylinder>
       </a-entity>
 
       <!-- Blood collection tube -->
-      <a-entity id="bloodTube" position="1.25 1.03 -.99" rotation="0 0 0">
-        <a-cylinder radius=".065" height=".32"
-                    material="color: #dff5f8; opacity: .7; roughness: .2"></a-cylinder>
-        <a-cylinder position="0 .12 0" radius=".068" height=".07"
-                    material="color: #b74c59; roughness: .3"></a-cylinder>
-        <a-cylinder position="0 -.11 0" radius=".058" height=".08"
+      <a-entity id="bloodTube" position="1.25 1.04 -.98">
+        <a-cylinder radius=".075" height=".36"
+                    material="color: #dff5f8; opacity: .75"></a-cylinder>
+        <a-cylinder position="0 .14 0" radius=".078" height=".075"
+                    material="color: #b74c59"></a-cylinder>
+        <a-cylinder position="0 -.12 0" radius=".066" height=".10"
                     material="color: #9d253e"></a-cylinder>
       </a-entity>
 
-      <!-- Needle safety tray -->
-      <a-box position=".84 1.005 -.98" width=".28" height=".025" depth=".19"
+      <a-box position=".82 1.01 -.98" width=".34" height=".03" depth=".23"
              material="color: #f0f4f5"></a-box>
-      <a-cylinder position=".84 1.035 -.98" rotation="0 0 90"
-                  radius=".018" height=".2"
+      <a-cylinder position=".82 1.045 -.98" rotation="0 0 90"
+                  radius=".02" height=".24"
                   material="color: #b4c7cf; metalness: .9"></a-cylinder>
 
-      <!-- Interaction camera -->
-      <a-entity position="0 2.45 3.8" rotation="-23 0 0">
+      <a-text value="STERILE FIELD" position="-1.25 .99 -.78"
+              rotation="-90 0 0" width="1.5" color="#36758a"></a-text>
+
+      <!-- One camera, one cursor, one raycaster -->
+      <a-entity id="cameraRig" position="0 2.05 2.55" rotation="0 0 0">
         <a-camera
+          id="mainCamera"
+          fov="58"
           wasd-controls-enabled="false"
-          look-controls="touchEnabled: true; mouseEnabled: true"
-          cursor="rayOrigin: entity; fuse: true; fuseTimeout: 1200"
-          raycaster="objects: .clickable; far: 8">
-          <a-entity cursor="fuse: true; fuseTimeout: 1200"
-                    position="0 0 -.8"
-                    geometry="primitive: ring; radiusInner: .009; radiusOuter: .015"
-                    material="color: #00dce5; shader: flat"
-                    animation__fuse="property: scale; startEvents: fusing; from: 1 1 1; to: 1.7 1.7 1.7; dur: 1200"
-                    animation__leave="property: scale; startEvents: mouseleave; to: 1 1 1; dur: 100">
+          look-controls="touchEnabled: true; mouseEnabled: true">
+
+          <a-entity
+            id="gazeCursor"
+            cursor="rayOrigin: entity; fuse: true; fuseTimeout: 1000"
+            raycaster="objects: .clickable; far: 10; interval: 50"
+            position="0 0 -1"
+            geometry="primitive: ring; radiusInner: 0.012; radiusOuter: 0.023"
+            material="color: #00cfdc; shader: flat"
+            animation__fusing="property: scale; startEvents: fusing; from: 1 1 1; to: 1.6 1.6 1.6; dur: 1000"
+            animation__mouseleave="property: scale; startEvents: mouseleave; to: 1 1 1; dur: 100">
           </a-entity>
+
         </a-camera>
       </a-entity>
-
-      <!-- Decorative equipment labels -->
-      <a-text value="STERILE FIELD" position="-1.25 .99 -.78"
-              rotation="-90 0 0" width="1.4" color="#36758a"></a-text>
 
     </a-scene>
   </div>
@@ -518,28 +492,28 @@
       {
         title: "STEP 1 OF 4 · PREPARATION",
         text: "Select the antiseptic swab to prepare the site.",
-        hint: "Look at the swab packet until the gaze cursor activates.",
+        hint: "Keep the targeting ring on the swab until it activates.",
         target: "swab",
         points: 20
       },
       {
         title: "STEP 2 OF 4 · SITE PREPARATION",
         text: "Select the tourniquet to continue the sequence.",
-        hint: "Choose the blue band on the simulated arm.",
+        hint: "Choose the blue band on the arm.",
         target: "tourniquet",
         points: 20
       },
       {
         title: "STEP 3 OF 4 · IDENTIFICATION",
         text: "Identify the visible superficial vein.",
-        hint: "Select the blue vein on the forearm.",
+        hint: "Aim at the blue vein on the forearm.",
         target: "vein",
         points: 20
       },
       {
         title: "STEP 4 OF 4 · CANNULA",
         text: "Select the cannula to complete this simulation.",
-        hint: "Select the cannula shown near the wrist.",
+        hint: "Aim at the cannula near the wrist.",
         target: "cannula",
         points: 40
       }
@@ -551,6 +525,8 @@
     let running = false;
     let completed = new Set();
     let penaltyLocked = new Set();
+    let interactionLocked = false;
+    let feedbackTimer = null;
 
     const scoreEl = document.getElementById("score");
     const progressEl = document.getElementById("progress");
@@ -563,7 +539,8 @@
 
     function updateScore() {
       scoreEl.textContent = score;
-      progressEl.style.width = (currentStep / steps.length * 100) + "%";
+      progressEl.style.width =
+        (currentStep / steps.length * 100) + "%";
     }
 
     function showStep() {
@@ -579,38 +556,37 @@
       updateScore();
     }
 
-    function setMessage(title, text, hint) {
-      stepTitleEl.textContent = title;
-      stepTextEl.textContent = text;
-      hintEl.textContent = hint || "";
-    }
-
     function penalizeWrongSelection(id) {
       if (!running || currentStep >= steps.length) return;
+      if (interactionLocked) return;
       if (id === steps[currentStep].target) return;
       if (penaltyLocked.has(id)) return;
 
       penaltyLocked.add(id);
+      interactionLocked = true;
       mistakes++;
       score = Math.max(0, score - 5);
       updateScore();
 
-      setMessage(
-        "INCORRECT SELECTION · −5 POINTS",
-        "That is not the expected object for this step.",
-        "Review the instruction and select the correct item."
-      );
+      stepTitleEl.textContent = "INCORRECT SELECTION · −5 POINTS";
+      stepTextEl.textContent =
+        "That is not the expected object for this step.";
+      hintEl.textContent =
+        "Look away, then aim at the correct object.";
 
-      // Return to the current instruction after brief feedback.
-      window.setTimeout(() => {
-        if (running && currentStep < steps.length) showStep();
-      }, 1300);
+      clearTimeout(feedbackTimer);
+      feedbackTimer = setTimeout(() => {
+        interactionLocked = false;
+        if (running) showStep();
+      }, 1200);
     }
 
-    function handleCorrectSelection(id) {
-      if (!running || currentStep >= steps.length) return;
+    function handleSelection(id) {
+      if (!running || interactionLocked) return;
+      if (currentStep >= steps.length) return;
 
       const step = steps[currentStep];
+
       if (id !== step.target) {
         penalizeWrongSelection(id);
         return;
@@ -618,27 +594,29 @@
 
       if (completed.has(id)) return;
 
+      interactionLocked = true;
       completed.add(id);
       score = Math.min(100, score + step.points);
       currentStep++;
-
       updateScore();
 
-      const object = document.getElementById(id);
-      if (object) {
-        object.setAttribute("material", "emissive", "#38e6ba");
-        object.setAttribute("material", "emissiveIntensity", 0.45);
+      const target = document.getElementById(id);
+      if (target) {
+        target.setAttribute("material", "emissive", "#38e6ba");
+        target.setAttribute("material", "emissiveIntensity", 0.35);
       }
 
-      if (currentStep < steps.length) {
-        showStep();
-      } else {
-        finishSimulation();
-      }
+      clearTimeout(feedbackTimer);
+      feedbackTimer = setTimeout(() => {
+        interactionLocked = false;
+        if (currentStep < steps.length) showStep();
+        else finishSimulation();
+      }, 350);
     }
 
     function finishSimulation() {
       running = false;
+      interactionLocked = false;
       progressEl.style.width = "100%";
       screen.style.display = "flex";
       welcomePanel.style.display = "none";
@@ -650,21 +628,30 @@
         completed.size + "/" + steps.length;
       document.getElementById("finalMistakes").textContent = mistakes;
 
-      let message = "Sequence completed. Review your score and try again to improve.";
-      if (score >= 90) message = "Excellent object selection. Continue practising under supervision.";
-      else if (score >= 70) message = "Good effort. Review your incorrect selections and repeat the sequence.";
-      else message = "Keep practising the sequence and review the equipment before trying again.";
+      let message = "Sequence completed. Review your score and try again.";
+      if (score >= 90) {
+        message = "Excellent object selection. Continue practising under supervision.";
+      } else if (score >= 70) {
+        message = "Good effort. Review your incorrect selections and repeat the sequence.";
+      } else {
+        message = "Keep practising the sequence and review the equipment before trying again.";
+      }
 
       document.getElementById("resultMessage").textContent = message;
-      setMessage("SIMULATION COMPLETE", "You completed all four stages.", "Select Practise Again to repeat.");
+      stepTitleEl.textContent = "SIMULATION COMPLETE";
+      stepTextEl.textContent = "You completed all four stages.";
+      hintEl.textContent = "Select Practise Again to repeat.";
     }
 
     function startSimulation() {
+      clearTimeout(feedbackTimer);
+
       currentStep = 0;
       score = 0;
       mistakes = 0;
       completed = new Set();
       penaltyLocked = new Set();
+      interactionLocked = false;
       running = true;
 
       document.querySelectorAll(".clickable").forEach(el => {
@@ -676,17 +663,24 @@
       welcomePanel.style.display = "block";
       resultPanel.style.display = "none";
       document.getElementById("results").style.display = "none";
+
       updateScore();
       showStep();
     }
 
-    document.getElementById("startBtn").addEventListener("click", startSimulation);
-    document.getElementById("restartBtn").addEventListener("click", startSimulation);
+    document.getElementById("startBtn")
+      .addEventListener("click", startSimulation);
+
+    document.getElementById("restartBtn")
+      .addEventListener("click", startSimulation);
 
     function installInteractions() {
       document.querySelectorAll(".clickable").forEach(el => {
+        if (el.dataset.interactionInstalled) return;
+        el.dataset.interactionInstalled = "true";
+
         el.addEventListener("click", () => {
-          handleCorrectSelection(el.id);
+          handleSelection(el.id);
         });
 
         el.addEventListener("mouseleave", () => {
@@ -696,6 +690,7 @@
     }
 
     const scene = document.querySelector("a-scene");
+
     if (scene.hasLoaded) installInteractions();
     else scene.addEventListener("loaded", installInteractions);
 
