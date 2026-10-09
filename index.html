@@ -236,20 +236,14 @@
       <div id="brand">TMS-<span>XR</span></div>
       <div id="subtitle">CLINICAL SKILLS SIMULATION</div>
     </div>
+
     <div id="scoreBox">
-      <div style="font-size:10px;color:#b5d1dd;letter-spacing:1px">
-        SCORE
-      </div>
-      <div>
-        <span id="score">0</span>
-        <span style="font-size:13px;color:#a7c5d2"> / 100</span>
-      </div>
+      <div style="font-size:10px;color:#b5d1dd;letter-spacing:1px">SCORE</div>
+      <div><span id="score">0</span><span style="font-size:13px;color:#a7c5d2"> / 100</span></div>
     </div>
   </header>
 
-  <div id="progressOuter">
-    <div id="progress"></div>
-  </div>
+  <div id="progressOuter"><div id="progress"></div></div>
 
   <div id="instruction">
     <div id="stepTitle">READY TO BEGIN</div>
@@ -261,6 +255,7 @@
     <div class="panel" id="welcomePanel">
       <div class="logoMark">XR</div>
       <h1>TMS-<span>XR</span></h1>
+
       <div style="color:#72dce7;font-weight:700;font-size:13px">
         AFFORDABLE IMMERSIVE MEDICAL LEARNING
       </div>
@@ -292,16 +287,13 @@
 
       <div id="results">
         <div class="resultLine">
-          <span>Final score</span>
-          <strong id="finalScore">0/100</strong>
+          <span>Final score</span><strong id="finalScore">0/100</strong>
         </div>
         <div class="resultLine">
-          <span>Stages completed</span>
-          <strong id="finalStages">0/4</strong>
+          <span>Stages completed</span><strong id="finalStages">0/4</strong>
         </div>
         <div class="resultLine">
-          <span>Incorrect selections</span>
-          <strong id="finalMistakes">0</strong>
+          <span>Incorrect selections</span><strong id="finalMistakes">0</strong>
         </div>
       </div>
 
@@ -323,390 +315,144 @@
       background="color: #e7f1f5"
       loading-screen="enabled: false">
 
-      <a-entity
-        light="type: ambient; intensity: 1.15; color: #e8f5ff">
-      </a-entity>
-
-      <a-entity
-        light="type: directional; intensity: 1.6; color: #ffffff"
-        position="-3 6 4">
-      </a-entity>
-
-      <a-entity
-        light="type: point; intensity: .65; color: #74d9ef"
-        position="2 3 -2">
-      </a-entity>
+      <a-entity light="type: ambient; intensity: 1.15; color: #e8f5ff"></a-entity>
+      <a-entity light="type: directional; intensity: 1.6; color: #ffffff" position="-3 6 4"></a-entity>
+      <a-entity light="type: point; intensity: .65; color: #74d9ef" position="2 3 -2"></a-entity>
 
       <a-sky color="#e7f1f5"></a-sky>
+      <a-plane rotation="-90 0 0" width="18" height="18" material="color: #cbd9df; roughness: .9"></a-plane>
+      <a-plane position="0 3 -4.5" width="12" height="6" material="color: #eaf2f5"></a-plane>
 
-      <a-plane
-        rotation="-90 0 0"
-        width="18"
-        height="18"
-        material="color: #cbd9df; roughness: .9">
-      </a-plane>
-
-      <a-plane
-        position="0 3 -4.5"
-        width="12"
-        height="6"
-        material="color: #eaf2f5">
-      </a-plane>
-
-      <!-- Clinical wall sign -->
-      <a-box
-        position="-3 2.7 -4.42"
-        width="1.7"
-        height="1.1"
-        depth=".08"
-        material="color: #d4e4ea">
-      </a-box>
-
-      <a-box
-        position="-3 2.7 -4.35"
-        width="1.48"
-        height=".9"
-        depth=".02"
-        material="color: #f7fbfd">
-      </a-box>
-
-      <a-text
-        value="CLINICAL SKILLS LAB"
-        position="-3.68 2.78 -4.32"
-        width="2.5"
-        color="#1c5269">
-      </a-text>
+      <a-box position="-3 2.7 -4.42" width="1.7" height="1.1" depth=".08" material="color: #d4e4ea"></a-box>
+      <a-box position="-3 2.7 -4.35" width="1.48" height=".9" depth=".02" material="color: #f7fbfd"></a-box>
+      <a-text value="CLINICAL SKILLS LAB" position="-3.68 2.78 -4.32" width="2.5" color="#1c5269"></a-text>
 
       <!-- Workstation -->
-      <a-box
-        position="0 .76 -1.45"
-        width="5.0"
-        height=".20"
-        depth="2.5"
-        material="color: #f7fafb; roughness: .35">
-      </a-box>
+      <a-box position="0 .76 -1.45" width="5.0" height=".20" depth="2.5" material="color: #f7fafb; roughness: .35"></a-box>
+      <a-box position="0 .64 -1.45" width="5.1" height=".07" depth="2.55" material="color: #8daab6; metalness: .45"></a-box>
 
-      <a-box
-        position="0 .64 -1.45"
-        width="5.1"
-        height=".07"
-        depth="2.55"
-        material="color: #8daab6; metalness: .45">
-      </a-box>
+      <a-box position="-2.15 .34 -2.25" width=".10" height=".65" depth=".10" material="color: #7b929c; metalness: .7"></a-box>
+      <a-box position="2.15 .34 -2.25" width=".10" height=".65" depth=".10" material="color: #7b929c; metalness: .7"></a-box>
+      <a-box position="-2.15 .34 -.65" width=".10" height=".65" depth=".10" material="color: #7b929c; metalness: .7"></a-box>
+      <a-box position="2.15 .34 -.65" width=".10" height=".65" depth=".10" material="color: #7b929c; metalness: .7"></a-box>
 
-      <!-- Table legs -->
-      <a-box position="-2.15 .34 -2.25"
-        width=".10" height=".65" depth=".10"
-        material="color: #7b929c; metalness: .7"></a-box>
-      <a-box position="2.15 .34 -2.25"
-        width=".10" height=".65" depth=".10"
-        material="color: #7b929c; metalness: .7"></a-box>
-      <a-box position="-2.15 .34 -.65"
-        width=".10" height=".65" depth=".10"
-        material="color: #7b929c; metalness: .7"></a-box>
-      <a-box position="2.15 .34 -.65"
-        width=".10" height=".65" depth=".10"
-        material="color: #7b929c; metalness: .7"></a-box>
-
-      <!-- Sterile drape -->
-      <a-box
-        position="-.15 .875 -1.45"
-        width="3.0"
-        height=".04"
-        depth="1.7"
-        material="color: #c1e9ef; roughness: .85">
-      </a-box>
-
-      <!-- Arm support -->
-      <a-box
-        position="-.25 .97 -1.35"
-        width="2.8"
-        height=".15"
-        depth=".75"
-        material="color: #d2dce2">
-      </a-box>
+      <a-box position="-.15 .875 -1.45" width="3.0" height=".04" depth="1.7" material="color: #c1e9ef; roughness: .85"></a-box>
+      <a-box position="-.25 .97 -1.35" width="2.8" height=".15" depth=".75" material="color: #d2dce2"></a-box>
 
       <!-- Arm and hand -->
-      <a-entity id="arm"
-        position="-.2 1.08 -1.32"
-        rotation="0 0 -4">
+      <a-entity id="arm" position="-.2 1.08 -1.32" rotation="0 0 -4">
 
-        <a-cylinder
-          position="-.05 0 0"
-          rotation="0 0 90"
-          radius=".29"
-          height="1.65"
-          material="color: #c99170; roughness: .8">
-        </a-cylinder>
+        <a-cylinder position="-.05 0 0" rotation="0 0 90" radius=".29" height="1.65" material="color: #c99170; roughness: .8"></a-cylinder>
+        <a-sphere position=".65 0 0" scale=".44 .29 .33" material="color: #d5a080; roughness: .78"></a-sphere>
+        <a-box position="1.02 .01 .005" width=".68" height=".18" depth=".47" material="color: #d5a080; roughness: .8" rotation="0 0 -4"></a-box>
 
-        <a-sphere
-          position=".65 0 0"
-          scale=".44 .29 .33"
-          material="color: #d5a080; roughness: .78">
-        </a-sphere>
+        <a-cylinder position="1.32 0 -.15" rotation="0 0 90" radius=".065" height=".40" material="color: #d5a080"></a-cylinder>
+        <a-sphere position="1.53 0 -.15" scale=".085 .07 .075" material="color: #e4b398"></a-sphere>
+        <a-cylinder position="1.36 0 -.05" rotation="0 0 90" radius=".065" height=".43" material="color: #d5a080"></a-cylinder>
+        <a-sphere position="1.58 0 -.05" scale=".085 .07 .075" material="color: #e4b398"></a-sphere>
+        <a-cylinder position="1.36 0 .055" rotation="0 0 90" radius=".062" height=".42" material="color: #d5a080"></a-cylinder>
+        <a-sphere position="1.57 0 .055" scale=".082 .07 .075" material="color: #e4b398"></a-sphere>
+        <a-cylinder position="1.31 0 .16" rotation="0 0 90" radius=".058" height=".36" material="color: #d5a080"></a-cylinder>
+        <a-sphere position="1.49 0 .16" scale=".078 .07 .072" material="color: #e4b398"></a-sphere>
 
-        <a-box
-          position="1.02 .01 .005"
-          width=".68"
-          height=".18"
-          depth=".47"
-          material="color: #d5a080; roughness: .8"
-          rotation="0 0 -4">
-        </a-box>
-
-        <!-- Fingers -->
-        <a-cylinder position="1.32 0 -.15"
-          rotation="0 0 90" radius=".065" height=".40"
-          material="color: #d5a080"></a-cylinder>
-        <a-sphere position="1.53 0 -.15"
-          scale=".085 .07 .075"
-          material="color: #e4b398"></a-sphere>
-
-        <a-cylinder position="1.36 0 -.05"
-          rotation="0 0 90" radius=".065" height=".43"
-          material="color: #d5a080"></a-cylinder>
-        <a-sphere position="1.58 0 -.05"
-          scale=".085 .07 .075"
-          material="color: #e4b398"></a-sphere>
-
-        <a-cylinder position="1.36 0 .055"
-          rotation="0 0 90" radius=".062" height=".42"
-          material="color: #d5a080"></a-cylinder>
-        <a-sphere position="1.57 0 .055"
-          scale=".082 .07 .075"
-          material="color: #e4b398"></a-sphere>
-
-        <a-cylinder position="1.31 0 .16"
-          rotation="0 0 90" radius=".058" height=".36"
-          material="color: #d5a080"></a-cylinder>
-        <a-sphere position="1.49 0 .16"
-          scale=".078 .07 .072"
-          material="color: #e4b398"></a-sphere>
-
-        <!-- Enlarged superficial vein -->
-        <a-cylinder
-          id="vein"
-          class="clickable"
-          position="-.1 .30 -.005"
-          rotation="0 0 90"
-          radius=".043"
-          height="1.08"
+        <!-- Vein -->
+        <a-cylinder id="vein" class="clickable"
+          position="-.1 .30 -.005" rotation="0 0 90"
+          radius=".043" height="1.08"
           material="color: #2868a2; emissive: #123b7c; emissiveIntensity: .18">
         </a-cylinder>
 
-        <a-cylinder
-          position="-.1 .325 -.005"
-          rotation="0 0 90"
-          radius=".014"
-          height=".92"
-          material="color: #75a9d2">
-        </a-cylinder>
+        <a-cylinder position="-.1 .325 -.005" rotation="0 0 90"
+          radius=".014" height=".92" material="color: #75a9d2"></a-cylinder>
 
-        <!-- Enlarged tourniquet -->
-        <a-box
-          id="tourniquet"
-          class="clickable"
+        <!-- Tourniquet -->
+        <a-box id="tourniquet" class="clickable"
           position="-.59 .275 0"
-          width=".27"
-          height=".09"
-          depth=".64"
-          material="color: #087fba; roughness: .5">
-        </a-box>
+          width=".27" height=".09" depth=".64"
+          material="color: #087fba; roughness: .5"></a-box>
 
-        <a-box
-          position="-.59 .325 0"
-          width=".13"
-          height=".018"
-          depth=".65"
-          material="color: #55bfe8">
-        </a-box>
+        <a-box position="-.59 .325 0"
+          width=".13" height=".018" depth=".65"
+          material="color: #55bfe8"></a-box>
 
-        <!-- Cannula: main cylinder is the clickable target -->
+        <!-- Cannula: selectable cylinder is now the visible main body -->
         <a-entity position=".39 .32 .01">
+          <a-cylinder id="cannula" class="clickable"
+            rotation="0 0 90" radius=".060" height=".43"
+            material="color: #d9e5eb; metalness: .4; roughness: .25"></a-cylinder>
 
-          <a-cylinder
-            id="cannula"
-            class="clickable"
-            rotation="0 0 90"
-            radius=".060"
-            height=".43"
-            material="color: #d9e5eb; metalness: .4; roughness: .25">
-          </a-cylinder>
+          <a-cylinder position=".21 0 0" rotation="0 0 90"
+            radius=".030" height=".27"
+            material="color: #b8c8d0; metalness: .85"></a-cylinder>
 
-          <a-cylinder
-            position=".21 0 0"
-            rotation="0 0 90"
-            radius=".030"
-            height=".27"
-            material="color: #b8c8d0; metalness: .85">
-          </a-cylinder>
+          <a-box position="-.04 .075 0"
+            width=".15" height=".10" depth=".15"
+            material="color: #e1f7fa"></a-box>
 
-          <a-box
-            position="-.04 .075 0"
-            width=".15"
-            height=".10"
-            depth=".15"
-            material="color: #e1f7fa">
-          </a-box>
-
-          <a-box
-            position="-.04 .13 0"
-            width=".065"
-            height=".03"
-            depth=".085"
-            material="color: #21b7b4">
-          </a-box>
-
+          <a-box position="-.04 .13 0"
+            width=".065" height=".03" depth=".085"
+            material="color: #21b7b4"></a-box>
         </a-entity>
       </a-entity>
 
-      <!-- Enlarged equipment tray -->
-      <a-box
-        position="1.15 .94 -1.25"
-        width="1.55"
-        height=".06"
-        depth="1.0"
-        material="color: #e7eef2; metalness: .4; roughness: .3">
-      </a-box>
+      <!-- Equipment tray -->
+      <a-box position="1.15 .94 -1.25" width="1.55" height=".06" depth="1.0" material="color: #e7eef2; metalness: .4; roughness: .3"></a-box>
+      <a-box position="1.15 .975 -1.25" width="1.45" height=".025" depth=".90" material="color: #b6cbd5; metalness: .3"></a-box>
 
-      <a-box
-        position="1.15 .975 -1.25"
-        width="1.45"
-        height=".025"
-        depth=".90"
-        material="color: #b6cbd5; metalness: .3">
-      </a-box>
+      <!-- Swab: moved clearly onto tray, with aligned selectable surface -->
+      <a-entity id="swabGroup" position=".96 1.025 -1.52">
 
-      <!-- Larger swab.
-           The visible box itself is the selectable target. -->
-      <a-box
-        id="swab"
-        class="clickable"
-        position=".78 1.055 -1.25"
-        rotation="0 0 -12"
-        width=".58"
-        height=".105"
-        depth=".43"
-        material="color: #ffffff; roughness: .35">
-
-        <!-- Blue identification stripe -->
-        <a-box
-          position="0 .53 0"
-          width=".15"
-          height=".10"
-          depth=".96"
-          material="color: #27b9d0">
+        <a-box id="swab" class="clickable"
+          position="0 0.035 0"
+          width=".58" height=".09" depth=".30"
+          material="color: #ffffff; roughness: .45">
         </a-box>
 
-        <!-- Clear label -->
-        <a-text
-          value="SWAB"
-          align="center"
+        <a-box position="0 .082 0"
+          width=".48" height=".012" depth=".045"
+          material="color: #20b9d0">
+        </a-box>
+
+        <a-text value="SWAB"
+          align="center" anchor="center"
           color="#17465b"
-          position="0 .59 .18"
+          position="0 .087 .075"
           rotation="-90 0 0"
-          width="1.15">
+          width=".8">
         </a-text>
-      </a-box>
+      </a-entity>
 
-      <!-- Larger syringe -->
-      <a-entity
-        id="syringe"
-        position="1.48 1.055 -1.28"
-        rotation="0 0 -15">
-
-        <a-cylinder
-          rotation="0 0 90"
-          radius=".075"
-          height=".48"
-          material="color: #f9ffff; opacity: .95">
-        </a-cylinder>
-
-        <a-cylinder
-          position="-.29 0 0"
-          rotation="0 0 90"
-          radius=".028"
-          height=".16"
-          material="color: #d0dce1; metalness: .7">
-        </a-cylinder>
-
-        <a-cylinder
-          position=".29 0 0"
-          rotation="0 0 90"
-          radius=".047"
-          height=".15"
-          material="color: #c9d5dc">
-        </a-cylinder>
-
-        <a-cylinder
-          rotation="0 0 90"
-          radius=".05"
-          height=".25"
-          material="color: #9cdbe8; opacity: .8">
-        </a-cylinder>
+      <!-- Syringe -->
+      <a-entity id="syringe" position="1.48 1.055 -1.28" rotation="0 0 -15">
+        <a-cylinder rotation="0 0 90" radius=".075" height=".48" material="color: #f9ffff; opacity: .95"></a-cylinder>
+        <a-cylinder position="-.29 0 0" rotation="0 0 90" radius=".028" height=".16" material="color: #d0dce1; metalness: .7"></a-cylinder>
+        <a-cylinder position=".29 0 0" rotation="0 0 90" radius=".047" height=".15" material="color: #c9d5dc"></a-cylinder>
+        <a-cylinder rotation="0 0 90" radius=".05" height=".25" material="color: #9cdbe8; opacity: .8"></a-cylinder>
       </a-entity>
 
       <!-- Blood collection tube -->
       <a-entity id="bloodTube" position="1.25 1.055 -.99">
-        <a-cylinder
-          radius=".085"
-          height=".42"
-          material="color: #dff5f8; opacity: .85">
-        </a-cylinder>
-
-        <a-cylinder
-          position="0 .17 0"
-          radius=".09"
-          height=".085"
-          material="color: #b74c59">
-        </a-cylinder>
-
-        <a-cylinder
-          position="0 -.14 0"
-          radius=".075"
-          height=".13"
-          material="color: #9d253e">
-        </a-cylinder>
+        <a-cylinder radius=".085" height=".42" material="color: #dff5f8; opacity: .85"></a-cylinder>
+        <a-cylinder position="0 .17 0" radius=".09" height=".085" material="color: #b74c59"></a-cylinder>
+        <a-cylinder position="0 -.14 0" radius=".075" height=".13" material="color: #9d253e"></a-cylinder>
       </a-entity>
 
-      <a-box
-        position=".82 1.015 -.98"
-        width=".42"
-        height=".035"
-        depth=".28"
-        material="color: #f0f4f5">
-      </a-box>
+      <a-box position=".82 1.015 -.98" width=".42" height=".035" depth=".28" material="color: #f0f4f5"></a-box>
+      <a-cylinder position=".82 1.055 -.98" rotation="0 0 90" radius=".027" height=".29" material="color: #b4c7cf; metalness: .9"></a-cylinder>
 
-      <a-cylinder
-        position=".82 1.055 -.98"
-        rotation="0 0 90"
-        radius=".027"
-        height=".29"
-        material="color: #b4c7cf; metalness: .9">
-      </a-cylinder>
+      <a-text value="STERILE FIELD" position="-1.25 .99 -.78" rotation="-90 0 0" width="1.5" color="#36758a"></a-text>
 
-      <a-text
-        value="STERILE FIELD"
-        position="-1.25 .99 -.78"
-        rotation="-90 0 0"
-        width="1.5"
-        color="#36758a">
-      </a-text>
-
-      <!-- Camera and single gaze cursor -->
+      <!-- Camera and single cursor -->
       <a-entity id="cameraRig" position="0 2.05 2.55">
-        <a-camera
-          id="mainCamera"
-          fov="58"
+        <a-camera id="mainCamera" fov="58"
           wasd-controls-enabled="false"
           look-controls="touchEnabled: true; mouseEnabled: true">
 
-          <a-entity
-            id="gazeCursor"
+          <a-entity id="gazeCursor"
             cursor="rayOrigin: entity; fuse: true; fuseTimeout: 1000"
             raycaster="objects: .clickable; far: 10; interval: 50"
             position="0 0 -1"
-            geometry="primitive: ring; radiusInner: 0.014; radiusOuter: 0.030"
+            geometry="primitive: ring; radiusInner: .014; radiusOuter: .030"
             material="color: #00aebe; shader: flat"
             animation__fusing="property: scale; startEvents: fusing; from: 1 1 1; to: 1.6 1.6 1.6; dur: 1000"
             animation__mouseleave="property: scale; startEvents: mouseleave; to: 1 1 1; dur: 100">
@@ -714,7 +460,6 @@
 
         </a-camera>
       </a-entity>
-
     </a-scene>
   </div>
 
@@ -723,28 +468,28 @@
       {
         title: "STEP 1 OF 4 · PREPARATION",
         text: "Select the antiseptic swab to prepare the site.",
-        hint: "Aim at the large white SWAB object and hold for one second.",
+        hint: "Aim at the white SWAB on the tray and hold for one second.",
         target: "swab",
         points: 20
       },
       {
         title: "STEP 2 OF 4 · SITE PREPARATION",
         text: "Select the tourniquet to continue the sequence.",
-        hint: "Aim at the enlarged blue band on the arm.",
+        hint: "Aim at the blue band on the arm.",
         target: "tourniquet",
         points: 20
       },
       {
         title: "STEP 3 OF 4 · IDENTIFICATION",
         text: "Identify the visible superficial vein.",
-        hint: "Aim at the enlarged blue vein on the forearm.",
+        hint: "Aim at the blue vein on the forearm.",
         target: "vein",
         points: 20
       },
       {
         title: "STEP 4 OF 4 · CANNULA",
         text: "Select the cannula to complete this simulation.",
-        hint: "Aim at the larger cannula near the wrist.",
+        hint: "Aim at the cannula near the wrist.",
         target: "cannula",
         points: 40
       }
@@ -832,29 +577,16 @@
       updateScore();
 
       const target = document.getElementById(id);
-
       if (target) {
-        target.setAttribute(
-          "material",
-          "emissive",
-          "#38e6ba"
-        );
-        target.setAttribute(
-          "material",
-          "emissiveIntensity",
-          0.35
-        );
+        target.setAttribute("material", "emissive", "#38e6ba");
+        target.setAttribute("material", "emissiveIntensity", .35);
       }
 
       clearTimeout(feedbackTimer);
       feedbackTimer = setTimeout(() => {
         interactionLocked = false;
-
-        if (currentStep < steps.length) {
-          showStep();
-        } else {
-          finishSimulation();
-        }
+        if (currentStep < steps.length) showStep();
+        else finishSimulation();
       }, 500);
     }
 
@@ -865,14 +597,12 @@
       screen.style.display = "flex";
       welcomePanel.style.display = "none";
       resultPanel.style.display = "block";
-
       document.getElementById("results").style.display = "block";
-      document.getElementById("finalScore").textContent =
-        score + "/100";
+
+      document.getElementById("finalScore").textContent = score + "/100";
       document.getElementById("finalStages").textContent =
         completed.size + "/" + steps.length;
-      document.getElementById("finalMistakes").textContent =
-        mistakes;
+      document.getElementById("finalMistakes").textContent = mistakes;
 
       let message =
         "Sequence completed. Review your score and try again.";
@@ -928,7 +658,6 @@
     function installInteractions() {
       document.querySelectorAll(".clickable").forEach(el => {
         if (el.dataset.interactionInstalled) return;
-
         el.dataset.interactionInstalled = "true";
 
         el.addEventListener("click", () => {
@@ -943,11 +672,8 @@
 
     const scene = document.querySelector("a-scene");
 
-    if (scene.hasLoaded) {
-      installInteractions();
-    } else {
-      scene.addEventListener("loaded", installInteractions);
-    }
+    if (scene.hasLoaded) installInteractions();
+    else scene.addEventListener("loaded", installInteractions);
 
     showStep();
   </script>
