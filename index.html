@@ -35,17 +35,33 @@ button{border:0;border-radius:12px;padding:14px 20px;font-weight:800;font-size:1
 #results{display:none;margin-top:18px;text-align:left;border-top:1px solid #284d60;padding-top:15px}
 .resultLine{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #18394b;font-size:13px}
 .resultLine strong{color:#6ce8c4}
-@media(max-width:520px){#brand{font-size:16px}#subtitle{font-size:9px}#score{font-size:20px}#progressOuter{top:57px}#scene{top:62px}#instruction{bottom:8px;padding:10px 12px}#stepText{font-size:13px}.panel{padding:23px 17px}}
+@media(max-width:520px){
+#brand{font-size:16px}
+#subtitle{font-size:9px}
+#score{font-size:20px}
+#progressOuter{top:57px}
+#scene{top:62px}
+#instruction{bottom:8px;padding:10px 12px}
+#stepText{font-size:13px}
+.panel{padding:23px 17px}
+}
 </style>
 </head>
 
 <body>
 <header id="hud">
-  <div><div id="brand">TMS-<span>XR</span></div><div id="subtitle">CLINICAL SKILLS SIMULATION</div></div>
-  <div id="scoreBox"><div style="font-size:10px;color:#b5d1dd;letter-spacing:1px">SCORE</div><div><span id="score">0</span><span style="font-size:13px;color:#a7c5d2"> / 100</span></div></div>
+  <div>
+    <div id="brand">TMS-<span>XR</span></div>
+    <div id="subtitle">CLINICAL SKILLS SIMULATION</div>
+  </div>
+  <div id="scoreBox">
+    <div style="font-size:10px;color:#b5d1dd;letter-spacing:1px">SCORE</div>
+    <div><span id="score">0</span><span style="font-size:13px;color:#a7c5d2"> / 100</span></div>
+  </div>
 </header>
 
 <div id="progressOuter"><div id="progress"></div></div>
+
 <div id="instruction">
   <div id="stepTitle">READY TO BEGIN</div>
   <div id="stepText">Start the simulation to begin.</div>
@@ -58,7 +74,11 @@ button{border:0;border-radius:12px;padding:14px 20px;font-weight:800;font-size:1
     <h1>TMS-<span>XR</span></h1>
     <div style="color:#72dce7;font-weight:700;font-size:13px">AFFORDABLE IMMERSIVE MEDICAL LEARNING</div>
     <p class="description">Practise the sequence of peripheral IV cannulation in an interactive 3D environment. Identify equipment, follow the sequence, and receive feedback on your selections.</p>
-    <div class="featureRow"><div class="feature">3D Clinical Scene</div><div class="feature">Interactive Learning</div><div class="feature">Live Scoring</div></div>
+    <div class="featureRow">
+      <div class="feature">3D Clinical Scene</div>
+      <div class="feature">Interactive Learning</div>
+      <div class="feature">Live Scoring</div>
+    </div>
     <button id="startBtn">START SIMULATION</button>
     <div class="small">Educational prototype only. Follow local clinical guidelines and practise real procedures under qualified supervision.</div>
   </div>
@@ -78,7 +98,13 @@ button{border:0;border-radius:12px;padding:14px 20px;font-weight:800;font-size:1
 </div>
 
 <div id="scene">
-<a-scene embedded renderer="colorManagement:true" vr-mode-ui="enabled:false" device-orientation-permission-ui="enabled:false" background="color:#e7f1f5" loading-screen="enabled:false">
+<a-scene embedded
+  renderer="colorManagement:true"
+  vr-mode-ui="enabled:false"
+  device-orientation-permission-ui="enabled:false"
+  background="color:#e7f1f5"
+  loading-screen="enabled:false">
+
   <a-entity light="type:ambient;intensity:1.15;color:#e8f5ff"></a-entity>
   <a-entity light="type:directional;intensity:1.6;color:#ffffff" position="-3 6 4"></a-entity>
   <a-entity light="type:point;intensity:.65;color:#74d9ef" position="2 3 -2"></a-entity>
@@ -105,6 +131,7 @@ button{border:0;border-radius:12px;padding:14px 20px;font-weight:800;font-size:1
     <a-cylinder position="-.05 0 0" rotation="0 0 90" radius=".29" height="1.65" material="color:#c99170"></a-cylinder>
     <a-sphere position=".65 0 0" scale=".44 .29 .33" material="color:#d5a080"></a-sphere>
     <a-box position="1.02 .01 .005" width=".68" height=".18" depth=".47" material="color:#d5a080" rotation="0 0 -4"></a-box>
+
     <a-cylinder position="1.32 0 -.15" rotation="0 0 90" radius=".065" height=".40" material="color:#d5a080"></a-cylinder>
     <a-sphere position="1.53 0 -.15" scale=".085 .07 .075" material="color:#e4b398"></a-sphere>
     <a-cylinder position="1.36 0 -.05" rotation="0 0 90" radius=".065" height=".43" material="color:#d5a080"></a-cylinder>
@@ -119,7 +146,7 @@ button{border:0;border-radius:12px;padding:14px 20px;font-weight:800;font-size:1
     <a-box id="tourniquet" class="clickable" position="-.59 .275 0" width=".27" height=".09" depth=".64" material="color:#087fba"></a-box>
     <a-box position="-.59 .325 0" width=".13" height=".018" depth=".65" material="color:#55bfe8"></a-box>
 
-    <!-- Cannula -->
+    <!-- Cannula: unchanged -->
     <a-entity position=".39 .32 .01">
       <a-cylinder id="cannula" class="clickable" rotation="0 0 90" radius=".060" height=".43" material="color:#d9e5eb;metalness:.4;roughness:.25"></a-cylinder>
       <a-cylinder position=".21 0 0" rotation="0 0 90" radius=".030" height=".27" material="color:#b8c8d0;metalness:.85"></a-cylinder>
@@ -132,11 +159,21 @@ button{border:0;border-radius:12px;padding:14px 20px;font-weight:800;font-size:1
   <a-box position="1.15 .94 -1.25" width="1.55" height=".06" depth="1" material="color:#e7eef2;metalness:.4"></a-box>
   <a-box position="1.15 .975 -1.25" width="1.45" height=".025" depth=".90" material="color:#b6cbd5"></a-box>
 
-  <!-- Swab: visible body and selectable body are the same entity -->
-  <a-entity id="swabGroup" position=".96 1.025 -1.52" rotation="0 0 -12">
-    <a-box id="swab" class="clickable" position="0 .035 0" width=".58" height=".09" depth=".30" material="color:#ffffff;roughness:.45"></a-box>
-    <a-box position="0 .082 0" width=".48" height=".012" depth=".045" material="color:#20b9d0"></a-box>
-    <a-text value="SWAB" align="center" anchor="center" color="#17465b" position="0 .087 .075" rotation="-90 0 0" width=".8"></a-text>
+  <!-- Swab: enlarged and moved slightly toward camera -->
+  <a-entity id="swabGroup" position=".96 1.025 -1.20" rotation="0 0 -12">
+    <a-box id="swab" class="clickable"
+      position="0 .075 0"
+      width=".68" height=".12" depth=".34"
+      material="color:#ffffff;roughness:.45">
+    </a-box>
+    <a-box position="0 .139 0"
+      width=".48" height=".012" depth=".045"
+      material="color:#20b9d0">
+    </a-box>
+    <a-text value="SWAB" align="center" anchor="center"
+      color="#17465b" position="0 .145 .09"
+      rotation="-90 0 0" width=".8">
+    </a-text>
   </a-entity>
 
   <!-- Syringe and blood tube -->
@@ -157,9 +194,13 @@ button{border:0;border-radius:12px;padding:14px 20px;font-weight:800;font-size:1
   <a-cylinder position=".82 1.055 -.98" rotation="0 0 90" radius=".027" height=".29" material="color:#b4c7cf"></a-cylinder>
   <a-text value="STERILE FIELD" position="-1.25 .99 -.78" rotation="-90 0 0" width="1.5" color="#36758a"></a-text>
 
-  <!-- Camera: use the dedicated A-Frame cursor primitive -->
-  <a-entity id="cameraRig" position="0 2.05 2.55">
-    <a-camera id="mainCamera" fov="58" wasd-controls-enabled="false" look-controls="touchEnabled:true;mouseEnabled:true">
+  <!-- Camera lowered from y=2.05 to y=1.70 -->
+  <a-entity id="cameraRig" position="0 1.70 2.55">
+    <a-camera id="mainCamera"
+      fov="58"
+      wasd-controls-enabled="false"
+      look-controls="touchEnabled:true;mouseEnabled:true">
+
       <a-cursor id="gazeCursor"
         fuse="true"
         fuse-timeout="1000"
@@ -168,6 +209,7 @@ button{border:0;border-radius:12px;padding:14px 20px;font-weight:800;font-size:1
         geometry="primitive:ring;radiusInner:.014;radiusOuter:.030"
         material="color:#00aebe;shader:flat">
       </a-cursor>
+
     </a-camera>
   </a-entity>
 </a-scene>
@@ -210,20 +252,27 @@ function showStep(){
 function penalizeWrongSelection(id){
  if(!running||currentStep>=steps.length||interactionLocked)return;
  if(id===steps[currentStep].target||penaltyLocked.has(id))return;
+
  penaltyLocked.add(id);
  interactionLocked=true;
  mistakes++;
  score=Math.max(0,score-5);
  updateScore();
+
  stepTitleEl.textContent="INCORRECT SELECTION · −5 POINTS";
  stepTextEl.textContent="That is not the expected object for this step.";
  hintEl.textContent="Look away, then aim at the correct object.";
+
  clearTimeout(feedbackTimer);
- feedbackTimer=setTimeout(()=>{interactionLocked=false;if(running)showStep();},1200);
+ feedbackTimer=setTimeout(()=>{
+   interactionLocked=false;
+   if(running)showStep();
+ },1200);
 }
 
 function handleSelection(id){
  if(!running||interactionLocked||currentStep>=steps.length)return;
+
  const step=steps[currentStep];
  if(id!==step.target){penalizeWrongSelection(id);return;}
  if(completed.has(id))return;
@@ -264,6 +313,7 @@ function finishSimulation(){
  if(score>=90)message="Excellent object selection. Continue practising under supervision.";
  else if(score>=70)message="Good effort. Review your incorrect selections and repeat the sequence.";
  else message="Keep practising the sequence and review the equipment before trying again.";
+
  document.getElementById("resultMessage").textContent=message;
  stepTitleEl.textContent="SIMULATION COMPLETE";
  stepTextEl.textContent="You completed all four stages.";
@@ -272,9 +322,13 @@ function finishSimulation(){
 
 function startSimulation(){
  clearTimeout(feedbackTimer);
- currentStep=0;score=0;mistakes=0;
- completed=new Set();penaltyLocked=new Set();
- interactionLocked=false;running=true;
+ currentStep=0;
+ score=0;
+ mistakes=0;
+ completed=new Set();
+ penaltyLocked=new Set();
+ interactionLocked=false;
+ running=true;
 
  document.querySelectorAll(".clickable").forEach(el=>{
    el.setAttribute("material","emissive","#000000");
@@ -285,6 +339,7 @@ function startSimulation(){
  welcomePanel.style.display="block";
  resultPanel.style.display="none";
  document.getElementById("results").style.display="none";
+
  updateScore();
  showStep();
 }
@@ -304,6 +359,7 @@ function installInteractions(){
 const scene=document.querySelector("a-scene");
 if(scene.hasLoaded)installInteractions();
 else scene.addEventListener("loaded",installInteractions);
+
 showStep();
 </script>
 </body>
