@@ -1,749 +1,705 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#10283f">
-  <title>TMS-XR | IV Cannulation Simulator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#071827">
+  <title>TMS-XR | Clinical Skills Simulator</title>
 
   <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
 
   <style>
     * { box-sizing: border-box; }
 
-    html, body {
-      width: 100%;
-      height: 100%;
+    body {
       margin: 0;
-      overflow: hidden;
       font-family: Arial, Helvetica, sans-serif;
-      background: #dcecf2;
-      color: #10283f;
+      background: #071827;
+      color: #fff;
+      overflow: hidden;
     }
 
-    a-scene {
-      position: fixed !important;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-    }
-
-    .hud {
+    #hud {
       position: fixed;
-      top: env(safe-area-inset-top, 0px);
+      top: 0;
       left: 0;
-      right: 0;
+      width: 100%;
       z-index: 10;
+      padding: 12px 16px;
+      background: linear-gradient(110deg, #071827, #123b52);
+      border-bottom: 1px solid #34728b;
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      gap: 10px;
-      padding: 12px 14px;
-      background: rgba(255,255,255,.97);
-      border-bottom: 1px solid #d5e1e8;
-      box-shadow: 0 2px 12px rgba(16,40,63,.10);
+      align-items: center;
+      gap: 12px;
     }
 
-    .brand h1 {
-      font-size: 16px;
-      margin: 0;
-      letter-spacing: .4px;
+    #brand {
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: 1px;
     }
 
-    .brand p {
+    #brand span { color: #42d9e8; }
+
+    #subtitle {
+      color: #b5d1dd;
       font-size: 11px;
-      margin: 3px 0 0;
-      color: #607487;
+      margin-top: 3px;
     }
 
-    .score {
-      flex-shrink: 0;
-      background: #e8f5ef;
-      color: #087f5b;
-      padding: 8px 12px;
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: 700;
+    #scoreBox {
+      text-align: right;
+      font-weight: bold;
       white-space: nowrap;
     }
 
-    .instruction-panel {
-      position: fixed;
-      left: 12px;
-      right: 12px;
-      bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-      z-index: 10;
-      padding: 14px 16px;
-      border-radius: 16px;
-      background: rgba(255,255,255,.98);
-      box-shadow: 0 4px 22px rgba(16,40,63,.16);
-      border: 1px solid #dce6ed;
+    #score {
+      color: #54e6c1;
+      font-size: 23px;
     }
 
-    .step-label {
-      font-size: 11px;
-      font-weight: 700;
-      color: #087f8c;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 6px;
-    }
-
-    #instruction {
-      font-size: 17px;
-      line-height: 1.35;
-      font-weight: 700;
-      margin: 0;
-      overflow-wrap: anywhere;
-    }
-
-    #hint {
-      margin: 7px 0 0;
-      color: #607487;
-      font-size: 13px;
-      line-height: 1.4;
-    }
-
-    .progress-track {
-      width: 100%;
+    #progressOuter {
       height: 5px;
-      background: #e6edf2;
-      border-radius: 10px;
-      overflow: hidden;
-      margin-top: 12px;
+      width: 100%;
+      background: #233d4d;
+      position: fixed;
+      top: 64px;
+      z-index: 11;
     }
 
     #progress {
       width: 0%;
       height: 100%;
-      background: #087f8c;
-      transition: width .3s ease;
+      background: linear-gradient(90deg, #36cfc9, #74f3b5);
+      transition: width .35s;
     }
 
-    .welcome, .result-screen {
+    #instruction {
+      position: fixed;
+      left: 50%;
+      bottom: 16px;
+      transform: translateX(-50%);
+      width: min(92%, 620px);
+      padding: 13px 17px;
+      border-radius: 15px;
+      background: rgba(5, 24, 38, .94);
+      border: 1px solid rgba(91, 210, 226, .65);
+      text-align: center;
+      z-index: 12;
+      box-shadow: 0 6px 28px rgba(0,0,0,.3);
+    }
+
+    #stepTitle {
+      color: #56e2e7;
+      font-size: 11px;
+      letter-spacing: 1.4px;
+      font-weight: 800;
+      margin-bottom: 5px;
+    }
+
+    #stepText {
+      font-size: 15px;
+      line-height: 1.4;
+    }
+
+    #hint {
+      margin-top: 5px;
+      font-size: 11px;
+      color: #b9d1dd;
+    }
+
+    #screen {
       position: fixed;
       inset: 0;
       z-index: 30;
+      background:
+        radial-gradient(ellipse at top, rgba(24,91,119,.7), transparent 60%),
+        linear-gradient(145deg, #061522, #0c2a3d 65%, #071827);
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
-      background: rgba(10,29,46,.80);
-      overflow-y: auto;
+      padding: 22px;
+      text-align: center;
     }
 
-    .modal {
-      width: 100%;
-      max-width: 440px;
-      padding: 25px;
-      background: #fff;
-      border-radius: 20px;
-      box-shadow: 0 10px 40px rgba(0,0,0,.2);
+    .panel {
+      width: min(100%, 510px);
+      padding: 30px 25px;
+      border: 1px solid #28576b;
+      background: rgba(6, 23, 36, .94);
+      border-radius: 22px;
+      box-shadow: 0 20px 70px rgba(0,0,0,.35);
     }
 
-    .eyebrow {
-      color: #087f8c;
-      font-weight: 700;
-      font-size: 12px;
-      letter-spacing: 1.4px;
-      text-transform: uppercase;
+    .logoMark {
+      width: 65px;
+      height: 65px;
+      margin: 0 auto 18px;
+      display: grid;
+      place-items: center;
+      border-radius: 18px;
+      font-size: 28px;
+      font-weight: 900;
+      color: #04202b;
+      background: linear-gradient(135deg, #48e2e8, #7df4b7);
     }
 
-    .modal h2 {
-      font-size: 26px;
-      line-height: 1.15;
-      margin: 10px 0;
+    h1 {
+      font-size: clamp(25px, 6vw, 36px);
+      margin: 0 0 8px;
     }
 
-    .modal p, .modal li {
+    h1 span { color: #55e0e7; }
+
+    .description {
+      color: #c0d5df;
+      line-height: 1.65;
       font-size: 14px;
-      line-height: 1.55;
-      color: #506477;
+      margin: 12px 0 22px;
     }
 
-    .modal ul { padding-left: 20px; }
+    .featureRow {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 22px;
+    }
 
-    .primary-button, .secondary-button {
-      display: block;
-      width: 100%;
+    .feature {
+      font-size: 11px;
+      border: 1px solid #315b6c;
+      background: #102d40;
+      border-radius: 30px;
+      padding: 8px 11px;
+      color: #d8edf4;
+    }
+
+    button {
       border: 0;
       border-radius: 12px;
-      padding: 14px 16px;
+      padding: 14px 22px;
+      font-weight: 800;
       font-size: 15px;
-      font-weight: 700;
       cursor: pointer;
-      margin-top: 12px;
-      min-height: 48px;
+      color: #04232b;
+      background: linear-gradient(100deg, #48e1e6, #7af0b6);
+      width: 100%;
     }
 
-    .primary-button { background: #087f8c; color: #fff; }
-    .secondary-button { background: #eaf0f4; color: #10283f; }
+    button:active { transform: scale(.98); }
 
-    .notice {
-      font-size: 11px !important;
-      color: #778897 !important;
-      margin-bottom: 0;
+    .secondary {
+      background: transparent;
+      border: 1px solid #3e7489;
+      color: white;
+      margin-top: 10px;
     }
 
-    .hidden { display: none !important; }
-
-    @media (max-width: 420px) {
-      .hud { padding: 10px; }
-      .brand h1 { font-size: 14px; }
-      .brand p { font-size: 10px; }
-      .score { font-size: 12px; padding: 8px; }
-      .instruction-panel {
-        left: 8px;
-        right: 8px;
-        bottom: calc(8px + env(safe-area-inset-bottom, 0px));
-        padding: 12px;
-      }
-      #instruction { font-size: 16px; }
-      .modal { padding: 20px; }
+    .small {
+      color: #8eafbd;
+      font-size: 11px;
+      line-height: 1.5;
+      margin-top: 17px;
     }
 
-    @media (orientation: landscape) and (max-height: 500px) {
-      .hud { padding: 6px 12px; }
-      .brand p { display: none; }
-      .instruction-panel {
-        left: auto;
-        right: 10px;
-        bottom: 10px;
-        width: min(340px, 42vw);
-        padding: 10px 12px;
-      }
-      #instruction { font-size: 15px; }
-      #hint { font-size: 11px; }
-      .progress-track { margin-top: 7px; }
-      .modal { padding: 16px 22px; }
-      .modal h2 { font-size: 21px; }
+    #scene {
+      position: fixed;
+      inset: 69px 0 0 0;
+    }
+
+    #results {
+      display: none;
+      margin-top: 18px;
+      text-align: left;
+      border-top: 1px solid #284d60;
+      padding-top: 15px;
+    }
+
+    .resultLine {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid #18394b;
+      font-size: 13px;
+    }
+
+    .resultLine strong { color: #6ce8c4; }
+
+    @media (max-width: 520px) {
+      #hud { padding: 10px 12px; }
+      #brand { font-size: 16px; }
+      #subtitle { font-size: 10px; }
+      #score { font-size: 20px; }
+      #progressOuter { top: 60px; }
+      #scene { top: 65px; }
+      #instruction { bottom: 10px; padding: 11px 12px; }
+      #stepText { font-size: 13px; }
+      .panel { padding: 24px 18px; }
     }
   </style>
-
-  <script>
-    let currentStep = 1;
-    let score = 0;
-    let simulationStarted = false;
-    let runId = 0;
-
-    const WRONG_PICK_PENALTY = 5;
-
-    const expectedTargets = {
-      1: "swab",
-      2: "tourniquet",
-      3: "vein",
-      4: "catheter"
-    };
-
-    const targetNames = {
-      swab: "the green swab",
-      tourniquet: "the blue tourniquet",
-      vein: "the highlighted vein",
-      catheter: "the yellow cannula"
-    };
-
-    function updateHUD(message, hint, progress) {
-      document.getElementById("instruction").textContent = message;
-      document.getElementById("hint").textContent = hint;
-
-      document.getElementById("step-label").textContent =
-        currentStep <= 4
-          ? "STEP " + currentStep + " OF 4"
-          : "SIMULATION FINISHED";
-
-      document.getElementById("score").textContent = score + "/100";
-      document.getElementById("progress").style.width = progress + "%";
-    }
-
-    function showResult() {
-      document.getElementById("result-score").textContent = score + "/100";
-
-      const message = score === 100
-        ? "Excellent sequence! You completed all programmed stages without losing marks."
-        : "Review your selections and practise again to improve your sequence score.";
-
-      document.getElementById("result-feedback").textContent = message;
-      document.getElementById("result-screen").classList.remove("hidden");
-    }
-
-    function penalizeWrongSelection(entity) {
-      if (!simulationStarted || currentStep > 4) return;
-
-      // One penalty per gaze visit. The learner must look away
-      // before the same object can incur another penalty.
-      if (entity.dataset.penaltyLocked === "true") return;
-
-      entity.dataset.penaltyLocked = "true";
-
-      score = Math.max(0, score - WRONG_PICK_PENALTY);
-
-      const correctTarget = targetNames[expectedTargets[currentStep]];
-
-      updateHUD(
-        "Incorrect selection: -5 marks",
-        "Select " + correctTarget + " to continue. Look away and select again if you want to retry this object.",
-        ((currentStep - 1) / 4) * 100
-      );
-    }
-
-    function resetEntity(id, visible) {
-      const entity = document.getElementById(id);
-      if (!entity) return;
-
-      [
-        "animation__advance",
-        "animation__withdraw",
-        "animation__flash",
-        "animation__fill"
-      ].forEach(name => entity.removeAttribute(name));
-
-      entity.setAttribute("visible", visible);
-      entity.dataset.penaltyLocked = "false";
-    }
-
-    function startSimulation() {
-      simulationStarted = true;
-      document.getElementById("welcome").classList.add("hidden");
-      document.getElementById("result-screen").classList.add("hidden");
-
-      updateHUD(
-        "Prepare the site",
-        "Select the green swab first. Keep the centre cursor on it until it activates.",
-        0
-      );
-    }
-
-    function restartSimulation() {
-      runId++;
-      currentStep = 1;
-      score = 0;
-      simulationStarted = true;
-
-      const resetItems = [
-        ["swab", true],
-        ["tourniquet", true],
-        ["vein", false],
-        ["catheter", false],
-        ["needle", false],
-        ["needle-tip", false],
-        ["blood-tube", false],
-        ["blood-cap", false],
-        ["blood", false],
-        ["flashback", false],
-        ["success", false]
-      ];
-
-      resetItems.forEach(([id, visible]) => resetEntity(id, visible));
-
-      document.getElementById("swab").setAttribute("color", "#00dd55");
-      document.getElementById("tourniquet").setAttribute("color", "#005eff");
-      document.getElementById("vein").setAttribute("color", "#329bd3");
-      document.getElementById("catheter").setAttribute("color", "#ffd000");
-
-      document.getElementById("needle").setAttribute(
-        "position", "0.10 1.31 -1.93"
-      );
-      document.getElementById("needle-tip").setAttribute(
-        "position", "0.10 1.31 -2.21"
-      );
-
-      // Reset penalty locks on all selectable objects.
-      document.querySelectorAll(".clickable").forEach(entity => {
-        entity.dataset.penaltyLocked = "false";
-      });
-
-      document.getElementById("result-screen").classList.add("hidden");
-
-      updateHUD(
-        "Prepare the site",
-        "Select the green swab first. Keep the centre cursor on it until it activates.",
-        0
-      );
-    }
-
-    AFRAME.registerComponent("cannulation-logic", {
-      init: function () {
-        const scene = this.el;
-
-        const setup = () => {
-          const swab = document.getElementById("swab");
-          const tourniquet = document.getElementById("tourniquet");
-          const vein = document.getElementById("vein");
-          const catheter = document.getElementById("catheter");
-          const needle = document.getElementById("needle");
-          const needleTip = document.getElementById("needle-tip");
-          const bloodTube = document.getElementById("blood-tube");
-          const bloodCap = document.getElementById("blood-cap");
-          const blood = document.getElementById("blood");
-          const flashback = document.getElementById("flashback");
-          const success = document.getElementById("success");
-
-          // Universal wrong-object detector. Correct targets are ignored
-          // here and handled by their individual procedure handlers.
-          document.querySelectorAll(".clickable").forEach(entity => {
-            entity.dataset.penaltyLocked = "false";
-
-            entity.addEventListener("click", () => {
-              if (!simulationStarted || currentStep > 4) return;
-
-              const expectedId = expectedTargets[currentStep];
-
-              if (entity.id !== expectedId) {
-                penalizeWrongSelection(entity);
-              }
-            });
-
-            entity.addEventListener("mouseleave", () => {
-              entity.dataset.penaltyLocked = "false";
-            });
-          });
-
-          swab.addEventListener("click", () => {
-            if (!simulationStarted || currentStep !== 1) return;
-
-            currentStep = 2;
-            score = Math.min(100, score + 20);
-            swab.setAttribute("color", "#777777");
-
-            updateHUD(
-              "Apply the blue tourniquet",
-              "Correct! Now select the blue tourniquet.",
-              25
-            );
-          });
-
-          tourniquet.addEventListener("click", () => {
-            if (!simulationStarted || currentStep !== 2) return;
-
-            currentStep = 3;
-            score = Math.min(100, score + 20);
-            tourniquet.setAttribute("color", "#777777");
-            vein.setAttribute("visible", true);
-
-            updateHUD(
-              "Identify the highlighted vein",
-              "Correct! Select the blue vein on the forearm.",
-              50
-            );
-          });
-
-          vein.addEventListener("click", () => {
-            if (!simulationStarted || currentStep !== 3) return;
-
-            currentStep = 4;
-            score = Math.min(100, score + 20);
-            vein.setAttribute("color", "#00ff66");
-            catheter.setAttribute("visible", true);
-            needle.setAttribute("visible", true);
-            needleTip.setAttribute("visible", true);
-
-            updateHUD(
-              "Insert the cannula",
-              "Correct! Select the yellow cannula to simulate insertion.",
-              75
-            );
-          });
-
-          catheter.addEventListener("click", () => {
-            if (!simulationStarted || currentStep !== 4) return;
-
-            currentStep = 5;
-            score = Math.min(100, score + 40);
-
-            const thisRun = runId;
-
-            updateHUD(
-              "Accessing vein...",
-              "Observe the simulated needle movement and blood flashback.",
-              85
-            );
-
-            needle.setAttribute(
-              "animation__advance",
-              "property: position; to: 0.10 1.31 -2.02; dur: 700; easing: easeInOutQuad"
-            );
-
-            needleTip.setAttribute(
-              "animation__advance",
-              "property: position; to: 0.10 1.31 -2.29; dur: 700; easing: easeInOutQuad"
-            );
-
-            setTimeout(() => {
-              if (thisRun !== runId) return;
-
-              flashback.setAttribute("visible", true);
-              flashback.setAttribute(
-                "animation__flash",
-                "property: scale; from: 0.2 0.2 0.2; to: 1 1 1; dur: 350; easing: easeOutElastic"
-              );
-
-              updateHUD(
-                "Blood flashback",
-                "The simulation displays a visual indication of vein access.",
-                90
-              );
-            }, 750);
-
-            setTimeout(() => {
-              if (thisRun !== runId) return;
-
-              catheter.setAttribute("color", "#00ff66");
-
-              needle.setAttribute(
-                "animation__withdraw",
-                "property: position; to: 0.10 1.31 -1.55; dur: 700; easing: easeInOutQuad"
-              );
-
-              needleTip.setAttribute(
-                "animation__withdraw",
-                "property: position; to: 0.10 1.31 -1.82; dur: 700; easing: easeInOutQuad"
-              );
-
-              updateHUD(
-                "Cannula in place",
-                "The simulation is completing its final stage.",
-                95
-              );
-            }, 1500);
-
-            setTimeout(() => {
-              if (thisRun !== runId) return;
-
-              bloodTube.setAttribute("visible", true);
-              bloodCap.setAttribute("visible", true);
-              blood.setAttribute("visible", true);
-
-              blood.setAttribute(
-                "animation__fill",
-                "property: scale; from: 1 0.2 1; to: 1 1 1; dur: 1000; easing: easeOutQuad"
-              );
-
-              success.setAttribute("visible", true);
-
-              updateHUD(
-                "Simulation complete",
-                "You completed the interactive sequence. Review your score or practise again.",
-                100
-              );
-
-              showResult();
-            }, 2400);
-          });
-        };
-
-        if (scene.hasLoaded) {
-          setup();
-        } else {
-          scene.addEventListener("loaded", setup, { once: true });
-        }
-      }
-    });
-  </script>
 </head>
 
 <body>
-  <div class="hud">
-    <div class="brand">
-      <h1>TMS-XR</h1>
-      <p>IV Cannulation Simulator · Educational Prototype</p>
+  <header id="hud">
+    <div>
+      <div id="brand">TMS-<span>XR</span></div>
+      <div id="subtitle">CLINICAL SKILLS SIMULATION</div>
     </div>
-    <div class="score">SCORE <span id="score">0/100</span></div>
+    <div id="scoreBox">
+      <div style="font-size:10px;color:#b5d1dd;letter-spacing:1px">SCORE</div>
+      <div><span id="score">0</span><span style="font-size:13px;color:#a7c5d2"> / 100</span></div>
+    </div>
+  </header>
+
+  <div id="progressOuter"><div id="progress"></div></div>
+
+  <div id="instruction">
+    <div id="stepTitle">READY TO BEGIN</div>
+    <div id="stepText">Start the simulation to begin.</div>
+    <div id="hint">Look at a selectable object to interact.</div>
   </div>
 
-  <div class="instruction-panel">
-    <div class="step-label" id="step-label">STEP 1 OF 4</div>
-    <p id="instruction">Prepare the site</p>
-    <p id="hint">Start the simulation to see the instructions.</p>
-    <div class="progress-track">
-      <div id="progress"></div>
+  <div id="screen">
+    <div class="panel" id="welcomePanel">
+      <div class="logoMark">XR</div>
+      <h1>TMS-<span>XR</span></h1>
+      <div style="color:#72dce7;font-weight:700;font-size:13px">
+        AFFORDABLE IMMERSIVE MEDICAL LEARNING
+      </div>
+      <p class="description">
+        Practise the sequence of peripheral IV cannulation in an interactive
+        3D environment. Identify the equipment, follow the procedure, and
+        receive feedback on your selections.
+      </p>
+      <div class="featureRow">
+        <div class="feature">3D Clinical Scene</div>
+        <div class="feature">Interactive Learning</div>
+        <div class="feature">Live Scoring</div>
+      </div>
+      <button id="startBtn">START SIMULATION</button>
+      <div class="small">
+        Educational prototype only. Follow local clinical guidelines and
+        practise real procedures under qualified supervision.
+      </div>
+    </div>
+
+    <div class="panel" id="resultPanel" style="display:none">
+      <div class="logoMark">✓</div>
+      <h1>Simulation <span>Complete</span></h1>
+      <p class="description" id="resultMessage">
+        You have completed the interactive sequence.
+      </p>
+      <div id="results">
+        <div class="resultLine"><span>Final score</span><strong id="finalScore">0/100</strong></div>
+        <div class="resultLine"><span>Stages completed</span><strong id="finalStages">0/4</strong></div>
+        <div class="resultLine"><span>Incorrect selections</span><strong id="finalMistakes">0</strong></div>
+      </div>
+      <button id="restartBtn">PRACTISE AGAIN</button>
+      <div class="small">
+        This score reflects object selection and sequence only. It does not
+        measure actual cannulation skill or establish clinical competence.
+      </div>
     </div>
   </div>
 
-  <div class="welcome" id="welcome">
-    <div class="modal">
-      <div class="eyebrow">TMS-XR · Clinical Skills Lab</div>
-      <h2>Practise before the clinic.</h2>
-      <p>
-        Explore a simulated IV cannulation sequence in your browser.
-        No app installation or VR headset is required.
-      </p>
-      <ul>
-        <li>Look around to find each instrument.</li>
-        <li>Keep the centre cursor on the target until it activates.</li>
-        <li>Wrong selections deduct marks.</li>
-        <li>Follow the instructions at the bottom of the screen.</li>
-      </ul>
-      <button class="primary-button" onclick="startSimulation()">
-        Start Simulation
-      </button>
-      <p class="notice">
-        Educational demonstration only. This prototype does not verify real
-        needle placement or replace supervised clinical training.
-      </p>
-    </div>
+  <div id="scene">
+    <a-scene
+      embedded
+      renderer="colorManagement: true; physicallyCorrectLights: true"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false"
+      background="color: #dceaf0"
+      loading-screen="enabled: false">
+
+      <a-assets>
+        <a-mixin id="metal" material="color: #b9c8d0; metalness: 0.8; roughness: 0.23"></a-mixin>
+      </a-assets>
+
+      <!-- Soft clinical lighting -->
+      <a-entity light="type: ambient; intensity: 1.05; color: #dcefff"></a-entity>
+      <a-entity light="type: directional; intensity: 1.6; color: #ffffff"
+                position="-3 6 4"></a-entity>
+      <a-entity light="type: point; intensity: 0.65; color: #74d9ef"
+                position="2 3 -2"></a-entity>
+
+      <!-- Clinical room -->
+      <a-sky color="#e7f1f5"></a-sky>
+      <a-plane rotation="-90 0 0" width="18" height="18"
+               material="color: #cbd9df; roughness: 0.9"></a-plane>
+      <a-plane position="0 3 -4.5" width="12" height="6"
+               material="color: #eaf2f5; roughness: 1"></a-plane>
+
+      <!-- Back wall details -->
+      <a-box position="-3 2.7 -4.42" width="1.7" height="1.1" depth=".08"
+             material="color: #d4e4ea"></a-box>
+      <a-box position="-3 2.7 -4.35" width="1.48" height=".9" depth=".02"
+             material="color: #f7fbfd"></a-box>
+      <a-text value="CLINICAL SKILLS LAB" position="-3.68 2.78 -4.32"
+              width="2.5" color="#1c5269"></a-text>
+
+      <!-- Workstation -->
+      <a-box position="0 0.76 -1.45" width="4.4" height=".18" depth="2.2"
+             material="color: #f7fafb; roughness: .35"></a-box>
+      <a-box position="0 0.65 -1.45" width="4.5" height=".06" depth="2.28"
+             material="color: #8daab6; metalness: .45"></a-box>
+
+      <a-box position="-1.9 .34 -2.2" width=".09" height=".7" depth=".09"
+             material="color: #7b929c; metalness: .7"></a-box>
+      <a-box position="1.9 .34 -2.2" width=".09" height=".7" depth=".09"
+             material="color: #7b929c; metalness: .7"></a-box>
+      <a-box position="-1.9 .34 -.7" width=".09" height=".7" depth=".09"
+             material="color: #7b929c; metalness: .7"></a-box>
+      <a-box position="1.9 .34 -.7" width=".09" height=".7" depth=".09"
+             material="color: #7b929c; metalness: .7"></a-box>
+
+      <!-- Blue sterile drape -->
+      <a-box position="-.15 .875 -1.45" width="2.6" height=".035" depth="1.45"
+             material="color: #c1e9ef; roughness: .85"></a-box>
+
+      <!-- Arm support -->
+      <a-box position="-.25 .97 -1.35" width="2.45" height=".14" depth=".65"
+             material="color: #d2dce2" radius=".04"></a-box>
+
+      <!-- Simulated forearm: tapered sections -->
+      <a-entity id="arm" position="-.2 1.08 -1.32" rotation="0 0 -4">
+        <a-cylinder position="-.05 0 0" rotation="0 0 90"
+                    radius=".23" height="1.45"
+                    material="color: #c99170; roughness: .8"></a-cylinder>
+        <a-sphere position=".65 0 0" scale=".38 .24 .27"
+                  material="color: #d5a080; roughness: .78"></a-sphere>
+
+        <!-- Palm -->
+        <a-box position="1.02 .01 .005" width=".58" height=".13" depth=".4"
+               material="color: #d5a080; roughness: .8"
+               rotation="0 0 -4"></a-box>
+
+        <!-- Fingers -->
+        <a-entity id="fingers">
+          <a-cylinder position="1.30 .00 -.14" rotation="0 0 90"
+                      radius=".055" height=".37"
+                      material="color: #d5a080"></a-cylinder>
+          <a-sphere position="1.49 .00 -.14" scale=".07 .06 .065"
+                    material="color: #e4b398"></a-sphere>
+
+          <a-cylinder position="1.34 .00 -.045" rotation="0 0 90"
+                      radius=".055" height=".40"
+                      material="color: #d5a080"></a-cylinder>
+          <a-sphere position="1.54 .00 -.045" scale=".07 .06 .065"
+                    material="color: #e4b398"></a-sphere>
+
+          <a-cylinder position="1.34 .00 .055" rotation="0 0 90"
+                      radius=".052" height=".38"
+                      material="color: #d5a080"></a-cylinder>
+          <a-sphere position="1.53 .00 .055" scale=".07 .06 .065"
+                    material="color: #e4b398"></a-sphere>
+
+          <a-cylinder position="1.29 .00 .15" rotation="0 0 90"
+                      radius=".05" height=".31"
+                      material="color: #d5a080"></a-cylinder>
+          <a-sphere position="1.45 .00 .15" scale=".065 .06 .06"
+                    material="color: #e4b398"></a-sphere>
+        </a-entity>
+
+        <!-- Visible superficial vein -->
+        <a-cylinder id="vein" class="clickable"
+                    position="-.1 .235 -.005"
+                    rotation="0 0 90"
+                    radius=".024" height=".82"
+                    material="color: #2868a2; emissive: #123b7c; emissiveIntensity: .18"
+                    visible="true"></a-cylinder>
+
+        <a-cylinder position="-.1 .251 -.005"
+                    rotation="0 0 90"
+                    radius=".008" height=".7"
+                    material="color: #75a9d2"></a-cylinder>
+
+        <!-- Tourniquet -->
+        <a-box id="tourniquet" class="clickable"
+               position="-.59 .22 0"
+               width=".16" height=".045" depth=".48"
+               material="color: #087fba; roughness: .5"></a-box>
+        <a-box position="-.59 .246 0"
+               width=".08" height=".01" depth=".49"
+               material="color: #55bfe8"></a-box>
+
+        <!-- Cannula at the wrist, shown from viewer side -->
+        <a-entity id="cannula" class="clickable"
+                  position=".39 .265 .01" rotation="0 0 0" visible="true">
+          <a-cylinder rotation="0 0 90" radius=".035" height=".25"
+                      material="color: #d9e5eb; metalness: .4; roughness: .25"></a-cylinder>
+          <a-cylinder position=".13 0 0" rotation="0 0 90"
+                      radius=".018" height=".17"
+                      material="color: #b8c8d0; metalness: .85"></a-cylinder>
+          <a-box position="-.03 .04 0" width=".08" height=".06" depth=".09"
+                 material="color: #e1f7fa; opacity: .95"></a-box>
+          <a-box position="-.03 .075 0" width=".035" height=".018" depth=".05"
+                 material="color: #21b7b4"></a-box>
+        </a-entity>
+      </a-entity>
+
+      <!-- Equipment tray -->
+      <a-box position="1.15 .94 -1.25" width="1.05" height=".045" depth=".72"
+             material="color: #e7eef2; metalness: .4; roughness: .3"></a-box>
+      <a-box position="1.15 .965 -1.25" width=".98" height=".018" depth=".65"
+             material="color: #b6cbd5; metalness: .3"></a-box>
+
+      <!-- Swab packet -->
+      <a-entity id="swab" class="clickable" position=".87 1.02 -1.25"
+                rotation="0 0 -12">
+        <a-box width=".27" height=".055" depth=".24"
+               material="color: #ffffff; roughness: .35"></a-box>
+        <a-box position="0 .03 0" width=".07" height=".009" depth=".24"
+               material="color: #4ac4d6"></a-box>
+        <a-text value="SWAB" align="center" color="#27556a"
+                position="0 .04 .13" rotation="-90 0 0" width=".6"></a-text>
+      </a-entity>
+
+      <!-- Syringe -->
+      <a-entity id="syringe" position="1.4 1.03 -1.26" rotation="0 0 -15">
+        <a-cylinder rotation="0 0 90" radius=".055" height=".36"
+                    material="color: #f9ffff; opacity: .88; metalness: .15"></a-cylinder>
+        <a-cylinder position="-.22 0 0" rotation="0 0 90"
+                    radius=".018" height=".12"
+                    material="color: #d0dce1; metalness: .7"></a-cylinder>
+        <a-cylinder position=".22 0 0" rotation="0 0 90"
+                    radius=".035" height=".1"
+                    material="color: #c9d5dc"></a-cylinder>
+        <a-cylinder position="0 0 0" rotation="0 0 90"
+                    radius=".038" height=".18"
+                    material="color: #9cdbe8; opacity: .8"></a-cylinder>
+      </a-entity>
+
+      <!-- Blood collection tube -->
+      <a-entity id="bloodTube" position="1.25 1.03 -.99" rotation="0 0 0">
+        <a-cylinder radius=".065" height=".32"
+                    material="color: #dff5f8; opacity: .7; roughness: .2"></a-cylinder>
+        <a-cylinder position="0 .12 0" radius=".068" height=".07"
+                    material="color: #b74c59; roughness: .3"></a-cylinder>
+        <a-cylinder position="0 -.11 0" radius=".058" height=".08"
+                    material="color: #9d253e"></a-cylinder>
+      </a-entity>
+
+      <!-- Needle safety tray -->
+      <a-box position=".84 1.005 -.98" width=".28" height=".025" depth=".19"
+             material="color: #f0f4f5"></a-box>
+      <a-cylinder position=".84 1.035 -.98" rotation="0 0 90"
+                  radius=".018" height=".2"
+                  material="color: #b4c7cf; metalness: .9"></a-cylinder>
+
+      <!-- Interaction camera -->
+      <a-entity position="0 2.45 3.8" rotation="-23 0 0">
+        <a-camera
+          wasd-controls-enabled="false"
+          look-controls="touchEnabled: true; mouseEnabled: true"
+          cursor="rayOrigin: entity; fuse: true; fuseTimeout: 1200"
+          raycaster="objects: .clickable; far: 8">
+          <a-entity cursor="fuse: true; fuseTimeout: 1200"
+                    position="0 0 -.8"
+                    geometry="primitive: ring; radiusInner: .009; radiusOuter: .015"
+                    material="color: #00dce5; shader: flat"
+                    animation__fuse="property: scale; startEvents: fusing; from: 1 1 1; to: 1.7 1.7 1.7; dur: 1200"
+                    animation__leave="property: scale; startEvents: mouseleave; to: 1 1 1; dur: 100">
+          </a-entity>
+        </a-camera>
+      </a-entity>
+
+      <!-- Decorative equipment labels -->
+      <a-text value="STERILE FIELD" position="-1.25 .99 -.78"
+              rotation="-90 0 0" width="1.4" color="#36758a"></a-text>
+
+    </a-scene>
   </div>
 
-  <div class="result-screen hidden" id="result-screen">
-    <div class="modal">
-      <div class="eyebrow">Session finished</div>
-      <h2>Simulation complete!</h2>
-      <p>Your final sequence score:</p>
-      <h2 id="result-score">100/100</h2>
-      <p id="result-feedback">
-        Review your selections and practise again to improve your score.
-      </p>
-      <button class="primary-button" onclick="restartSimulation()">
-        Practise Again
-      </button>
-      <button class="secondary-button"
-        onclick="document.getElementById('result-screen').classList.add('hidden')">
-        Review the Scene
-      </button>
-      <p class="notice">
-        The score measures programmed interactions, not verified clinical competence.
-      </p>
-    </div>
-  </div>
+  <script>
+    const steps = [
+      {
+        title: "STEP 1 OF 4 · PREPARATION",
+        text: "Select the antiseptic swab to prepare the site.",
+        hint: "Look at the swab packet until the gaze cursor activates.",
+        target: "swab",
+        points: 20
+      },
+      {
+        title: "STEP 2 OF 4 · SITE PREPARATION",
+        text: "Select the tourniquet to continue the sequence.",
+        hint: "Choose the blue band on the simulated arm.",
+        target: "tourniquet",
+        points: 20
+      },
+      {
+        title: "STEP 3 OF 4 · IDENTIFICATION",
+        text: "Identify the visible superficial vein.",
+        hint: "Select the blue vein on the forearm.",
+        target: "vein",
+        points: 20
+      },
+      {
+        title: "STEP 4 OF 4 · CANNULA",
+        text: "Select the cannula to complete this simulation.",
+        hint: "Select the cannula shown near the wrist.",
+        target: "cannula",
+        points: 40
+      }
+    ];
 
-  <a-scene
-    cannulation-logic
-    background="color: #dcecf2"
-    renderer="colorManagement: true"
-    vr-mode-ui="enabled: false"
-    loading-screen="enabled: true">
+    let currentStep = 0;
+    let score = 0;
+    let mistakes = 0;
+    let running = false;
+    let completed = new Set();
+    let penaltyLocked = new Set();
 
-    <a-light type="ambient" intensity="1.6" color="#ffffff"></a-light>
-    <a-light type="directional" intensity="1.3"
-      position="-3 5 4" color="#ffffff"></a-light>
-    <a-sky color="#dcecf2"></a-sky>
+    const scoreEl = document.getElementById("score");
+    const progressEl = document.getElementById("progress");
+    const stepTitleEl = document.getElementById("stepTitle");
+    const stepTextEl = document.getElementById("stepText");
+    const hintEl = document.getElementById("hint");
+    const screen = document.getElementById("screen");
+    const welcomePanel = document.getElementById("welcomePanel");
+    const resultPanel = document.getElementById("resultPanel");
 
-    <!-- TABLE -->
-    <a-plane position="0 0 -3" rotation="-90 0 0"
-      width="12" height="12" color="#d5dfe3"></a-plane>
+    function updateScore() {
+      scoreEl.textContent = score;
+      progressEl.style.width = (currentStep / steps.length * 100) + "%";
+    }
 
-    <a-box position="0 0.82 -2.2"
-      width="3.8" height="0.18" depth="1.8" color="#f8fafb"></a-box>
+    function showStep() {
+      if (currentStep >= steps.length) {
+        finishSimulation();
+        return;
+      }
 
-    <a-box position="0 0.70 -2.2"
-      width="3.8" height="0.08" depth="1.8" color="#9aa7ad"></a-box>
+      const step = steps[currentStep];
+      stepTitleEl.textContent = step.title;
+      stepTextEl.textContent = step.text;
+      hintEl.textContent = step.hint;
+      updateScore();
+    }
 
-    <!-- ARM -->
-    <a-cylinder position="0 1.05 -2.2" radius="0.23"
-      height="1.65" rotation="0 0 90" color="#d39a7b"></a-cylinder>
+    function setMessage(title, text, hint) {
+      stepTitleEl.textContent = title;
+      stepTextEl.textContent = text;
+      hintEl.textContent = hint || "";
+    }
 
-    <a-cylinder position="-0.78 1.05 -2.2" radius="0.29"
-      height="0.65" rotation="0 0 90" color="#d39a7b"></a-cylinder>
+    function penalizeWrongSelection(id) {
+      if (!running || currentStep >= steps.length) return;
+      if (id === steps[currentStep].target) return;
+      if (penaltyLocked.has(id)) return;
 
-    <a-sphere position="-0.42 1.05 -2.2"
-      radius="0.27" color="#d39a7b"></a-sphere>
+      penaltyLocked.add(id);
+      mistakes++;
+      score = Math.max(0, score - 5);
+      updateScore();
 
-    <!-- HAND -->
-    <a-box position="1.02 1.05 -2.2"
-      width="0.55" height="0.25" depth="0.45" color="#d39a7b"></a-box>
+      setMessage(
+        "INCORRECT SELECTION · −5 POINTS",
+        "That is not the expected object for this step.",
+        "Review the instruction and select the correct item."
+      );
 
-    <!-- TOURNIQUET -->
-    <a-torus id="tourniquet" class="clickable"
-      position="-0.30 1.05 -2.2" radius="0.27"
-      radius-tubular="0.045" rotation="0 90 0" color="#005eff"></a-torus>
+      // Return to the current instruction after brief feedback.
+      window.setTimeout(() => {
+        if (running && currentStep < steps.length) showStep();
+      }, 1300);
+    }
 
-    <!-- VEIN -->
-    <a-cylinder id="vein" class="clickable"
-      position="0.10 1.28 -2.02" radius="0.045"
-      height="0.55" rotation="0 0 90" color="#329bd3"
-      visible="false"></a-cylinder>
+    function handleCorrectSelection(id) {
+      if (!running || currentStep >= steps.length) return;
 
-    <!-- SWAB -->
-    <a-box id="swab" class="clickable"
-      position="1.15 1.08 -1.45"
-      width="0.28" height="0.08" depth="0.12"
-      color="#00dd55"></a-box>
+      const step = steps[currentStep];
+      if (id !== step.target) {
+        penalizeWrongSelection(id);
+        return;
+      }
 
-    <!-- CANNULA -->
-    <a-cylinder id="catheter" class="clickable"
-      position="0.10 1.31 -1.72" radius="0.045"
-      height="0.42" rotation="90 0 0"
-      color="#ffd000" visible="false"></a-cylinder>
+      if (completed.has(id)) return;
 
-    <a-cylinder position="0.10 1.31 -1.48"
-      radius="0.09" height="0.13" rotation="90 0 0"
-      color="#eeb400"></a-cylinder>
+      completed.add(id);
+      score = Math.min(100, score + step.points);
+      currentStep++;
 
-    <!-- NEEDLE -->
-    <a-cylinder id="needle"
-      position="0.10 1.31 -1.93" radius="0.012"
-      height="0.55" rotation="90 0 0"
-      color="#c5cdd1" visible="false"></a-cylinder>
+      updateScore();
 
-    <a-cone id="needle-tip"
-      position="0.10 1.31 -2.21"
-      radius-bottom="0.025" radius-top="0" height="0.12"
-      rotation="90 0 0" color="#aeb7bb"
-      visible="false"></a-cone>
+      const object = document.getElementById(id);
+      if (object) {
+        object.setAttribute("material", "emissive", "#38e6ba");
+        object.setAttribute("material", "emissiveIntensity", 0.45);
+      }
 
-    <!-- SYRINGE -->
-    <a-cylinder id="syringe" class="clickable"
-      position="1.0 1.18 -1.75" radius="0.09"
-      height="0.55" rotation="0 0 90"
-      color="#edf5f7"></a-cylinder>
+      if (currentStep < steps.length) {
+        showStep();
+      } else {
+        finishSimulation();
+      }
+    }
 
-    <a-cylinder position="1.32 1.18 -1.75"
-      radius="0.075" height="0.22" rotation="0 0 90"
-      color="#aebbc0"></a-cylinder>
+    function finishSimulation() {
+      running = false;
+      progressEl.style.width = "100%";
+      screen.style.display = "flex";
+      welcomePanel.style.display = "none";
+      resultPanel.style.display = "block";
+      document.getElementById("results").style.display = "block";
 
-    <a-cylinder position="0.38 1.18 -1.75"
-      radius="0.012" height="0.40" rotation="0 0 90"
-      color="#b8c0c4"></a-cylinder>
+      document.getElementById("finalScore").textContent = score + "/100";
+      document.getElementById("finalStages").textContent =
+        completed.size + "/" + steps.length;
+      document.getElementById("finalMistakes").textContent = mistakes;
 
-    <!-- COLLECTION TRAY -->
-    <a-box id="collection-tray" class="clickable"
-      position="1.0 0.94 -1.45"
-      width="1.1" height="0.07" depth="0.75"
-      color="#aebbc0"></a-box>
+      let message = "Sequence completed. Review your score and try again to improve.";
+      if (score >= 90) message = "Excellent object selection. Continue practising under supervision.";
+      else if (score >= 70) message = "Good effort. Review your incorrect selections and repeat the sequence.";
+      else message = "Keep practising the sequence and review the equipment before trying again.";
 
-    <a-box position="1.0 0.98 -1.45"
-      width="0.95" height="0.025" depth="0.60"
-      color="#e7edef"></a-box>
+      document.getElementById("resultMessage").textContent = message;
+      setMessage("SIMULATION COMPLETE", "You completed all four stages.", "Select Practise Again to repeat.");
+    }
 
-    <!-- BLOOD TUBE -->
-    <a-cylinder id="blood-tube"
-      position="1.35 1.18 -1.45" radius="0.065"
-      height="0.45" color="#f5f7f8"
-      visible="false"></a-cylinder>
+    function startSimulation() {
+      currentStep = 0;
+      score = 0;
+      mistakes = 0;
+      completed = new Set();
+      penaltyLocked = new Set();
+      running = true;
 
-    <a-cylinder id="blood-cap"
-      position="1.35 1.42 -1.45" radius="0.075"
-      height="0.07" color="#c92727"
-      visible="false"></a-cylinder>
+      document.querySelectorAll(".clickable").forEach(el => {
+        el.setAttribute("material", "emissive", "#000000");
+        el.setAttribute("material", "emissiveIntensity", 0);
+      });
 
-    <a-cylinder id="blood"
-      position="1.35 1.02 -1.45" radius="0.055"
-      height="0.18" color="#9e1717"
-      visible="false"></a-cylinder>
+      screen.style.display = "none";
+      welcomePanel.style.display = "block";
+      resultPanel.style.display = "none";
+      document.getElementById("results").style.display = "none";
+      updateScore();
+      showStep();
+    }
 
-    <!-- SIMULATED FLASHBACK -->
-    <a-sphere id="flashback"
-      position="0.10 1.31 -2.02" radius="0.07"
-      color="#b00020" visible="false"></a-sphere>
+    document.getElementById("startBtn").addEventListener("click", startSimulation);
+    document.getElementById("restartBtn").addEventListener("click", startSimulation);
 
-    <a-text id="success"
-      value="PROCEDURE COMPLETE"
-      position="0 1.8 -2.7" width="3"
-      color="#087f5b" align="center"
-      visible="false"></a-text>
+    function installInteractions() {
+      document.querySelectorAll(".clickable").forEach(el => {
+        el.addEventListener("click", () => {
+          handleCorrectSelection(el.id);
+        });
 
-    <!-- CAMERA AND GAZE CURSOR -->
-    <a-camera position="0 1.6 0" look-controls="enabled: true">
-      <a-cursor
-        fuse="true"
-        fuse-timeout="1500"
-        color="#ff3333"
-        geometry="primitive: ring; radiusInner: 0.012; radiusOuter: 0.025"
-        raycaster="objects: .clickable">
-      </a-cursor>
-    </a-camera>
+        el.addEventListener("mouseleave", () => {
+          penaltyLocked.delete(el.id);
+        });
+      });
+    }
 
-  </a-scene>
+    const scene = document.querySelector("a-scene");
+    if (scene.hasLoaded) installInteractions();
+    else scene.addEventListener("loaded", installInteractions);
+
+    showStep();
+  </script>
 </body>
 </html>
