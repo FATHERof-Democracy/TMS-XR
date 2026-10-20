@@ -464,21 +464,22 @@ $("btnRegister").addEventListener("click",function(e){
   e.preventDefault();e.stopPropagation();
   try{
     const name=($("regName").value||"").trim();
-    const user=($("regUser").value||"").trim().toLowerCase().replace(/�s�,"");
-    const pass=$("regPass").value||"";
-    const role=$("regRole").value||"Medical Student";
+    var user=($("regUser").value||"").trim().toLowerCase().split(" ").join("").split("�t").join("");
+    var pass=$("regPass").value||"";
+    var role=$("regRole").value||"Medical Student";
     $("regErr").textContent="";
     if(!name||!user||!pass){$("regErr").textContent="Please fill name, username and password.";return;}
     if(user.length<3){$("regErr").textContent="Username must be at least 3 characters.";return;}
     if(pass.length<4){$("regErr").textContent="Password min 4 characters.";return;}
-    const users=getUsers();
+    var users=getUsers();
     if(users.some(function(u){return u.username===user;})){$("regErr").textContent="That username is already taken. Choose another or use Login.";return;}
-    const nu={
+    var av=selectedAvatar||"�uD83D�uDC69�u200D�u2695�uFE0F";
+    var nu={
       name:name,
       username:user,
       pass:pass,
       role:role,
-      avatar:selectedAvatar||"�������������",
+      avatar:av,
       createdAt:new Date().toISOString(),
       progress:{rouScore:0,rouTotal:0,streakBest:0,streakCorrect:0,telasScore:0,telasTotal:0}
     };
@@ -494,11 +495,11 @@ $("btnRegister").addEventListener("click",function(e){
 $("btnLogin").addEventListener("click",function(e){
   e.preventDefault();e.stopPropagation();
   try{
-    const user=($("loginUser").value||"").trim().toLowerCase().replace(/�s�,"");
-    const pass=$("loginPass").value||"";
+    var user=($("loginUser").value||"").trim().toLowerCase().split(" ").join("").split("�t").join("");
+    var pass=$("loginPass").value||"";
     $("loginErr").textContent="";
     if(!user||!pass){$("loginErr").textContent="Enter username and password.";return;}
-    const u=getUsers().find(function(x){return x.username===user&&x.pass===pass;});
+    var u=getUsers().find(function(x){return x.username===user&&x.pass===pass;});
     if(!u){$("loginErr").textContent="Invalid username or password. Use the Register tab if you are new.";return;}
     setSession(u);
     enterApp();
@@ -616,7 +617,7 @@ let p3dC=null,p3dEx=new Set(),p3dDx=false,p3dNx=false;
 function showP3dSelect(){$("p3dCaseSelect").classList.remove("hidden");$("p3dActive").classList.add("hidden");}
 function loadP3d(k){const c=p3dCases[k];if(!c)return;p3dC=c;p3dEx.clear();p3dDx=false;p3dNx=false;$("p3dCaseSelect").classList.add("hidden");$("p3dActive").classList.remove("hidden");$("p3dTitle").textContent=c.title;$("p3dHistory").textContent=c.brief;$("p3dVitals").innerHTML=c.vitals.map(v=>`<div class="vital ${v.c}"><div class="val">${v.v}</div><div class="lbl">${v.l}</div></div>`).join("");$("p3dLog").innerHTML='<div class="muted">Click the patient</div>';$("p3dActionArea").classList.add("hidden");}
 document.querySelectorAll("[data-pcase]").forEach(b=>b.onclick=()=>loadP3d(b.dataset.pcase));
-document.querySelectorAll(".body-part").forEach(p=>p.addEventListener("click",()=>{if(mode!=="patient3d"||!p3dC)return;const r=p.getAttribute("data-region");const f=p3dC.findings[r]||"No specific finding.";p.setAttribute("material","emissive","#38e6ba");p.setAttribute("material","emissiveIntensity",0.35);if(!p3dEx.has(r)){p3dEx.add(r);if(p3dEx.size===1)$("p3dLog").innerHTML="";const d=document.createElement("div");d.innerHTML=`<span class="region">${r}</span>: ${f}`;$("p3dLog").appendChild(d);}));
+document.querySelectorAll(".body-part").forEach(p=>p.addEventListener("click",()=>{if(mode!=="patient3d"||!p3dC)return;const r=p.getAttribute("data-region");const f=p3dC.findings[r]||"No specific finding.";p.setAttribute("material","emissive","#38e6ba");p.setAttribute("material","emissiveIntensity",0.35);if(!p3dEx.has(r)){p3dEx.add(r);if(p3dEx.size===1)$("p3dLog").innerHTML="";const d=document.createElement("div");d.innerHTML=`<span class="region">${r}</span>: ${f}`;$("p3dLog").appendChild(d);}}));
 $("p3dMoreHx").onclick=()=>{if(!p3dC)return;$("p3dActionArea").classList.remove("hidden");$("p3dActionArea").innerHTML=`<p style="background:#122a3d;padding:9px;border-radius:8px">${p3dC.more}</p>`;};
 $("p3dLabs").onclick=()=>{if(!p3dC)return;$("p3dActionArea").classList.remove("hidden");$("p3dActionArea").innerHTML=`<pre style="background:#122a3d;padding:9px;border-radius:8px;white-space:pre-wrap;font-size:12.5px">${p3dC.labs}</pre>`;};
 $("p3dDx").onclick=()=>{if(!p3dC||p3dDx)return;const a=$("p3dActionArea");a.classList.remove("hidden");a.innerHTML="<h3>Diagnosis?</h3>"ꝷ�.dxO.map(o=>`<button class="opt-btn" data-v="${o}">${o}</button>`).join("");a.querySelectorAll(".opt-btn").forEach(b=>b.onclick=()=>{if(p3dDx)return;p3dDx=true;const ok=b.dataset.v===p3dC.dx;b.classList.add(ok?"correct":"wrong");if(!ok)a.querySelectorAll(".opt-btn").forEach(x=>{if(x.dataset.v===p3dC.dx)x.classList.add("correct");});a.innerHTML�=`<p>${p3dC.ex}</p>`;});};
