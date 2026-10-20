@@ -1,403 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TMS-XR | Master Clinical Platform v3</title>
+<script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial,sans-serif;background:#071522;color:#fff}
+a-scene{position:fixed;inset:0;width:100%;height:100%}
+.panel{position:fixed;z-index:20;left:10px;top:10px;width:min(420px,calc(100vw - 20px));max-height:calc(100vh - 20px);overflow-y:auto;padding:14px;border-radius:14px;background:rgba(7,21,34,.96);border:1px solid #34536b;box-shadow:0 8px 28px #0007}
+.panel.wide{width:min(580px,calc(100vw - 20px))}
+h1{font-size:18px;margin:0 0 4px}h2{font-size:14px;margin:12px 0 5px;color:#9fd4e8}h3{font-size:13px;margin:8px 0 3px;color:#c5e4f0}
+p{font-size:13px;line-height:1.4;margin:5px 0}.muted{color:#b9cedd;font-size:11.5px}
+button{border:1px solid #4d6c82;border-radius:8px;padding:9px 8px;color:#fff;background:#203e55;cursor:pointer;font-weight:600;font-size:12.5px;touch-action:manipulation;text-align:left}
+button.primary{background:#087f8c;border-color:#20a7ae}button.danger{background:#653341}button.success{background:#1a5c45}button:disabled{opacity:.45;cursor:default}
+.button-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
+.status{background:#142d41;border-radius:8px;padding:10px;min-height:44px;margin-bottom:8px;font-size:13px}
+.progress-bg{background:#30475a;height:8px;border-radius:20px;overflow:hidden;margin:8px 0}.progress{height:100%;width:0%;background:#43d6b4;transition:width .2s}
+#authGate,#welcome{position:fixed;z-index:40;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(3,13,23,.95);padding:14px;overflow-y:auto}
+#welcome{z-index:30}.card{width:min(720px,100%);padding:22px;border:1px solid #41637a;border-radius:16px;background:#102538}
+#authGate .card{width:min(440px,100%)}
+input,select{width:100%;padding:11px;border-radius:8px;border:1px solid #4d6c82;background:#0d2233;color:#fff;font-size:14px;margin:6px 0 10px}
+.auth-tabs{display:flex;gap:6px;margin-bottom:12px}
+.auth-tabs button{flex:1;text-align:center;padding:10px}
+.auth-tabs button.active{background:#087f8c;border-color:#20a7ae}
+.mod-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
+.mod-grid button{width:100%;padding:11px;font-size:12.5px;text-align:center}
+.hidden{display:none!important}
+#topRight{position:fixed;z-index:21;top:10px;right:10px;display:flex;gap:6px;align-items:center}
+#topRight button{background:rgba(7,21,34,.94)}
+.case-card{background:#122a3d;border:1px solid #2d4f66;border-radius:10px;padding:10px;margin:7px 0;cursor:pointer}
+.case-card:hover{border-color:#4aa8c4}
+.tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:99px;background:#1e4a5c;margin-right:4px;color:#9fd4e8}
+.quiz-opt,.opt-btn{display:block;width:100%;text-align:left;margin:4px 0}
+.correct{border-color:#2ecc71!important;background:#1a4a35!important}
+.wrong{border-color:#e74c3c!important;background:#4a1f2a!important}
+ul.compact{margin:4px 0 8px 18px;padding:0;font-size:13px}ul.compact li{margin:3px 0}
+.step-num{color:#43d6b4;font-weight:700}
+.streak{font-size:22px;font-weight:700;color:#43d6b4}
+.feedback-box{background:#0f2a1f;border:1px solid #2a6b4a;border-radius:10px;padding:12px;margin:10px 0}
+.feedback-box.bad{background:#2a1218;border-color:#6b2a3a}
+.finding-log{background:#0d2233;border:1px solid #2a4a60;border-radius:8px;padding:8px;max-height:130px;overflow-y:auto;font-size:12.5px}
+.finding-log div{margin:4px 0;padding:3px 0;border-bottom:1px solid #1a3348}
+.finding-log .region{color:#43d6b4;font-weight:600}
+.vitals{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin:6px 0}
+.vital{background:#122a3d;border-radius:7px;padding:6px;text-align:center}
+.vital .val{font-size:15px;font-weight:700;color:#43d6b4}
+.vital .lbl{font-size:10px;color:#9bb8cc}
+.vital.warn .val{color:#f0a030}.vital.danger .val{color:#e74c3c}
+.vis-card{background:linear-gradient(145deg,#1a3548,#122a3d);border:1px solid #2d5a70;border-radius:12px;padding:14px;margin:10px 0}
+.vis-icon{font-size:42px;text-align:center;margin:8px 0;line-height:1}
+.vis-caption{font-size:11px;color:#8ab4c8;text-align:center;font-style:italic}
+.user-bar{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:13px;color:#9fd4e8}
+.avatar{width:42px;height:42px;border-radius:50%;background:#1e4a5c;display:flex;align-items:center;justify-content:center;font-size:22px;border:2px solid #4aa8c4;flex-shrink:0}
+.avatar-pick{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.avatar-pick button{width:48px;height:48px;border-radius:50%;font-size:22px;padding:0;text-align:center;display:flex;align-items:center;justify-content:center}
+.avatar-pick button.selected{border-color:#43d6b4;background:#1a4a35}
+.search-wrap{margin:10px 0}
+.search-wrap input{margin:0}
+.sarcasm{background:#2a1f12;border:1px solid #6b4a2a;border-radius:10px;padding:12px;margin:8px 0;font-size:13.5px;line-height:1.45}
+.sarcasm .label{color:#f0a030;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.telas-header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.telas-avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(145deg,#4a2a1a,#2a1f12);border:2px solid #c47a20;display:flex;align-items:center;justify-content:center;font-size:28px}
+.telas-progress{font-size:12px;color:#b9cedd}
+.auth-err{color:#e74c3c;font-size:12px;min-height:18px}
+@media(max-width:600px){.panel{max-height:50vh;top:6px;left:6px;width:calc(100vw - 12px)}#topRight{top:auto;bottom:8px;right:8px;flex-direction:column}.mod-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<a-scene background="color:#b8d1df" renderer="colorManagement:true;physicallyCorrectLights:true" vr-mode-ui="enabled:true" cursor="rayOrigin:mouse" raycaster="objects:.clickable" loading-screen="enabled:true">
+  <a-entity light="type:ambient;intensity:1.05"></a-entity>
+  <a-entity light="type:directional;intensity:1.15" position="-2 6 3"></a-entity>
+  <a-plane rotation="-90 0 0" width="24" height="24" color="#dce8ed" position="0 0 0"></a-plane>
+
+  <a-entity id="ivScene" visible="false">
+    <a-box position="0 0.72 -2.2" width="3.4" height="0.12" depth="1.4" color="#f4f7f8"></a-box>
+    <a-cylinder position="-0.9 0.35 -2.2" radius="0.06" height="0.7" color="#8195a0"></a-cylinder>
+    <a-cylinder position="0.9 0.35 -2.2" radius="0.06" height="0.7" color="#8195a0"></a-cylinder>
+    <a-cylinder id="ivArm" position="-0.15 1.02 -2.15" rotation="0 0 90" radius="0.16" height="1.75" color="#bd8d70"></a-cylinder>
+    <a-sphere position="0.78 1.02 -2.15" radius="0.17" color="#bd8d70"></a-sphere>
+    <a-box position="1.10 1.02 -2.15" width="0.35" height="0.10" depth="0.25" color="#bd8d70"></a-box>
+    <a-entity position="1.15 1.05 -1.55" rotation="0 0 -12">
+      <a-cylinder id="swab" class="clickable" position="0 0 0" rotation="0 0 90" radius="0.035" height="0.24" color="#f7fff8" material="emissive:#000"></a-cylinder>
+      <a-sphere position="-0.12 0 0" radius="0.055" color="#42b883"></a-sphere>
+    </a-entity>
+    <a-torus id="tourniquet" class="clickable" position="-0.24 1.13 -2.15" rotation="0 90 0" radius="0.18" radius-tubular="0.035" color="#1675c1" material="emissive:#000"></a-torus>
+    <a-cylinder id="vein" class="clickable" position="0.18 1.17 -1.99" rotation="0 0 90" radius="0.018" height="0.62" color="#297fd1" visible="false"></a-cylinder>
+    <a-entity id="cannulaGroup" visible="false" position="0.52 1.19 -1.98" rotation="0 0 90">
+      <a-cylinder id="cannula" class="clickable" position="0 0 0" radius="0.025" height="0.38" color="#f0c84a" material="emissive:#000"></a-cylinder>
+      <a-cylinder position="0 0.20 0" radius="0.04" height="0.08" color="#e8edf0"></a-cylinder>
+      <a-sphere id="flashback" position="0 0.06 0" radius="0.018" color="#b31d34" visible="false"></a-sphere>
+    </a-entity>
+    <a-box position="1.12 0.86 -2.25" width="0.58" height="0.08" depth="0.40" color="#b6c2c9"></a-box>
+    <a-text value="EQUIPMENT TRAY" position="0.86 0.95 -2.02" width="1.0" color="#183247" align="center"></a-text>
+  </a-entity>
+
+  <a-entity id="anatomyScene" visible="false" position="0 0 -0.3">
+    <a-box position="0 0.05 -2.4" width="4.2" height="0.08" depth="2.2" color="#e8f0f4"></a-box>
+    <a-text value="TMS-XR FULL-BODY ANATOMY" position="0 2.55 -2.1" width="3.0" color="#123047" align="center"></a-text>
+    <a-entity id="anatSkin">
+      <a-sphere class="anat-part clickable" id="skinHead" position="0 2.15 -2.2" radius="0.22" color="#d7a080"></a-sphere>
+      <a-cylinder class="anat-part clickable" id="skinNeck" position="0 1.88 -2.2" radius="0.09" height="0.18" color="#d7a080"></a-cylinder>
+      <a-box class="anat-part clickable" id="skinTorso" position="0 1.35 -2.2" width="0.72" height="0.85" depth="0.38" color="#d7a080"></a-box>
+      <a-box class="anat-part clickable" id="skinPelvis" position="0 0.82 -2.2" width="0.58" height="0.28" depth="0.32" color="#d7a080"></a-box>
+      <a-cylinder class="anat-part clickable" id="skinRUA" position="0.52 1.45 -2.2" rotation="0 0 90" radius="0.09" height="0.55" color="#d7a080"></a-cylinder>
+      <a-cylinder class="anat-part clickable" id="skinLUA" position="-0.52 1.45 -2.2" rotation="0 0 90" radius="0.09" height="0.55" color="#d7a080"></a-cylinder>
+      <a-cylinder class="anat-part clickable" id="skinRFA" position="0.95 1.45 -2.2" rotation="0 0 90" radius="0.07" height="0.48" color="#d7a080"></a-cylinder>
+      <a-cylinder class="anat-part clickable" id="skinLFA" position="-0.95 1.45 -2.2" rotation="0 0 90" radius="0.07" height="0.48" color="#d7a080"></a-cylinder>
+      <a-cylinder class="anat-part clickable" id="skinRThigh" position="0.18 0.45 -2.2" radius="0.12" height="0.55" color="#d7a080"></a-cylinder>
+      <a-cylinder class="anat-part clickable" id="skinLThigh" position="-0.18 0.45 -2.2" radius="0.12" height="0.55" color="#d7a080"></a-cylinder>
+      <a-cylinder class="anat-part clickable" id="skinRLeg" position="0.18 0.05 -2.2" radius="0.09" height="0.45" color="#d7a080"></a-cylinder>
+      <a-cylinder class="anat-part clickable" id="skinLLeg" position="-0.18 0.05 -2.2" radius="0.09" height="0.45" color="#d7a080"></a-cylinder>
+    </a-entity>
+    <a-entity id="anatMuscles" visible="false">
+      <a-sphere class="anat-part clickable" id="mPecR" position="0.18 1.55 -2.05" scale="0.22 0.14 0.08" color="#a84d49"></a-sphere>
+      <a-sphere class="anat-part clickable" id="mBicepsR" position="0.52 1.48 -2.08" scale="0.18 0.09 0.08" color="#a84d49"></a-sphere>
+      <a-sphere class="anat-part clickable" id="mQuadR" position="0.18 0.5 -2.08" scale="0.14 0.22 0.09" color="#b45b51"></a-sphere>
+    </a-entity>
+    <a-entity id="anatBones" visible="false">
+      <a-sphere class="anat-part clickable" id="bSkull" position="0 2.15 -2.2" radius="0.19" color="#f0dfb4"></a-sphere>
+      <a-cylinder class="anat-part clickable" id="bSpine" position="0 1.35 -2.28" radius="0.04" height="0.9" color="#f0dfb4"></a-cylinder>
+      <a-cylinder class="anat-part clickable" id="bFemurR" position="0.18 0.45 -2.2" radius="0.045" height="0.5" color="#f0dfb4"></a-cylinder>
+      <a-cylinder class="anat-part clickable" id="bFemurL" position="-0.18 0.45 -2.2" radius="0.045" height="0.5" color="#f0dfb4"></a-cylinder>
+    </a-entity>
+    <a-entity id="anatVessels" visible="false">
+      <a-cylinder class="anat-part clickable" id="vAorta" position="0.05 1.4 -2.12" radius="0.03" height="0.7" color="#bd303b"></a-cylinder>
+      <a-cylinder class="anat-part clickable" id="vFemoralR" position="0.22 0.5 -2.08" radius="0.016" height="0.4" color="#bd303b"></a-cylinder>
+    </a-entity>
+    <a-entity id="anatLabels" visible="false">
+      <a-text value="SKULL" position="0.35 2.3 -2.0" width="0.9" color="#51452f"></a-text>
+      <a-text value="AORTA" position="0.25 1.55 -1.95" width="0.9" color="#7b2929"></a-text>
+    </a-entity>
+  </a-entity>
+
+  <a-entity id="patientScene" visible="false">
+    <a-box position="0 0.35 -2.4" width="2.4" height="0.5" depth="1.1" color="#e8eef2"></a-box>
+    <a-box position="0 0.62 -2.4" width="2.2" height="0.08" depth="0.95" color="#f5f8fa"></a-box>
+    <a-entity id="patientRoot" position="0 0.7 -2.35">
+      <a-sphere class="clickable body-part" id="pHead" position="0 1.05 0" radius="0.18" color="#d7a080" data-region="Head / Face"></a-sphere>
+      <a-cylinder class="clickable body-part" position="0 0.86 0" radius="0.07" height="0.12" color="#d7a080" data-region="Neck"></a-cylinder>
+      <a-box class="clickable body-part" position="0 0.55 0" width="0.48" height="0.42" depth="0.28" color="#d7a080" data-region="Chest"></a-box>
+      <a-box class="clickable body-part" position="0 0.22 0" width="0.44" height="0.28" depth="0.26" color="#d7a080" data-region="Abdomen"></a-box>
+      <a-box class="clickable body-part" position="0 0.02 0" width="0.4" height="0.14" depth="0.24" color="#d7a080" data-region="Pelvis / Groin"></a-box>
+      <a-cylinder class="clickable body-part" position="0.38 0.55 0" rotation="0 0 75" radius="0.065" height="0.55" color="#d7a080" data-region="Right arm"></a-cylinder>
+      <a-cylinder class="clickable body-part" position="-0.38 0.55 0" rotation="0 0 -75" radius="0.065" height="0.55" color="#d7a080" data-region="Left arm"></a-cylinder>
+      <a-cylinder class="clickable body-part" position="0.12 -0.28 0" radius="0.08" height="0.55" color="#d7a080" data-region="Right leg"></a-cylinder>
+      <a-cylinder class="clickable body-part" position="-0.12 -0.28 0" radius="0.08" height="0.55" color="#d7a080" data-region="Left leg"></a-cylinder>
+    </a-entity>
+  </a-entity>
+
+  <a-entity camera look-controls position="0 1.6 1.0">
+    <a-entity cursor="fuse:false" raycaster="objects:.clickable;far:12" position="0 0 -1" geometry="primitive:ring;radiusInner:0.007;radiusOuter:0.012" material="color:#ff5c67;shader:flat"></a-entity>
+  </a-entity>
+</a-scene>
+
+<!-- AUTH -->
+<div id="authGate">
+  <div class="card">
+    <h1>TMS-XR</h1>
+    <p class="muted">Each user registers once, then logs in with their own username &amp; password. Scores and progress are saved per account on this device.</p>
+    <div class="auth-tabs">
+      <button type="button" class="active" id="tabLogin">Login</button>
+      <button type="button" id="tabRegister">Register</button>
+    </div>
+    <div id="loginForm">
+      <label class="muted">Username</label>
+      <input id="loginUser" placeholder="Username" autocomplete="username">
+      <label class="muted">Password</label>
+      <input id="loginPass" type="password" placeholder="Password" autocomplete="current-password">
+      <div class="auth-err" id="loginErr"></div>
+      <button class="primary" id="btnLogin" style="width:100%;text-align:center;padding:12px">Login</button>
+    </div>
+    <div id="registerForm" class="hidden">
+      <label class="muted">Full name</label>
+      <input id="regName" placeholder="e.g. Amina Okello" maxlength="60">
+      <label class="muted">Username</label>
+      <input id="regUser" placeholder="Choose a username" maxlength="30">
+      <label class="muted">Password</label>
+      <input id="regPass" type="password" placeholder="Min 4 characters" maxlength="40">
+      <label class="muted">Role</label>
+      <select id="regRole">
+        <option>Medical Student</option>
+        <option>Intern / House Officer</option>
+        <option>Resident / Registrar</option>
+        <option>Consultant / Specialist</option>
+        <option>Nurse / Clinical Officer</option>
+        <option>Other</option>
+      </select>
+      <label class="muted">Avatar</label>
+      <div class="avatar-pick" id="avatarPick">
+        <button type="button" data-av="�������������" class="selected" title="Female clinician">�������������</button>
+        <button type="button" data-av="�������������" title="Male clinician">�������������</button>
+        <button type="button" data-av="����" title="Female">����</button>
+        <button type="button" data-av="����" title="Male">����</button>
+        <button type="button" data-av="�����������" title="Tech">�����������</button>
+        <button type="button" data-av="����" title="Stethoscope">����</button>
+      </div>
+      <div class="auth-err" id="regErr"></div>
+      <button class="primary" id="btnRegister" style="width:100%;text-align:center;padding:12px">Create account</button>
+    </div>
+    <p class="muted" style="margin-top:12px">Educational prototype only. Accounts are stored in this browser.</p>
+  </div>
+</div>
+
+<!-- WELCOME -->
+<div id="welcome" class="hidden">
+  <div class="card">
+    <div class="user-bar">
+      <div class="avatar" id="userAvatar">�������������</div>
+      <div>
+        <div id="userBarName">User</div>
+        <div class="muted" id="userBarRole">Role</div>
+      </div>
+    </div>
+    <h1>TMS-XR Master Platform</h1>
+    <div class="search-wrap">
+      <input id="modSearch" placeholder="Search modules��� e.g. anatomy, roulette, telas, IV" type="search">
+    </div>
+    <div class="mod-grid" id="modGrid">
+      <button class="primary" data-mod="iv" data-keys="iv cannula cannulation drip">1. IV Cannulation</button>
+      <button class="primary" data-mod="anatomy" data-keys="anatomy body bones muscles vessels">2. Full-Body Anatomy</button>
+      <button class="primary" data-mod="patient3d" data-keys="3d patient examine clinical examination" style="background:#0a5c4a;border-color:#1aaa8a">3. 3D Interactive Patient</button>
+      <button class="primary" data-mod="clinical" data-keys="presentation cases text visual signs">4. Patient Presentations</button>
+      <button class="primary" data-mod="delivery" data-keys="delivery birth resuscitation newborn who">5. Delivery & Resuscitation</button>
+      <button class="primary" data-mod="radiology" data-keys="radiology xray ct mri ultrasound imaging">6. Virtual Radiology</button>
+      <button class="primary" data-mod="surgery" data-keys="surgery surgical operation appendicectomy hernia">7. Surgical Conditions</button>
+      <button class="primary" data-mod="drugs" data-keys="drug dosage pharmacology medicine">8. Drug Physiology</button>
+      <button class="primary" data-mod="roulette" data-keys="roulette case random challenge diagnosis" style="background:#0a6b5c;border-color:#1ab39a">9. Case Roulette</button>
+      <button class="primary" data-mod="streak" data-keys="streak next step rapid fire" style="background:#6b3a0a;border-color:#c47a20">10. Next-Best-Step Streak</button>
+      <button class="primary" data-mod="telas" data-keys="telas doc sarcasm consultant humour humor fun" style="background:#4a1a5c;border-color:#a04ac4;grid-column:1/-1">11. Telas Doc �� Consultant Sarcasm Lounge</button>
+    </div>
+    <p class="muted" id="searchEmpty" class="hidden" style="display:none;margin-top:8px">No modules match your search.</p>
+  </div>
+</div>
+
+<div id="topRight" class="hidden">
+  <button id="homeBtn">Main menu</button>
+  <button id="logoutBtn" class="danger">Logout</button>
+</div>
+
+<!-- MODULE PANELS (abbreviated structure ��� full logic in script) -->
+<section id="ivPanel" class="panel hidden">
+  <h1>IV Cannulation</h1><p class="muted">4-stage scored sequence</p>
+  <div class="status"><strong id="ivStepTitle">STEP 1</strong><p id="ivStepText"></p><p class="muted" id="ivHint"></p></div>
+  <p>Score: <strong id="ivScore">0</strong>/100</p><div class="progress-bg"><div class="progress" id="ivProgress"></div></div>
+  <div class="button-grid"><button id="ivReset">Restart</button><button id="ivBack" class="danger">Exit</button></div>
+</section>
+
+<section id="anatomyControls" class="panel hidden">
+  <h1>Full-Body Anatomy</h1><div class="status" id="anatStatus">Select a layer</div>
+  <div class="button-grid">
+    <button id="showSkin">Skin</button><button id="showMuscles">Muscles</button>
+    <button id="showBones">Bones</button><button id="showVessels">Vessels</button>
+    <button id="toggleLabels">Labels</button><button id="resetAnatomy">Reset</button>
+    <button class="primary" id="startGuide">Guide</button><button id="nextGuide">Next</button>
+    <button class="primary" id="startQuiz">Quiz</button><button id="resetQuiz">Reset quiz</button>
+  </div>
+  <p id="quizScore">Quiz: 0/0</p>
+  <button class="danger" id="anatBack" style="width:100%">Exit</button>
+</section>
+
+<section id="patient3DPanel" class="panel hidden">
+  <h1 id="p3dTitle">3D Interactive Patient</h1>
+  <div id="p3dCaseSelect">
+    <button class="opt-btn primary" data-pcase="app">Surgery �� Acute abdominal pain</button>
+    <button class="opt-btn primary" data-pcase="acs">Medicine �� Chest pain</button>
+    <button class="opt-btn primary" data-pcase="pre">Obs �� Headache in pregnancy</button>
+    <button class="opt-btn primary" data-pcase="asthma">Paeds �� Breathing difficulty</button>
+  </div>
+  <div id="p3dActive" class="hidden">
+    <div class="status" id="p3dInstruction">Click body regions to examine</div>
+    <div id="p3dHistory" style="background:#122a3d;border-radius:8px;padding:9px;font-size:13px"></div>
+    <div class="vitals" id="p3dVitals"></div>
+    <div class="finding-log" id="p3dLog"></div>
+    <div class="button-grid">
+      <button id="p3dMoreHx" class="primary">More history</button><button id="p3dLabs">Investigations</button>
+      <button id="p3dDx" class="primary">Diagnosis</button><button id="p3dNext">Next step</button>
+    </div>
+    <div id="p3dActionArea" class="hidden"></div>
+    <button id="p3dBackCases" style="width:100%;margin-top:8px">Back to cases</button>
+  </div>
+  <button class="danger" id="p3dExit" style="width:100%;margin-top:8px">Exit</button>
+</section>
+
+<section id="clinicalPanel" class="panel wide hidden">
+  <h1>Patient Presentations</h1>
+  <div id="clinicalList"></div>
+  <div id="clinicalDetail" class="hidden">
+    <div class="status" id="clinicalStatus"></div>
+    <div id="clinicalBody"></div>
+    <div class="button-grid"><button id="clinicalQuizBtn" class="primary">Self-check</button><button id="clinicalBackList">Back</button></div>
+    <div id="clinicalQuizArea" class="hidden"></div>
+  </div>
+  <button class="danger" id="clinicalExit" style="width:100%;margin-top:10px">Exit</button>
+</section>
+
+<section id="deliveryPanel" class="panel wide hidden">
+  <h1>Delivery & Newborn Resuscitation</h1>
+  <div class="status" id="delStatus">Choose pathway</div>
+  <div class="button-grid"><button class="primary" id="delNormal">Normal delivery</button><button class="primary" id="delResus">Resuscitation</button></div>
+  <div id="delContent"></div>
+  <div class="button-grid"><button id="delNext" class="primary">Next</button><button id="delReset">Restart</button></div>
+  <button class="danger" id="delExit" style="width:100%;margin-top:8px">Exit</button>
+</section>
+
+<section id="radiologyPanel" class="panel wide hidden">
+  <h1>Virtual Radiology</h1>
+  <div id="radList"></div>
+  <div id="radDetail" class="hidden">
+    <div class="status" id="radStatus"></div><div id="radBody"></div>
+    <div class="button-grid"><button id="radQuizBtn" class="primary">Test</button><button id="radBackList">Back</button></div>
+    <div id="radQuizArea" class="hidden"></div>
+  </div>
+  <button class="danger" id="radExit" style="width:100%;margin-top:10px">Exit</button>
+</section>
+
+<section id="surgeryPanel" class="panel wide hidden">
+  <h1>Surgical Conditions</h1>
+  <div id="surgList"></div>
+  <div id="surgDetail" class="hidden">
+    <div class="status" id="surgStatus"></div><div id="surgBody"></div>
+    <div class="button-grid"><button id="surgQuizBtn" class="primary">Quiz</button><button id="surgBackList">Back</button></div>
+    <div id="surgQuizArea" class="hidden"></div>
+  </div>
+  <button class="danger" id="surgExit" style="width:100%;margin-top:10px">Exit</button>
+</section>
+
+<section id="drugsPanel" class="panel wide hidden">
+  <h1>Drug Physiology & Dosage</h1>
+  <div id="drugList"></div>
+  <div id="drugDetail" class="hidden">
+    <div class="status" id="drugStatus"></div><div id="drugBody"></div>
+    <button id="drugBackList" style="width:100%;margin-top:8px">Back</button>
+  </div>
+  <button class="danger" id="drugExit" style="width:100%;margin-top:10px">Exit</button>
+</section>
+
+<section id="roulettePanel" class="panel wide hidden">
+  <h1>Case Roulette</h1>
+  <div class="status" id="rouStatus">Press New Case</div>
+  <div id="rouCaseBox" class="hidden">
+    <div id="rouVignette" style="background:#122a3d;border-radius:10px;padding:12px;margin:8px 0;font-size:13.5px;line-height:1.5"></div>
+    <h3>Diagnosis</h3><div id="rouDxOpts"></div>
+    <h3>Next best step</h3><div id="rouNextOpts"></div>
+    <div id="rouFeedback" class="hidden"></div>
+  </div>
+  <div class="button-grid"><button class="primary" id="rouNew">New Case</button><button id="rouShared">Today���s Shared</button></div>
+  <p>Score: <strong id="rouScore">0</strong>/<strong id="rouTotal">0</strong> �� <strong id="rouAcc">���</strong></p>
+  <button class="danger" id="rouExit" style="width:100%;margin-top:8px">Exit</button>
+</section>
+
+<section id="streakPanel" class="panel wide hidden">
+  <h1>Next-Best-Step Streak</h1>
+  <div style="text-align:center;margin:8px 0">
+    <div class="streak" id="streakCount">0</div>
+    <div class="muted">Best: <strong id="streakBest">0</strong> �� Correct: <strong id="streakCorrect">0</strong></div>
+  </div>
+  <div class="status" id="streakStatus">Press Start</div>
+  <div id="streakVignette" class="hidden" style="background:#122a3d;border-radius:10px;padding:12px;margin:8px 0;font-size:13.5px"></div>
+  <div id="streakOpts"></div>
+  <div id="streakFeedback" class="hidden"></div>
+  <div class="button-grid"><button class="primary" id="streakStart">Start / Next</button><button id="streakReset">Reset</button></div>
+  <button class="danger" id="streakExit" style="width:100%;margin-top:8px">Exit</button>
+</section>
+
+<section id="telasPanel" class="panel wide hidden">
+  <div class="telas-header">
+    <div class="telas-avatar">����</div>
+    <div>
+      <h1 style="margin:0">Telas Doc</h1>
+      <div class="telas-progress" id="telasProgress">Consultant of questionable bedside manner</div>
+    </div>
+  </div>
+  <p class="muted">20 scenarios �� Educational sarcasm �� Builds clinical standards (and humility)</p>
+  <div class="status" id="telasStatus">Press Start for your first encounter with Consultant Telas.</div>
+  <div id="telasBox" class="hidden">
+    <div class="sarcasm"><div class="label">Junior presents</div><div id="telasJunior"></div></div>
+    <div class="sarcasm"><div class="label">Consultant Telas replies</div><div id="telasConsult"></div></div>
+    <h3 id="telasQLabel">Telas tests you</h3>
+    <div id="telasOpts"></div>
+    <div id="telasFeedback" class="hidden"></div>
+  </div>
+  <div class="button-grid">
+    <button class="primary" id="telasStart">Start / Next</button>
+    <button id="telasScoreBtn">Score <span id="telasScore">0</span>/<span id="telasTotal">0</span></button>
+  </div>
+  <button class="danger" id="telasExit" style="width:100%;margin-top:8px">Leave the lounge</button>
+</section>
 
 <script>
-const steps = [
-  {
-    title: "STEP 1 OF 4 · PREPARATION",
-    text: "Move the antiseptic swab from the tray onto the correct forearm area.",
-    hint: "Drag the white swab onto the upper surface of the forearm.",
-    target: "swab",
-    points: 20
-  },
-  {
-    title: "STEP 2 OF 4 · SITE PREPARATION",
-    text: "Select the tourniquet to continue the sequence.",
-    hint: "Aim at the blue band on the arm.",
-    target: "tourniquet",
-    points: 20
-  },
-  {
-    title: "STEP 3 OF 4 · IDENTIFICATION",
-    text: "Identify the visible superficial vein.",
-    hint: "Aim at the blue vein on the forearm.",
-    target: "vein",
-    points: 20
-  },
-  {
-    title: "STEP 4 OF 4 · CANNULA",
-    text: "Select the cannula to complete this simulation.",
-    hint: "Aim at the cannula near the wrist.",
-    target: "cannula",
-    points: 40
-  }
+(()=>{
+"use strict";
+const $=id=>document.getElementById(id);
+let mode="auth", currentUser=null, selectedAvatar="�������������";
+
+// ---- Auth (localStorage) ----
+function getUsers(){try{return JSON.parse(localStorage.getItem("tmsxr_users")||"[]");}catch(e){return[];}}
+function saveUsers(u){localStorage.setItem("tmsxr_users",JSON.stringify(u));}
+function setSession(u){localStorage.setItem("tmsxr_session",JSON.stringify({username:u.username}));currentUser=u;}
+function clearSession(){localStorage.removeItem("tmsxr_session");currentUser=null;}
+function loadSession(){
+  try{
+    const s=JSON.parse(localStorage.getItem("tmsxr_session")||"null");
+    if(!s)return null;
+    const u=getUsers().find(x=>x.username===s.username);
+    return u||null;
+  }catch(e){return null;}
+}
+/** Save fields onto the logged-in user's account (per-user progress). */
+function updateUserProgress(patch){
+  if(!currentUser)return;
+  const users=getUsers();
+  const i=users.findIndex(x=>x.username===currentUser.username);
+  if(i<0)return;
+  const prev=users[i].progress||{};
+  users[i]={...users[i],...patch,progress:{...prev,...(patch.progress||{})}};
+  currentUser=users[i];
+  saveUsers(users);
+}
+function getProgress(){return(currentUser&&currentUser.progress)||{};}
+
+$("tabLogin").onclick=()=>{$("tabLogin").classList.add("active");$("tabRegister").classList.remove("active");$("loginForm").classList.remove("hidden");$("registerForm").classList.add("hidden");$("loginErr").textContent="";};
+$("tabRegister").onclick=()=>{$("tabRegister").classList.add("active");$("tabLogin").classList.remove("active");$("registerForm").classList.remove("hidden");$("loginForm").classList.add("hidden");$("regErr").textContent="";};
+
+document.querySelectorAll("#avatarPick button").forEach(b=>{
+  b.onclick=()=>{document.querySelectorAll("#avatarPick button").forEach(x=>x.classList.remove("selected"));b.classList.add("selected");selectedAvatar=b.dataset.av;};
+});
+
+$("btnRegister").onclick=()=>{
+  const name=$("regName").value.trim(), user=$("regUser").value.trim().toLowerCase().replace(/�s�,""), pass=$("regPass").value, role=$("regRole").value;
+  $("regErr").textContent="";
+  if(!name||!user||!pass){$("regErr").textContent="Please fill name, username and password.";return;}
+  if(user.length<3){$("regErr").textContent="Username must be at least 3 characters.";return;}
+  if(pass.length<4){$("regErr").textContent="Password min 4 characters.";return;}
+  const users=getUsers();
+  if(users.some(u=>u.username===user)){$("regErr").textContent="That username is already registered. Login or choose another.";return;}
+  const nu={name,username:user,pass,role,avatar:selectedAvatar,createdAt:new Date().toISOString(),progress:{rouScore:0,rouTotal:0,streakBest:0,streakCorrect:0,telasScore:0,telasTotal:0}};
+  users.push(nu);saveUsers(users);setSession(nu);enterApp();
+};
+
+$("btnLogin").onclick=()=>{
+  const user=$("loginUser").value.trim().toLowerCase().replace(/�s�,""), pass=$("loginPass").value;
+  $("loginErr").textContent="";
+  if(!user||!pass){$("loginErr").textContent="Enter username and password.";return;}
+  const u=getUsers().find(x=>x.username===user&&x.pass===pass);
+  if(!u){$("loginErr").textContent="Invalid username or password. Register if you are new.";return;}
+  setSession(u);enterApp();
+};
+
+function enterApp(){
+  $("authGate").classList.add("hidden");
+  $("welcome").classList.remove("hidden");
+  $("topRight").classList.remove("hidden");
+  $("userAvatar").textContent=currentUser.avatar||"�������������";
+  $("userBarName").textContent=currentUser.name;
+  const p=getProgress();
+  $("userBarRole").textContent=currentUser.role�" �� @"狪答뇪�.username�(p.streakBest?` �� Best streak ${p.streakBest}`:"");
+  loadRouStats();loadStreakStats();loadTelasStats();
+  mode="menu";
+}
+
+$("logoutBtn").onclick=()=>{clearSession();location.reload();};
+
+const existing=loadSession();
+if(existing){currentUser=existing;enterApp();}
+
+// ---- Search ----
+$("modSearch").addEventListener("input",()=>{
+  const q=$("modSearch").value.trim().toLowerCase();
+  let any=false;
+  document.querySelectorAll("#modGrid button").forEach(b=>{
+    const keys=(b.dataset.keys||"")�" "�.textContent;
+    const show=!q||keys.toLowerCase().includes(q);
+    b.style.display=show?"":"none";
+    if(show)any=true;
+  });
+  $("searchEmpty").style.display=any?"none":"block";
+});
+
+// ---- Navigation ----
+function hideAll(){
+  ["ivPanel","anatomyControls","patient3DPanel","clinicalPanel","deliveryPanel","radiologyPanel","surgeryPanel","drugsPanel","roulettePanel","streakPanel","telasPanel"].forEach(id=>$(id).classList.add("hidden"));
+  $("ivScene").setAttribute("visible",false);$("anatomyScene").setAttribute("visible",false);$("patientScene").setAttribute("visible",false);
+}
+function setMode(m){
+  mode=m;$("welcome").classList.toggle("hidden",m!=="menu");hideAll();
+  if(m==="iv"){$("ivPanel").classList.remove("hidden");$("ivScene").setAttribute("visible",true);resetIV();}
+  else if(m==="anatomy"){$("anatomyControls").classList.remove("hidden");$("anatomyScene").setAttribute("visible",true);resetAnatomy();}
+  else if(m==="patient3d"){$("patient3DPanel").classList.remove("hidden");$("patientScene").setAttribute("visible",true);showP3dSelect();}
+  else if(m==="clinical"){$("clinicalPanel").classList.remove("hidden");showClinicalList();}
+  else if(m==="delivery"){$("deliveryPanel").classList.remove("hidden");resetDelivery();}
+  else if(m==="radiology"){$("radiologyPanel").classList.remove("hidden");showRadList();}
+  else if(m==="surgery"){$("surgeryPanel").classList.remove("hidden");showSurgList();}
+  else if(m==="drugs"){$("drugsPanel").classList.remove("hidden");showDrugList();}
+  else if(m==="roulette"){$("roulettePanel").classList.remove("hidden");loadRouStats();}
+  else if(m==="streak"){$("streakPanel").classList.remove("hidden");loadStreakStats();}
+  else if(m==="telas"){$("telasPanel").classList.remove("hidden");loadTelasStats();$("telasStatus").textContent="Press Start. Telas is already judging you.";};
+}
+document.querySelectorAll("[data-mod]").forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mod)));
+$("homeBtn").onclick=()=>setMode("menu");
+
+// ---- IV ----
+const ivSteps=[{id:"swab",title:"STEP 1 �� PREPARATION",text:"Select the antiseptic swab.",hint:"White/green swab",points:20},{id:"tourniquet",title:"STEP 2 �� TOURNIQUET",text:"Select the tourniquet.",hint:"Blue band",points:20},{id:"vein",title:"STEP 3 �� VEIN",text:"Identify the vein.",hint:"Blue vein",points:20},{id:"cannula",title:"STEP 4 �� CANNULA",text:"Select the cannula.",hint:"Yellow cannula",points:40}];
+let ivStep=0,ivScore=0,ivMistakes=0,ivLocked=false,ivTimer=null;const ivDone=new Set(),ivPen=new Set();
+function showIVStep(){$("ivScore").textContent=ivScore;$("ivProgress").style.width=(ivStep/4*100)�"%";if(ivStep>=4){$("ivStepTitle").textContent="COMPLETE";$("ivStepText").textContent=`Score ${ivScore}/100 �� Mistakes ${ivMistakes}`;$("ivHint").textContent="";$("ivProgress").style.width="100%";return;}const s=ivSteps[ivStep];$("ivStepTitle").textContent=s.title;$("ivStepText").textContent=s.text;$("ivHint").textContent=s.hint;}
+function resetIV(){clearTimeout(ivTimer);ivStep=0;ivScore=0;ivMistakes=0;ivLocked=false;ivDone.clear();ivPen.clear();$("vein").setAttribute("visible",false);$("cannulaGroup").setAttribute("visible",false);$("flashback").setAttribute("visible",false);document.querySelectorAll("#ivScene .clickable").forEach(e=>{e.setAttribute("material","emissive","#000");e.setAttribute("material","emissiveIntensity",0);});showIVStep();}
+$("ivReset").onclick=resetIV;$("ivBack").onclick=()=>setMode("menu");
+function ivSelect(id){if(mode!=="iv"||ivLocked||ivStep>=4)return;const exp=ivSteps[ivStep];if(id!==exp.id){if(ivPen.has(id))return;ivPen.add(id);ivMistakes�;ivScore=Math.max(0,ivScore-5);$("ivStepTitle").textContent="TRY AGAIN ���5";$("ivScore").textContent=ivScore;ivLocked=true;ivTimer=setTimeout(()=>{ivLocked=false;showIVStep();},900);return;}if(ivDone.has(id))return;ivDone.add(id);ivScore=Math.min(100,ivScore笚�.points);ivStep�;const t=$(id);if(t){t.setAttribute("material","emissive","#38e6ba");t.setAttribute("material","emissiveIntensity",0.35);}if(id==="tourniquet")$("vein").setAttribute("visible",true);if(id==="vein")$("cannulaGroup").setAttribute("visible",true);if(id==="cannula")$("flashback").setAttribute("visible",true);ivLocked=true;showIVStep();ivTimer=setTimeout(()=>{ivLocked=false;showIVStep();},600);}
+["swab","tourniquet","vein","cannula"].forEach(id=>$(id).addEventListener("click",()=>ivSelect(id)));
+
+// ---- Anatomy ----
+const layers={skin:["anatSkin"],muscles:["anatMuscles"],bones:["anatBones"],vessels:["anatVessels"]};
+function vis(id,y){const e=$(id);if(e)e.setAttribute("visible",y);}
+function anatomyLayer(l){Object.keys(layers).forEach(k=>layers[k].forEach(id=>vis(id,k===l)));$("anatStatus").textContent=l�" layer.";}
+function resetAnatomy(){anatomyLayer("skin");vis("anatLabels",false);$("anatStatus").textContent="Start with skin.";gIdx=-1;qActive=false;qIdx=0;qScore=0;$("quizScore").textContent="Quiz: 0/0";}
+$("showSkin").onclick=()=>anatomyLayer("skin");$("showMuscles").onclick=()=>anatomyLayer("muscles");$("showBones").onclick=()=>anatomyLayer("bones");$("showVessels").onclick=()=>anatomyLayer("vessels");
+$("toggleLabels").onclick=()=>{const n=!$("anatLabels").getAttribute("visible");vis("anatLabels",n);};$("resetAnatomy").onclick=resetAnatomy;$("anatBack").onclick=()=>setMode("menu");
+const guide=[["skin","Skin"],["muscles","Muscles"],["bones","Bones"],["vessels","Vessels"]];let gIdx=-1;
+function nextGuide(){gIdx�;if(gIdx>=guide.length){gIdx=-1;$("anatStatus").textContent="Guide complete";return;}anatomyLayer(guide[gIdx][0]);$("anatStatus").textContent=guide[gIdx][1];}
+$("startGuide").onclick=()=>{gIdx=-1;nextGuide();};$("nextGuide").onclick=nextGuide;
+const qQ=[{id:"bSkull",layer:"bones",name:"skull"},{id:"bFemurR",layer:"bones",name:"right femur"},{id:"vAorta",layer:"vessels",name:"aorta"},{id:"mBicepsR",layer:"muscles",name:"right biceps"}];
+let qOrder=[],qIdx=0,qScore=0,qActive=false,qAns=false;
+$("startQuiz").onclick=()=>{qOrder=qQ.slice().sort(()=>Math.random()-0.5);qIdx=0;qScore=0;qActive=true;nextQ();};
+$("resetQuiz").onclick=()=>{qActive=false;$("quizScore").textContent="Quiz: 0/0";};
+function nextQ(){if(qIdx>=qOrder.length){qActive=false;$("anatStatus").textContent=`Done ${qScore}/${qOrder.length}`;return;}qAns=false;const q=qOrder[qIdx];anatomyLayer(q.layer);$("anatStatus").textContent="Select: "�.name;$("quizScore").textContent=`Quiz: ${qScore}/${qIdx}`;}
+document.querySelectorAll(".anat-part").forEach(p=>p.addEventListener("click",()=>{if(mode!=="anatomy"||!qActive||qAns)return;qAns=true;if(p.id===qOrder[qIdx].id)qScore�;qIdx�;$("quizScore").textContent=`Quiz: ${qScore}/${qIdx}`;setTimeout(()=>{if(qActive)nextQ();},1000);}));
+
+// ---- 3D Patient ----
+const p3dCases={
+app:{title:"Acute abdominal pain",brief:"22F. Periumbilical pain ��� RIF 18h. Anorexia. LMP 3w ago.",vitals:[{l:"HR",v:"98",c:"warn"},{l:"BP",v:"118/72",c:""},{l:"Temp",v:"37.9",c:"warn"},{l:"SpO���",v:"98%",c:""},{l:"RR",v:"18",c:""},{l:"Pain",v:"7/10",c:"warn"}],
+findings:{"Head / Face":"Uncomfortable, mild pallor.","Neck":"No nodes.","Chest":"Clear.","Abdomen":"RIF tenderness � rebound � guarding.","Pelvis / Groin":"No hernia.","Right arm":"Warm.","Left arm":"Warm.","Right leg":"Normal.","Left leg":"Normal."},
+more:"No urinary sx. Never pregnant.",labs:"��-hCG neg �� WBC 14.2 �� CRP 48",dx:"Acute appendicitis",dxO:["Acute appendicitis","Ectopic","Pyelo","Torsion","GE"],next:"Urgent surgical review, NBM, IV fluids, Abx",nextO:["Urgent surgical review, NBM, IV fluids, Abx","Discharge oral Abx","Immediate laparotomy","Steroids","CT head"],ex:"Migratory pain � RIF peritonism � neg ��-hCG."},
+acs:{title:"Chest pain",brief:"58M. Crushing central pain ��� arm/jaw 40 min. Sweaty. Smoker, HTN.",vitals:[{l:"HR",v:"92",c:"warn"},{l:"BP",v:"148/88",c:"warn"},{l:"Temp",v:"36.8",c:""},{l:"SpO���",v:"96%",c:""},{l:"RR",v:"20",c:"warn"},{l:"Pain",v:"8/10",c:"danger"}],
+findings:{"Head / Face":"Diaphoretic.","Neck":"JVP not raised.","Chest":"Soft S4.","Abdomen":"Soft.","Pelvis / Groin":"Femoral �.","Right arm":"Equal BP.","Left arm":"Pulse �.","Right leg":"Warm.","Left leg":"Warm."},
+more:"Not relieved by rest. Father MI 54.",labs:"ECG ST��� V2���V4",dx:"STEMI (anterior)",dxO:["STEMI (anterior)","Unstable angina","Dissection","Pericarditis","PE"],next:"Activate primary PCI � DAPT",nextO:["Activate primary PCI � DAPT","Outpatient stress","CT aorta first","Discharge GTN","PPI only"],ex:"Classic � ST elevation = STEMI."},
+pre:{title:"Headache in pregnancy",brief:"29F 31/40. New headache, visual sparkles, epigastric discomfort.",vitals:[{l:"HR",v:"88",c:""},{l:"BP",v:"162/104",c:"danger"},{l:"Temp",v:"36.7",c:""},{l:"SpO���",v:"98%",c:""},{l:"RR",v:"16",c:""},{l:"Pain",v:"5/10",c:""}],
+findings:{"Head / Face":"Mild facial oedema.","Neck":"No meningism.","Chest":"Clear.","Abdomen":"Mild RUQ tenderness.","Pelvis / Groin":"No PV bleed.","Right arm":"Brisk reflexes, clonus.","Left arm":"Brisk.","Right leg":"Oedema.","Left leg":"Oedema."},
+more:"Reduced fetal movements.",labs:"Protein 2� �� Plt 142 �� ALT 68",dx:"Pre-eclampsia (concerning)",dxO:["Pre-eclampsia (concerning)","Migraine","Normal","HELLP full","UTI"],next:"Urgent obstetric assessment, BP control, CTG",nextO:["Urgent obstetric assessment, BP control, CTG","Reassure 1wk","Discharge","Immediate CS","Warfarin"],ex:"HTN � protein � symptoms = PET."},
+asthma:{title:"Breathing difficulty",brief:"6M. Wheeze 6h post viral. Known asthma. Frequent salbutamol.",vitals:[{l:"HR",v:"128",c:"warn"},{l:"BP",v:"98/62",c:""},{l:"Temp",v:"37.4",c:""},{l:"SpO���",v:"90%",c:"danger"},{l:"RR",v:"36",c:"danger"},{l:"Pain",v:"���",c:""}],
+findings:{"Head / Face":"Tired, short sentences, flaring.","Neck":"Tracheal tug.","Chest":"Wheeze, recession.","Abdomen":"Using abdo muscles.","Pelvis / Groin":"Normal.","Right arm":"Warm.","Left arm":"Warm.","Right leg":"Normal.","Left leg":"Normal."},
+more:"No choking episode.",labs:"SpO��� 90%",dx:"Acute severe asthma",dxO:["Acute severe asthma","Foreign body","Pneumonia","Croup","Anaphylaxis"],next:"O���, salbutamol �� ipratropium, steroids, senior",nextO:["O���, salbutamol �� ipratropium, steroids, senior","Discharge","Abx only","Immediate intubation","Physio only"],ex:"Hypoxia � recession = severe."}
+};
+let p3dC=null,p3dEx=new Set(),p3dDx=false,p3dNx=false;
+function showP3dSelect(){$("p3dCaseSelect").classList.remove("hidden");$("p3dActive").classList.add("hidden");}
+function loadP3d(k){const c=p3dCases[k];if(!c)return;p3dC=c;p3dEx.clear();p3dDx=false;p3dNx=false;$("p3dCaseSelect").classList.add("hidden");$("p3dActive").classList.remove("hidden");$("p3dTitle").textContent=c.title;$("p3dHistory").textContent=c.brief;$("p3dVitals").innerHTML=c.vitals.map(v=>`<div class="vital ${v.c}"><div class="val">${v.v}</div><div class="lbl">${v.l}</div></div>`).join("");$("p3dLog").innerHTML='<div class="muted">Click the patient</div>';$("p3dActionArea").classList.add("hidden");}
+document.querySelectorAll("[data-pcase]").forEach(b=>b.onclick=()=>loadP3d(b.dataset.pcase));
+document.querySelectorAll(".body-part").forEach(p=>p.addEventListener("click",()=>{if(mode!=="patient3d"||!p3dC)return;const r=p.getAttribute("data-region");const f=p3dC.findings[r]||"No specific finding.";p.setAttribute("material","emissive","#38e6ba");p.setAttribute("material","emissiveIntensity",0.35);if(!p3dEx.has(r)){p3dEx.add(r);if(p3dEx.size===1)$("p3dLog").innerHTML="";const d=document.createElement("div");d.innerHTML=`<span class="region">${r}</span>: ${f}`;$("p3dLog").appendChild(d);}));
+$("p3dMoreHx").onclick=()=>{if(!p3dC)return;$("p3dActionArea").classList.remove("hidden");$("p3dActionArea").innerHTML=`<p style="background:#122a3d;padding:9px;border-radius:8px">${p3dC.more}</p>`;};
+$("p3dLabs").onclick=()=>{if(!p3dC)return;$("p3dActionArea").classList.remove("hidden");$("p3dActionArea").innerHTML=`<pre style="background:#122a3d;padding:9px;border-radius:8px;white-space:pre-wrap;font-size:12.5px">${p3dC.labs}</pre>`;};
+$("p3dDx").onclick=()=>{if(!p3dC||p3dDx)return;const a=$("p3dActionArea");a.classList.remove("hidden");a.innerHTML="<h3>Diagnosis?</h3>"ꝷ�.dxO.map(o=>`<button class="opt-btn" data-v="${o}">${o}</button>`).join("");a.querySelectorAll(".opt-btn").forEach(b=>b.onclick=()=>{if(p3dDx)return;p3dDx=true;const ok=b.dataset.v===p3dC.dx;b.classList.add(ok?"correct":"wrong");if(!ok)a.querySelectorAll(".opt-btn").forEach(x=>{if(x.dataset.v===p3dC.dx)x.classList.add("correct");});a.innerHTML�=`<p>${p3dC.ex}</p>`;});};
+$("p3dNext").onclick=()=>{if(!p3dC||p3dNx)return;const a=$("p3dActionArea");a.classList.remove("hidden");a.innerHTML="<h3>Next step?</h3>"ꝷ�.nextO.map(o=>`<button class="opt-btn" data-v="${o}">${o}</button>`).join("");a.querySelectorAll(".opt-btn").forEach(b=>b.onclick=()=>{if(p3dNx)return;p3dNx=true;const ok=b.dataset.v===p3dC.next;b.classList.add(ok?"correct":"wrong");if(!ok)a.querySelectorAll(".opt-btn").forEach(x=>{if(x.dataset.v===p3dC.next)x.classList.add("correct");});});};
+$("p3dBackCases").onclick=showP3dSelect;$("p3dExit").onclick=()=>setMode("menu");
+
+// Clinical, Delivery, Rad, Surg, Drugs, Roulette, Streak ��� compact re-use from prior design
+const clinicalCases=[{id:"app",spec:"Surgery",title:"Acute appendicitis",icon:"����",classic:"Migratory pain ��� RIF, anorexia, fever.",general:"Atypical extremes of age.",signs:"Rebound, Rovsing.",workup:"FBC, CRP, ��-hCG, US/CT.",quiz:[{q:"Migration?",opts:["RUQ","Periumbilical to RIF","LIF","Epigastrium"],a:1}]},{id:"mi",spec:"Medicine",title:"STEMI",icon:"������",classic:"Crushing pain, diaphoresis, ST elevation.",general:"Atypical in women/elderly.",signs:"S4 possible.",workup:"ECG <10 min.",quiz:[{q:"First test?",opts:["Troponin only","12-lead ECG","CT","Echo"],a:1}]},{id:"pre",spec:"Obs",title:"Pre-eclampsia",icon:"����",classic:"���20w HTN � protein/symptoms.",general:"Postpartum possible.",signs:"Hyperreflexia.",workup:"BP, urine, FBC, LFT, CTG.",quiz:[{q:"Min gestation?",opts:["12w","20w","28w","Any"],a:1}]},{id:"asth",spec:"Paeds",title:"Acute asthma",icon:"�������",classic:"Wheeze, increased work of breathing.",general:"Silent chest dangerous.",signs:"Recession.",workup:"Clinical � SpO2.",quiz:[{q:"Danger?",opts:["Loud wheeze","Silent chest","Mild tachypnoea","Normal SpO2"],a:1}]},{id:"chole",spec:"Surgery",title:"Cholecystitis",icon:"����",classic:"RUQ pain, fever, Murphy���s.",general:"Acalculous in ICU.",signs:"Murphy���s.",workup:"US first.",quiz:[{q:"First imaging?",opts:["CT","Ultrasound","MRI","XR"],a:1}]},{id:"sbo",spec:"Surgery",title:"SBO",icon:"����",classic:"Colicky pain, distension, vomiting, absolute constipation.",general:"Check hernias.",signs:"Tympanic.",workup:"NBM, IV, NG, imaging.",quiz:[{q:"Must check?",opts:["Epigastrium","Hernial orifices","PR only","Chest"],a:1}]}];
+function showClinicalList(){$("clinicalList").classList.remove("hidden");$("clinicalDetail").classList.add("hidden");$("clinicalList").innerHTML=clinicalCases.map(c=>`<div class="case-card" data-id="${c.id}"><span class="tag">${c.spec}</span><strong>${c.icon} ${c.title}</strong></div>`).join("");$("clinicalList").querySelectorAll(".case-card").forEach(el=>el.onclick=()=>openClin(el.dataset.id));}
+function openClin(id){const c=clinicalCases.find(x=>x.id===id);$("clinicalList").classList.add("hidden");$("clinicalDetail").classList.remove("hidden");$("clinicalQuizArea").classList.add("hidden");$("clinicalStatus").innerHTML=`<strong>${c.icon} ${c.title}</strong>`;$("clinicalBody").innerHTML=`<div class="vis-card"><div class="vis-icon">${c.icon}</div></div><h3>Classic</h3><p>${c.classic}</p><h3>Variants</h3><p>${c.general}</p><h3>Signs</h3><p>${c.signs}</p><h3>Work-up</h3><p>${c.workup}</p>`;$("clinicalQuizBtn").onclick=()=>{const a=$("clinicalQuizArea");a.classList.remove("hidden");a.innerHTML=c.quiz.map((item,i)=>`<p><strong>Q.</strong> ${item.q}</p>${item.opts.map((o,j)=>`<button class="quiz-opt" data-a="${j}">${o}</button>`).join("")}`);a.querySelectorAll(".quiz-opt").forEach(btn=>btn.onclick=()=>{const ai=滙�.dataset.a;btn.classList.add(ai===c.quiz[0].a?"correct":"wrong");if(ai!==c.quiz[0].a)a.querySelectorAll(".quiz-opt")[c.quiz[0].a].classList.add("correct");});};}
+$("clinicalBackList").onclick=showClinicalList;$("clinicalExit").onclick=()=>setMode("menu");
+
+const normalD=[{t:"Prep",b:"History, clean area, resus kit."},{t:"Birth",b:"Support perineum, deliver, note time."},{t:"Golden Minute",b:"Dry, warm, assess. Clear only if needed."},{t:"Cord",b:"Delayed clamp ���60s if vigorous."},{t:"Third stage",b:"Uterotonic, monitor bleeding."},{t:"Post",b:"Skin-to-skin, monitor."}];
+const resusD=[{t:"Help",b:"Warmer, bag-mask, SpO2 ready."},{t:"Initial",b:"Warm, dry, stimulate, airway."},{t:"PPV",b:"If apnoeic/HR<100: PPV."},{t:"Reassess",b:"Optimise ventilation."},{t:"Compressions",b:"HR<60: 3:1."},{t:"Ongoing",b:"Thermal care, transfer, debrief."}];
+let delS=[],delI=0;
+function resetDelivery(){delS=[];delI=0;$("delStatus").textContent="Choose pathway";$("delContent").innerHTML="";}
+function showDel(){if(!delS.length)return;if(delI>=delS.length){$("delStatus").textContent="Complete";return;}const s=delS[delI];$("delStatus").innerHTML=`Step ${delI�} ��� ${s.t}`;$("delContent").innerHTML=`<p>${s.b}</p>`;}
+$("delNormal").onclick=()=>{delS=normalD;delI=0;showDel();};$("delResus").onclick=()=>{delS=resusD;delI=0;showDel();};
+$("delNext").onclick=()=>{if(delS.length){delI�;showDel();}};$("delReset").onclick=resetDelivery;$("delExit").onclick=()=>setMode("menu");
+
+const radCases=[{id:"ptx",m:"CXR",t:"Tension PTX",f:"Shift away, no markings.",c:"Dyspnoea, tracheal deviation.",tip:"Decompress if unstable.",q:{q:"Feature?",o:["Shift away","Shift toward","Normal","Bilateral"],a:0}},{id:"pe",m:"CTPA",t:"PE",f:"Filling defect.",c:"Dyspnoea, VTE risk.",tip:"Probability scores.",q:{q:"Imaging?",o:["CXR","CTPA","US","XR"],a:1}},{id:"gall",m:"US",t:"Gallstones",f:"Shadowing foci.",c:"RUQ, Murphy���s.",tip:"US first.",q:{q:"Feature?",o:["Shadowing","No shadow","Hypervascular","Anterior only"],a:0}},{id:"ich",m:"CT",t:"ICH",f:"Hyperdense blood.",c:"Thunderclap / focal.",tip:"Non-contrast first.",q:{q:"First?",o:["MRI","Non-contrast CT","Contrast","XR"],a:1}}];
+function showRadList(){$("radList").classList.remove("hidden");$("radDetail").classList.add("hidden");$("radList").innerHTML=radCases.map(c=>`<div class="case-card" data-id="${c.id}"><span class="tag">${c.m}</span><strong>${c.t}</strong></div>`).join("");$("radList").querySelectorAll(".case-card").forEach(el=>el.onclick=()=>openRad(el.dataset.id));}
+function openRad(id){const c=radCases.find(x=>x.id===id);$("radList").classList.add("hidden");$("radDetail").classList.remove("hidden");$("radQuizArea").classList.add("hidden");$("radStatus").innerHTML=`<strong>${c.t}</strong>`;$("radBody").innerHTML=`<p>${c.f}</p><p>${c.c}</p><p class="muted">${c.tip}</p>`;$("radQuizBtn").onclick=()=>{const a=$("radQuizArea");a.classList.remove("hidden");a.innerHTML=`<p>${c.q.q}</p>`�.q.o.map((o,j)=>`<button class="quiz-opt" data-a="${j}">${o}</button>`).join("");a.querySelectorAll(".quiz-opt").forEach(b=>b.onclick=()=>{const ai=�.dataset.a;b.classList.add(ai===c.q.a?"correct":"wrong");});};}
+$("radBackList").onclick=showRadList;$("radExit").onclick=()=>setMode("menu");
+
+const surgCases=[{id:"a",t:"Appendicectomy",p:"RIF pain.",s:["Consent, Abx","Lap preferred"],d:"Convert if needed.",q:{q:"Approach?",o:["Always open","Lap when available","Never","Abx only"],a:1}},{id:"h",t:"Inguinal hernia",p:"Groin swelling.",s:["Mesh repair","Emergency if strangulated"],d:"Painful irreducible = urgent.",q:{q:"Painful irreducible?",o:["Watch","Urgent surgery assessment","Home","CT later"],a:1}},{id:"c",t:"Lap cholecystectomy",p:"Symptomatic stones.",s:["Critical view of safety"],d:"Bailout if unclear.",q:{q:"Safety?",o:["Critical view","Clip all","Never convert","Ignore"],a:0}}];
+function showSurgList(){$("surgList").classList.remove("hidden");$("surgDetail").classList.add("hidden");$("surgList").innerHTML=surgCases.map(c=>`<div class="case-card" data-id="${c.id}"><strong>${c.t}</strong></div>`).join("");$("surgList").querySelectorAll(".case-card").forEach(el=>el.onclick=()=>openSurg(el.dataset.id));}
+function openSurg(id){const c=surgCases.find(x=>x.id===id);$("surgList").classList.add("hidden");$("surgDetail").classList.remove("hidden");$("surgQuizArea").classList.add("hidden");$("surgStatus").innerHTML=`<strong>${c.t}</strong>`;$("surgBody").innerHTML=`<p>${c.p}</p><ul class="compact">${c.s.map(x=>`<li>${x}</li>`).join("")}</ul><p>${c.d}</p>`;$("surgQuizBtn").onclick=()=>{const a=$("surgQuizArea");a.classList.remove("hidden");a.innerHTML=`<p>${c.q.q}</p>`�.q.o.map((o,j)=>`<button class="quiz-opt" data-a="${j}">${o}</button>`).join("");a.querySelectorAll(".quiz-opt").forEach(b=>b.onclick=()=>{b.classList.add(�.dataset.a===c.q.a?"correct":"wrong");});};}
+$("surgBackList").onclick=showSurgList;$("surgExit").onclick=()=>setMode("menu");
+
+const drugs=[{id:"htn",t:"Hypertension",a:"ACEi/ARB, CCB, thiazide-like.",ch:"Specialist dosing.",moa:"ACEi���AngII.",ci:"Pregnancy, bilateral RAS."},{id:"ast",t:"Asthma",a:"SABA � ICS.",ch:"Spacer preferred.",moa:"��2 agonist.",ci:"Non-selective ��-blockers."},{id:"dm",t:"Metformin / T2DM",a:"Metformin first-line.",ch:"Specialist.",moa:"���hepatic glucose.",ci:"Severe renal impairment."}];
+function showDrugList(){$("drugList").classList.remove("hidden");$("drugDetail").classList.add("hidden");$("drugList").innerHTML=drugs.map(c=>`<div class="case-card" data-id="${c.id}"><strong>${c.t}</strong></div>`).join("");$("drugList").querySelectorAll(".case-card").forEach(el=>el.onclick=()=>openDrug(el.dataset.id));}
+function openDrug(id){const c=drugs.find(x=>x.id===id);$("drugList").classList.add("hidden");$("drugDetail").classList.remove("hidden");$("drugStatus").innerHTML=`<strong>${c.t}</strong>`;$("drugBody").innerHTML=`<p><b>Adult:</b> ${c.a}</p><p><b>Child:</b> ${c.ch}</p><p><b>MOA:</b> ${c.moa}</p><p><b>CI:</b> ${c.ci}</p>`;}
+$("drugBackList").onclick=showDrugList;$("drugExit").onclick=()=>setMode("menu");
+
+function shuffle(a){const x=a.slice();for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i�));[x[i],x[j]]=[x[j],x[i]];}return x;}
+const rouBank=[{s:"migratory pain to RIF, anorexia, fever",dx:"Acute appendicitis",dxO:["Acute appendicitis","Cholecystitis","Pyelo","Ectopic","Diverticulitis"],n:"Urgent surgical review",nO:["Urgent surgical review","Discharge","Steroids","Thrombolysis","Colonoscopy"],e:"Classic migration."},{s:"crushing chest pain, ST elevation V2���V4",dx:"STEMI (anterior)",dxO:["STEMI (anterior)","Unstable angina","Pericarditis","Dissection","PE"],n:"Activate primary PCI",nO:["Activate primary PCI","Outpatient stress","Observe","CT abdo","Discharge"],e:"ST elevation = STEMI."},{s:"28w pregnant, new HTN, headache, proteinuria",dx:"Pre-eclampsia",dxO:["Pre-eclampsia","Normal pregnancy","Migraine","UTI","Thrombocytopenia"],n:"Urgent obstetric assessment",nO:["Urgent obstetric assessment","Reassure 4w","Warfarin","Immediate CS","Paracetamol"],e:"HTN � protein ���20w."},{s:"fever, flank pain, CVA tenderness",dx:"Pyelonephritis",dxO:["Pyelonephritis","Cystitis","Appendicitis","Cholecystitis","Strain"],n:"Culture � empirical Abx",nO:["Culture � empirical Abx","Laparotomy","No Abx","CT head","Steroids"],e:"Systemic � flank."},{s:"elderly fall, shortened ER leg",dx:"NOF fracture",dxO:["NOF fracture","Ankle sprain","Disc","Soft tissue","Pelvic only"],n:"Analgesia, IV, G&S, XR, ortho",nO:["Analgesia, IV, G&S, XR, ortho","Crutches","Thrombolysis","Physio","CT head only"],e:"Classic deformity."},{s:"thunderclap headache, photophobia",dx:"SAH until proven otherwise",dxO:["SAH until proven otherwise","Tension","Migraine","Meningitis","Sinus"],n:"Urgent non-contrast CT",nO:["Urgent non-contrast CT","Discharge","MRI weeks","Abx","Reassure"],e:"Thunderclap needs exclusion."},{s:"���-hCG, unilateral pain, spotting",dx:"Ectopic until excluded",dxO:["Ectopic until excluded","Miscarriage","Torsion","PID","Appendicitis"],n:"��-hCG, TVUS, senior",nO:["��-hCG, TVUS, senior","Discharge 1wk","Antenatal","CT","Steroids"],e:"Ectopic until excluded."},{s:"trauma, absent BS, trachea away",dx:"Tension pneumothorax",dxO:["Tension pneumothorax","Simple PTX","Haemothorax","PE","Asthma"],n:"Immediate decompression then drain",nO:["Immediate decompression then drain","CT first","Observe","Nebs","Thrombolysis"],e:"Clinical if unstable."},{s:"anaphylaxis: urticaria, wheeze, low BP",dx:"Anaphylaxis",dxO:["Anaphylaxis","Anxiety","Asthma","Sepsis","Vasovagal"],n:"IM adrenaline 1:1000 now",nO:["IM adrenaline 1:1000 now","Oral antihistamine","IV fluids first","Steroids first","Observe"],e:"IM adrenaline first."},{s:"newborn apnoeic, HR 70",dx:"Needs PPV",dxO:["Needs PPV","Normal","Observe","Adrenaline first","Compressions first"],n:"Warm, airway, start PPV",nO:["Warm, airway, start PPV","Observe 10 min","Adrenaline first","Compressions first","Ward"],e:"Ventilation is priority."}];
+let rouScore=0,rouTotal=0,rouAns=false;
+function loadRouStats(){const p=getProgress();rouScore=p.rouScore||0;rouTotal=p.rouTotal||0;if($("rouScore")){$("rouScore").textContent=rouScore;$("rouTotal").textContent=rouTotal;$("rouAcc").textContent=rouTotal?Math.round(rouScore/rouTotal*100)�"%":"���";}}
+function pickRou(shared){let idx;if(shared){const d=new Date();idx=Math.abs(Math.floor(Math.sin(d.getFullYear()*10000�.getMonth()*100�.getDate())*10000))%rouBank.length;}else idx=Math.floor(Math.random()*rouBank.length);const b=rouBank[idx];const age=[22,34,45,58,67][Math.floor(Math.random()*5)];const sex=Math.random()>0.5?"male":"female";return{v:`${sex==="male"?"Mr":"Ms"} X, ${age}y ${sex}, ${b.s}.`,dx:b.dx,dxO:shuffle(b.dxO),n:b.n,nO:shuffle(b.nO),e:b.e};}
+function renderRou(c){rouAns=false;$("rouCaseBox").classList.remove("hidden");$("rouFeedback").classList.add("hidden");$("rouVignette").textContent=c.v;$("rouDxOpts").innerHTML=c.dxO.map(o=>`<button class="opt-btn" data-v="${o}">${o}</button>`).join("");$("rouNextOpts").innerHTML=c.nO.map(o=>`<button class="opt-btn" data-v="${o}">${o}</button>`).join("");let cd=null,cn=null;
+$("rouDxOpts").querySelectorAll("button").forEach(b=>b.onclick=()=>{if(rouAns)return;cd=b.dataset.v;$("rouDxOpts").querySelectorAll("button").forEach(x=>x.classList.remove("correct","wrong"));b.classList.add(cd===c.dx?"correct":"wrong");if(cd!==c.dx)$("rouDxOpts").querySelectorAll("button").forEach(x=>{if(x.dataset.v===c.dx)x.classList.add("correct");});chk();});
+$("rouNextOpts").querySelectorAll("button").forEach(b=>b.onclick=()=>{if(rouAns)return;cn=b.dataset.v;$("rouNextOpts").querySelectorAll("button").forEach(x=>x.classList.remove("correct","wrong"));b.classList.add(cn===c.n?"correct":"wrong");if(cn!==c.n)$("rouNextOpts").querySelectorAll("button").forEach(x=>{if(x.dataset.v===c.n)x.classList.add("correct");});chk();});
+function chk(){if(cd===null||cn===null)return;rouAns=true;rouTotal�;const both=cd===c.dx&&cn===c.n;if(both)rouScore�;$("rouScore").textContent=rouScore;$("rouTotal").textContent=rouTotal;$("rouAcc").textContent=Math.round(rouScore/rouTotal*100)�"%";updateUserProgress({progress:{rouScore,rouTotal}});const box=$("rouFeedback");box.classList.remove("hidden");box.className="feedback-box"�(both?"":" bad");box.innerHTML=both?`<strong>Excellent.</strong> ${c.e}`:`<strong>Review:</strong> ${c.dx} �� ${c.n}. ${c.e}`;}}
+$("rouNew").onclick=()=>renderRou(pickRou(false));$("rouShared").onclick=()=>renderRou(pickRou(true));$("rouExit").onclick=()=>setMode("menu");
+
+const streakBank=[{v:"STEMI on ECG. Next?",a:"Activate primary PCI",o:["Activate primary PCI","Outpatient stress","Discharge","CT abdo"]},{v:"Ectopic suspected, hypotensive. Next?",a:"Resuscitate � urgent senior",o:["Resuscitate � urgent senior","Discharge 1wk","Antenatal","Oral Abx"]},{v:"Child asthma SpO2 89%. First?",a:"O2 � salbutamol � steroids � senior",o:["O2 � salbutamol � steroids � senior","Abx only","Discharge","Immediate intubation"]},{v:"NOF deformity after fall. Next?",a:"Analgesia, IV, G&S, XR, ortho",o:["Analgesia, IV, G&S, XR, ortho","Crutches","Thrombolysis","Physio"]},{v:"Tension PTX clinically. Next?",a:"Immediate needle decompression",o:["Immediate needle decompression","Wait CXR","Nebs","Observe"]},{v:"PET features 28w. Next?",a:"Urgent obstetric assessment",o:["Urgent obstetric assessment","Reassure","Warfarin","Discharge"]},{v:"Rigid abdomen. Next?",a:"ABC, IV fluids, urgent surgical review",o:["ABC, IV fluids, urgent surgical review","Oral fluids","Outpatient","Analgesia only"]},{v:"Thunderclap headache. Next?",a:"Urgent non-contrast CT",o:["Urgent non-contrast CT","Discharge","MRI weeks","Abx"]},{v:"Anaphylaxis. Drug?",a:"IM adrenaline 1:1000",o:["IM adrenaline 1:1000","Oral antihistamine","IV fluids first","Steroids first"]},{v:"Newborn apnoeic HR 70. Priority?",a:"Warm, airway, PPV",o:["Warm, airway, PPV","Observe","Adrenaline first","Compressions first"]},{v:"Sepsis elderly confusion. Next?",a:"Sepsis bundle: cultures, Abx, fluids",o:["Sepsis bundle: cultures, Abx, fluids","Observe","Oral fluids","Discharge"]},{v:"DKA picture. Next?",a:"ABC, IV fluids, fixed-rate insulin, senior",o:["ABC, IV fluids, fixed-rate insulin, senior","Oral fluids","SC insulin only","Discharge"]}];
+let streak=0,best=0,stCorrect=0,stAns=false,stCase=null;
+function loadStreakStats(){const p=getProgress();best=p.streakBest||0;stCorrect=p.streakCorrect||0;if($("streakBest")){$("streakBest").textContent=best;$("streakCorrect").textContent=stCorrect;}}
+function loadStreak(){stAns=false;$("streakFeedback").classList.add("hidden");stCase=streakBank[Math.floor(Math.random()*streakBank.length)];$("streakVignette").classList.remove("hidden");$("streakVignette").textContent=stCase.v;$("streakOpts").innerHTML=shuffle(stCase.o).map(o=>`<button class="opt-btn" data-v="${o}">${o}</button>`).join("");
+$("streakOpts").querySelectorAll("button").forEach(b=>b.onclick=()=>{if(stAns)return;stAns=true;const ok=b.dataset.v===stCase.a;b.classList.add(ok?"correct":"wrong");if(!ok){$("streakOpts").querySelectorAll("button").forEach(x=>{if(x.dataset.v===stCase.a)x.classList.add("correct");});streak=0;}else{streak�;stCorrect�;if(streak>best)best=streak;}$("streakCount").textContent=streak;$("streakBest").textContent=best;$("streakCorrect").textContent=stCorrect;updateUserProgress({progress:{streakBest:best,streakCorrect:stCorrect}});const box=$("streakFeedback");box.classList.remove("hidden");box.className="feedback-box"�(ok?"":" bad");box.innerHTML=ok?`Correct! Streak ${streak}`:`Wrong. ${stCase.a}`;} );}
+$("streakStart").onclick=loadStreak;$("streakReset").onclick=()=>{streak=0;$("streakCount").textContent="0";};$("streakExit").onclick=()=>setMode("menu");
+
+// ---- TELAS DOC improved ----
+const telasScenarios=[
+{j:"The potassium is 6.9 but I���m waiting for the formal printed report before treating.",c:"Charming. Shall we also wait for the autopsy report before calling the arrest team?",q:"Severe hyperkalaemia with ECG changes ��� priority action?",o:["Protect the heart (calcium), shift and remove K�, treat cause ��� act on ECG, don���t wait for stationery","Wait for three lab confirmations","Oral kayexalate and tea","Ignore ECG"],a:0,fb:"Calcium stabilises membranes. Paperwork does not."},
+{j:"I���ve ordered a full-body CT for classic appendicitis in a thin 20-year-old.",c:"Excellent. Why stop at the body? Add a dental panoramic while we���re celebrating radiation.",q:"Preferred first imaging for suspected appendicitis when expertise allows?",o:["Ultrasound first in appropriate patients; CT if needed","Full-body CT for all","MRI only ever","No imaging ever"],a:0,fb:"Clinical judgement still exists. So does ALARA."},
+{j:"Saturations 85%, patient ���looks okay���, so no oxygen yet.",c:"���Looks okay��� ��� the last words before many rapid responses.",q:"Oxygen principle?",o:["Correct hypoxia to an appropriate target range for that patient","100% for everyone","Never give oxygen","Only if blue"],a:0,fb:"Hypoxia is not a vibe check."},
+{j:"STEMI on ECG but I���m waiting for troponin before calling PCI.",c:"Troponin is fashionably late. ST elevation is the fire alarm. You don���t wait for the smoke detector���s formal letter.",q:"STEMI action?",o:["Activate reperfusion on ECG � clinical picture; do not wait for troponin","Always wait for troponin","Troponin replaces ECG","Discharge if pain free"],a:0,fb:"Minutes of myocardium. Not minutes of bureaucracy."},
+{j:"Febrile neutropenic ��� I diagnosed ���viral��� and sent them home.",c:"Neutropenic sepsis would like a word. And a lawyer.",q:"Febrile neutropenia?",o:["Urgent assessment, cultures, broad-spectrum antibiotics without delay","Home with paracetamol","Wait all cultures","Oral Abx always"],a:0,fb:"Fever � neutropenia = emergency pathway."},
+{j:"GCS 8, still debating intubation after 25 minutes.",c:"The brain is patient. Until it isn���t.",q:"Low GCS airway?",o:["Protect airway early; call skilled help","Debate until 3","Never intubate medical patients","Only if family requests"],a:0,fb:"A comes before everything, including your meeting."},
+{j:"Copied last week���s discharge summary and changed the name.",c:"Efficient plagiarism. The lawyers will admire your productivity.",q:"Documentation?",o:["Accurate, contemporaneous, original for this patient","Copy-paste forever","Minimal notes","Write after the complaint"],a:0,fb:"Your notes outlive your memory and your excuses."},
+{j:"Child with stridor ��� I���m forcing a throat exam with a spatula.",c:"Yes, convert partial obstruction to complete. Very thorough. The anaesthetist will send flowers.",q:"Suspected severe upper airway obstruction in a child?",o:["Keep calm, minimal disturbance, senior/anaesthetics/ENT early ��� do not force exam","Force a good look","Lie flat","Waiting room"],a:0,fb:"Some exams can kill. This is one."},
+{j:"Asymptomatic bacteriuria in a non-pregnant adult ��� I started antibiotics.",c:"Bacteria in urine is not a personality disorder requiring treatment.",q:"Asymptomatic bacteriuria?",o:["Generally do not treat (exceptions: pregnancy, before certain urological procedures)","Always treat","Treat all elderly with bacteria","Abx for every positive dip"],a:0,fb:"Treat people, not lab printouts."},
+{j:"Patient refused the procedure. I wrote ���non-compliant��� and left.",c:"���Non-compliant��� ��� Latin for ���I didn���t ask why���.",q:"When a patient declines?",o:["Explore understanding and concerns, assess capacity, document, respect informed refusal","Label and leave","Coerce","Ignore capacity"],a:0,fb:"Autonomy is the point, not the obstacle."},
+{j:"I���ve been awake 16 hours and I���m still doing complex decisions alone.",c:"Hero complex is not a clinical competency. Error rates don���t care about your pride.",q:"Fatigue?",o:["Escalate, hand over, use checklists ��� do not solo complex decisions when exhausted","Push alone","Hide tiredness","More coffee, faster decisions"],a:0,fb:"Knowing your limits is a skill. Using them is wisdom."},
+{j:"���See one, do one, teach one��� on LP with no supervision plan.",c:"See one, do one, settle one claim.",q:"Procedural supervision?",o:["Supervision matched to experience; competence before independence","Unsupervised day one","Students teach immediately","Never let juniors try"],a:0,fb:"Patients are not practice dummies."},
+{j:"Chest pain, normal troponin at 1 hour, non-diagnostic ECG ��� discharged.",c:"Bold. I���ll keep the crash trolley warm for the comeback tour.",q:"ACS rule-out?",o:["Follow validated pathways (troponin timing, ECG, risk tools)","One blood test cures all","Discharge if pain free","CT every chest pain"],a:0,fb:"Pathways exist because gut feeling is not a biomarker."},
+{j:"Sepsis ��� still choosing antibiotics at 90 minutes.",c:"Sepsis six is not sepsis ninety. Bacteria don���t respect your indecision.",q:"Septic shock antibiotics?",o:["Give appropriate antibiotics urgently after cultures where possible","Wait all results","Oral Abx in shock","Abx after CT only"],a:0,fb:"Delay has a mortality curve. You���re on it."},
+{j:"Asthmatic still distressed after one nebuliser ��� I left them ���to settle���.",c:"Wheeze is not ambient music.",q:"After initial asthma treatment?",o:["Reassess objectively; escalate early if poor response","One neb is enough","Discharge if speaking","Ignore silent chest"],a:0,fb:"Reassessment separates clinicians from spectators."},
+{j:"Warfarin INR 8.5, no bleed ��� I did nothing overnight.",c:"High INR is not a silent meditation.",q:"High INR, no major bleed?",o:["Follow protocol: withhold, consider vitamin K by INR/risk, senior input","Ignore if not bleeding","Double next dose","PCC for every high INR"],a:0,fb:"Protocols beat improvisation with clotting."},
+{j:"I put the only working cannula in the foot ���because arms were hard���.",c:"Feet walk. Arms drip. Unless both arms are on fire, rethink.",q:"IV site preference?",o:["Upper limbs preferred; lower limb only with clear reason","Always feet first","Central line for every bloods","No preference"],a:0,fb:"Infection and thrombosis enjoy the scenic route via the foot."},
+{j:"Told the family the scan was ���a bit funny��� and walked off.",c:"Kafka called. He wants his communication style back.",q:"Communicating significant results?",o:["Clear language, check understanding, time for questions, support, document","Maximum jargon","Voicemail","Smile and leave"],a:0,fb:"Families remember the manner more than the median."},
+{j:"Query UTI, normal dip, no symptoms ��� antibiotics ���just in case���.",c:"���Just in case��� is how we breed resistance and C. difficile.",q:"Treat asymptomatic / dip-only?",o:["Do not treat asymptomatic bacteriuria outside defined exceptions","Always treat positive cultures","Treat every elderly positive dip","Abx for all cloudy urine"],a:0,fb:"Stewardship is not optional fashion."},
+{j:"Beta-blocker held because HR was 56 in a stable ACS patient without other contraindications.",c:"56 is not asystole. It���s a number that still allows blood to leave the heart.",q:"Early beta-blockade caution in ACS?",o:["Avoid/caution if hypotensive, acute failure, bradycardia, heart block, severe asthma ��� otherwise often useful if stable","Never use beta-blockers in ACS","Max dose immediately always","Only after discharge"],a:0,fb:"Guidelines > folklore."}
 ];
-
-let currentStep = 0;
-let score = 0;
-let mistakes = 0;
-let running = false;
-let completed = new Set();
-let penaltyLocked = new Set();
-let interactionLocked = false;
-let feedbackTimer = null;
-
-const scoreEl = document.getElementById("score");
-const progressEl = document.getElementById("progress");
-const stepTitleEl = document.getElementById("stepTitle");
-const stepTextEl = document.getElementById("stepText");
-const hintEl = document.getElementById("hint");
-const screen = document.getElementById("screen");
-const welcomePanel = document.getElementById("welcomePanel");
-const resultPanel = document.getElementById("resultPanel");
-
-const sceneEl = document.querySelector("a-scene");
-const swabEl = document.getElementById("swab");
-const swabGroup = document.getElementById("swabGroup");
-
-const swabStart = new THREE.Vector3(1.15, 1.025, -1.52);
-const cleaningTarget = new THREE.Vector3(-0.28, 1.38, -1.33);
-
-let draggingSwab = false;
-let dragPlane = null;
-let pointerId = null;
-let originalSwabPosition = null;
-
-function updateScore() {
-  scoreEl.textContent = score;
-  progressEl.style.width =
-    (currentStep / steps.length * 100) + "%";
-}
-
-function showStep() {
-  if (currentStep >= steps.length) {
-    finishSimulation();
-    return;
-  }
-
-  const step = steps[currentStep];
-  stepTitleEl.textContent = step.title;
-  stepTextEl.textContent = step.text;
-  hintEl.textContent = step.hint;
-  updateScore();
-}
-
-function wrongAction(message) {
-  if (!running || interactionLocked) return;
-
-  interactionLocked = true;
-  mistakes++;
-  score = Math.max(0, score - 5);
-  updateScore();
-
-  stepTitleEl.textContent = "TRY AGAIN · −5 POINTS";
-  stepTextEl.textContent = message;
-  hintEl.textContent = "Review the instruction and try again.";
-
-  clearTimeout(feedbackTimer);
-  feedbackTimer = setTimeout(() => {
-    interactionLocked = false;
-    if (running) showStep();
-  }, 1200);
-}
-
-function handleSelection(id) {
-  if (!running || interactionLocked ||
-      currentStep >= steps.length) return;
-
-  const step = steps[currentStep];
-
-  if (id !== step.target) {
-    if (penaltyLocked.has(id)) return;
-    penaltyLocked.add(id);
-    wrongAction("That is not the expected object for this step.");
-    return;
-  }
-
-  if (completed.has(id)) return;
-
-  interactionLocked = true;
-  completed.add(id);
-  score = Math.min(100, score + step.points);
-  currentStep++;
-
-  updateScore();
-
-  const target = document.getElementById(id);
-  if (target) {
-    target.setAttribute("material", "emissive", "#38e6ba");
-    target.setAttribute("material", "emissiveIntensity", 0.35);
-  }
-
-  clearTimeout(feedbackTimer);
-  feedbackTimer = setTimeout(() => {
-    interactionLocked = false;
-    if (currentStep < steps.length) {
-      showStep();
-    } else {
-      finishSimulation();
-    }
-  }, 700);
-}
-
-/* SWAB DRAGGING */
-
-function getPointerCoordinates(event) {
-  const canvas = sceneEl.canvas;
-  const rect = canvas.getBoundingClientRect();
-
-  return {
-    x: ((event.clientX - rect.left) / rect.width) * 2 - 1,
-    y: -((event.clientY - rect.top) / rect.height) * 2 + 1
-  };
-}
-
-function getCamera() {
-  return document.getElementById("mainCamera")
-    .getObject3D("camera");
-}
-
-function pointerHitsSwab(event) {
-  if (!sceneEl.canvas || !swabEl.object3D) return false;
-
-  const pointer = getPointerCoordinates(event);
-  const raycaster = new THREE.Raycaster();
-
-  raycaster.setFromCamera(pointer, getCamera());
-
-  const hits = raycaster.intersectObject(
-    swabEl.object3D,
-    true
-  );
-
-  return hits.length > 0;
-}
-
-function moveSwabWithPointer(event) {
-  if (!draggingSwab) return;
-
-  const pointer = getPointerCoordinates(event);
-  const raycaster = new THREE.Raycaster();
-
-  raycaster.setFromCamera(pointer, getCamera());
-
-  const intersections = new THREE.Vector3();
-  const found = raycaster.ray.intersectPlane(
-    dragPlane,
-    intersections
-  );
-
-  if (!found) return;
-
-  const groupPosition = swabGroup.object3D.position;
-  groupPosition.set(
-    intersections.x,
-    intersections.y,
-    intersections.z
-  );
-
-  swabGroup.object3D.rotation.set(0, 0, 0);
-}
-
-function startSwabDrag(event) {
-  if (!running || interactionLocked ||
-      currentStep !== 0 || completed.has("swab")) return;
-
-  if (!pointerHitsSwab(event)) return;
-
-  event.preventDefault();
-
-  draggingSwab = true;
-  pointerId = event.pointerId;
-
-  originalSwabPosition =
-    swabGroup.object3D.position.clone();
-
-  dragPlane = new THREE.Plane(
-    new THREE.Vector3(0, 0, 1),
-    1.33
-  );
-
-  if (sceneEl.canvas.setPointerCapture) {
-    try {
-      sceneEl.canvas.setPointerCapture(pointerId);
-    } catch (_) {}
-  }
-
-  moveSwabWithPointer(event);
-
-  stepTitleEl.textContent = "SWAB IN HAND";
-  stepTextEl.textContent =
-    "Move the swab onto the correct area of the forearm.";
-  hintEl.textContent = "Release when the swab is over the target.";
-}
-
-function finishSwabDrag(event) {
-  if (!draggingSwab) return;
-
-  moveSwabWithPointer(event);
-  draggingSwab = false;
-
-  const currentPosition =
-    swabGroup.object3D.position.clone();
-
-  const distance = currentPosition.distanceTo(cleaningTarget);
-
-  if (distance < 0.58) {
-    swabGroup.object3D.position.set(
-      cleaningTarget.x,
-      cleaningTarget.y,
-      cleaningTarget.z
-    );
-
-    handleSelection("swab");
-
-    stepTitleEl.textContent = "SITE PREPARATION COMPLETE";
-    stepTextEl.textContent =
-      "Correct placement. Continue to the next stage.";
-    hintEl.textContent =
-      "This prototype checks placement; it does not yet simulate wiping or validate antiseptic technique.";
-  } else {
-    if (originalSwabPosition) {
-      swabGroup.object3D.position.copy(originalSwabPosition);
-      swabGroup.object3D.rotation.set(0, 0, -12);
-    }
-
-    wrongAction(
-      "The swab was not placed over the designated forearm area."
-    );
-  }
-
-  pointerId = null;
-}
-
-function installSwabDragging() {
-  const canvas = sceneEl.canvas;
-  if (!canvas || canvas.dataset.swabDragReady) return;
-
-  canvas.dataset.swabDragReady = "true";
-  canvas.style.touchAction = "none";
-
-  canvas.addEventListener("pointerdown", startSwabDrag);
-  canvas.addEventListener("pointermove", event => {
-    if (draggingSwab) {
-      event.preventDefault();
-      moveSwabWithPointer(event);
-    }
-  });
-
-  canvas.addEventListener("pointerup", finishSwabDrag);
-  canvas.addEventListener("pointercancel", event => {
-    if (!draggingSwab) return;
-
-    draggingSwab = false;
-
-    if (originalSwabPosition) {
-      swabGroup.object3D.position.copy(originalSwabPosition);
-      swabGroup.object3D.rotation.set(0, 0, -12);
-    }
-
-    pointerId = null;
+let telasIdx=-1,telasScore=0,telasTotal=0,telasAns=false;
+function loadTelasStats(){const p=getProgress();telasScore=p.telasScore||0;telasTotal=p.telasTotal||0;if($("telasScore")){$("telasScore").textContent=telasScore;$("telasTotal").textContent=telasTotal;}}
+function loadTelas(){
+  telasIdx=(telasIdx�)%telasScenarios.length;telasAns=false;
+  const s=telasScenarios[telasIdx];
+  $("telasBox").classList.remove("hidden");$("telasFeedback").classList.add("hidden");
+  $("telasJunior").textContent=s.j;$("telasConsult").textContent=s.c;
+  $("telasOpts").innerHTML=s.o.map(o=>`<button class="opt-btn" data-v="${o}">${o}</button>`).join("");
+  $("telasStatus").textContent=`Encounter ${telasIdx�} of ${telasScenarios.length}`;
+  $("telasProgress").textContent=`Score ${telasScore}/${telasTotal||0} �� Telas remains unimpressed`;
+  $("telasOpts").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    if(telasAns)return;telasAns=true;telasTotal�;
+    const ok=b.dataset.v===s.o[s.a];
+    b.classList.add(ok?"correct":"wrong");
+    if(!ok)$("telasOpts").querySelectorAll("button")[s.a].classList.add("correct");
+    if(ok)telasScore�;
+    $("telasScore").textContent=telasScore;$("telasTotal").textContent=telasTotal;
+    $("telasProgress").textContent=`Score ${telasScore}/${telasTotal}`;
+    updateUserProgress({progress:{telasScore,telasTotal}});
+    const box=$("telasFeedback");box.classList.remove("hidden");
+    box.className="feedback-box"�(ok?"":" bad");
+    box.innerHTML=ok
+      ?`<strong>Telas (grudgingly):</strong> Acceptable. ${s.fb}`
+      :`<strong>Telas:</strong> Predictable. ${s.fb}`;
   });
 }
+$("telasStart").onclick=loadTelas;$("telasExit").onclick=()=>setMode("menu");
 
-/* OTHER OBJECTS KEEP THEIR SELECTION INTERACTIONS */
-
-function installInteractions() {
-  document.querySelectorAll(".clickable").forEach(el => {
-    if (el.id === "swab" ||
-        el.dataset.interactionInstalled) return;
-
-    el.dataset.interactionInstalled = "true";
-
-    el.addEventListener("click", () => {
-      if (el.id === "tourniquet" ||
-          el.id === "vein" ||
-          el.id === "cannula") {
-        handleSelection(el.id);
-      }
-    });
-
-    el.addEventListener("mouseleave", () => {
-      penaltyLocked.delete(el.id);
-    });
-  });
-
-  installSwabDragging();
-}
-
-function finishSimulation() {
-  running = false;
-  interactionLocked = false;
-  progressEl.style.width = "100%";
-
-  screen.style.display = "flex";
-  welcomePanel.style.display = "none";
-  resultPanel.style.display = "block";
-  document.getElementById("results").style.display = "block";
-
-  document.getElementById("finalScore").textContent =
-    score + "/100";
-  document.getElementById("finalStages").textContent =
-    completed.size + "/4";
-  document.getElementById("finalMistakes").textContent =
-    mistakes;
-
-  let message =
-    "Sequence completed. Review your score and try again.";
-
-  if (score >= 90) {
-    message = "Excellent object selection. Continue practising under supervision.";
-  } else if (score >= 70) {
-    message = "Good effort. Review your mistakes and repeat the sequence.";
-  } else {
-    message = "Keep practising the sequence and review the equipment.";
-  }
-
-  document.getElementById("resultMessage").textContent = message;
-  stepTitleEl.textContent = "SIMULATION COMPLETE";
-  stepTextEl.textContent = "You completed all four stages.";
-  hintEl.textContent = "Select Practise Again to repeat.";
-}
-
-function startSimulation() {
-  clearTimeout(feedbackTimer);
-
-  currentStep = 0;
-  score = 0;
-  mistakes = 0;
-  completed = new Set();
-  penaltyLocked = new Set();
-  interactionLocked = false;
-  draggingSwab = false;
-  running = true;
-
-  swabGroup.object3D.position.copy(swabStart);
-  swabGroup.object3D.rotation.set(0, 0, -12);
-
-  document.querySelectorAll(".clickable").forEach(el => {
-    el.setAttribute("material", "emissive", "#000000");
-    el.setAttribute("material", "emissiveIntensity", 0);
-  });
-
-  screen.style.display = "none";
-  welcomePanel.style.display = "block";
-  resultPanel.style.display = "none";
-  document.getElementById("results").style.display = "none";
-
-  updateScore();
-  showStep();
-}
-
-document.getElementById("startBtn")
-  .addEventListener("click", startSimulation);
-
-document.getElementById("restartBtn")
-  .addEventListener("click", startSimulation);
-
-if (sceneEl.hasLoaded) {
-  installInteractions();
-} else {
-  sceneEl.addEventListener("loaded", installInteractions);
-}
-
-showStep();
+})();
 </script>
+</body>
+</html>
