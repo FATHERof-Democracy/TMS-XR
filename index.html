@@ -8,6 +8,7 @@
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial,sans-serif;background:#071522;color:#fff}
 a-scene{position:fixed;inset:0;width:100%;height:100%}
+body.auth-open a-scene{pointer-events:none!important;visibility:hidden}
 .panel{position:fixed;z-index:20;left:10px;top:10px;width:min(420px,calc(100vw - 20px));max-height:calc(100vh - 20px);overflow-y:auto;padding:14px;border-radius:14px;background:rgba(7,21,34,.96);border:1px solid #34536b;box-shadow:0 8px 28px #0007}
 .panel.wide{width:min(580px,calc(100vw - 20px))}
 h1{font-size:18px;margin:0 0 4px}h2{font-size:14px;margin:12px 0 5px;color:#9fd4e8}h3{font-size:13px;margin:8px 0 3px;color:#c5e4f0}
@@ -17,13 +18,15 @@ button.primary{background:#087f8c;border-color:#20a7ae}button.danger{background:
 .button-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
 .status{background:#142d41;border-radius:8px;padding:10px;min-height:44px;margin-bottom:8px;font-size:13px}
 .progress-bg{background:#30475a;height:8px;border-radius:20px;overflow:hidden;margin:8px 0}.progress{height:100%;width:0%;background:#43d6b4;transition:width .2s}
-#authGate,#welcome{position:fixed;z-index:40;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(3,13,23,.95);padding:14px;overflow-y:auto}
-#welcome{z-index:30}.card{width:min(720px,100%);padding:22px;border:1px solid #41637a;border-radius:16px;background:#102538}
+#authGate,#welcome{position:fixed;z-index:9999;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(3,13,23,.97);padding:14px;overflow-y:auto;pointer-events:auto}
+#welcome{z-index:30}.card{width:min(720px,100%);padding:22px;border:1px solid #41637a;border-radius:16px;background:#102538;pointer-events:auto}
 #authGate .card{width:min(440px,100%)}
 input,select{width:100%;padding:11px;border-radius:8px;border:1px solid #4d6c82;background:#0d2233;color:#fff;font-size:14px;margin:6px 0 10px}
-.auth-tabs{display:flex;gap:6px;margin-bottom:12px}
-.auth-tabs button{flex:1;text-align:center;padding:10px}
+.auth-tabs{display:flex;gap:6px;margin-bottom:14px}
+.auth-tabs button{flex:1;text-align:center;padding:12px;font-size:14px}
 .auth-tabs button.active{background:#087f8c;border-color:#20a7ae}
+#authGate button,#authGate input,#authGate select{pointer-events:auto;position:relative;z-index:10000}
+.auth-layout-title{font-size:15px;font-weight:700;color:#9fd4e8;margin:0 0 10px}
 .mod-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
 .mod-grid button{width:100%;padding:11px;font-size:12.5px;text-align:center}
 .hidden{display:none!important}
@@ -155,38 +158,46 @@ ul.compact{margin:4px 0 8px 18px;padding:0;font-size:13px}ul.compact li{margin:3
   </a-entity>
 </a-scene>
 
-<!-- AUTH -->
+<!-- AUTH: two separate layouts (Login / Register) -->
 <div id="authGate">
   <div class="card">
     <h1>TMS-XR</h1>
-    <p class="muted">Each user registers once, then logs in with their own username &amp; password. Scores and progress are saved per account on this device.</p>
+    <p class="muted">Each user has their own account. Register once, then login anytime on this device.</p>
+
     <div class="auth-tabs">
       <button type="button" class="active" id="tabLogin">Login</button>
       <button type="button" id="tabRegister">Register</button>
     </div>
+
+    <!-- LAYOUT 1: LOGIN -->
     <div id="loginForm">
+      <div class="auth-layout-title">Login to your account</div>
       <label class="muted">Username</label>
-      <input id="loginUser" placeholder="Username" autocomplete="username">
+      <input id="loginUser" placeholder="Your username" autocomplete="username">
       <label class="muted">Password</label>
-      <input id="loginPass" type="password" placeholder="Password" autocomplete="current-password">
+      <input id="loginPass" type="password" placeholder="Your password" autocomplete="current-password">
       <div class="auth-err" id="loginErr"></div>
-      <button class="primary" id="btnLogin" style="width:100%;text-align:center;padding:12px">Login</button>
+      <button type="button" class="primary" id="btnLogin" style="width:100%;text-align:center;padding:14px;margin-top:6px">Login</button>
+      <p class="muted" style="margin-top:12px;text-align:center">New here? Click the <strong>Register</strong> tab above.</p>
     </div>
+
+    <!-- LAYOUT 2: REGISTER -->
     <div id="registerForm" class="hidden">
+      <div class="auth-layout-title">Create a new account</div>
       <label class="muted">Full name</label>
-      <input id="regName" placeholder="e.g. Amina Okello" maxlength="60">
-      <label class="muted">Username</label>
-      <input id="regUser" placeholder="Choose a username" maxlength="30">
-      <label class="muted">Password</label>
-      <input id="regPass" type="password" placeholder="Min 4 characters" maxlength="40">
+      <input id="regName" placeholder="e.g. Amina Okello" maxlength="60" autocomplete="name">
+      <label class="muted">Username (unique)</label>
+      <input id="regUser" placeholder="Choose a username" maxlength="30" autocomplete="username">
+      <label class="muted">Password (min 4 characters)</label>
+      <input id="regPass" type="password" placeholder="Choose a password" maxlength="40" autocomplete="new-password">
       <label class="muted">Role</label>
       <select id="regRole">
-        <option>Medical Student</option>
-        <option>Intern / House Officer</option>
-        <option>Resident / Registrar</option>
-        <option>Consultant / Specialist</option>
-        <option>Nurse / Clinical Officer</option>
-        <option>Other</option>
+        <option value="Medical Student">Medical Student</option>
+        <option value="Intern / House Officer">Intern / House Officer</option>
+        <option value="Resident / Registrar">Resident / Registrar</option>
+        <option value="Consultant / Specialist">Consultant / Specialist</option>
+        <option value="Nurse / Clinical Officer">Nurse / Clinical Officer</option>
+        <option value="Other">Other</option>
       </select>
       <label class="muted">Avatar</label>
       <div class="avatar-pick" id="avatarPick">
@@ -198,9 +209,11 @@ ul.compact{margin:4px 0 8px 18px;padding:0;font-size:13px}ul.compact li{margin:3
         <button type="button" data-av="����" title="Stethoscope">����</button>
       </div>
       <div class="auth-err" id="regErr"></div>
-      <button class="primary" id="btnRegister" style="width:100%;text-align:center;padding:12px">Create account</button>
+      <button type="button" class="primary" id="btnRegister" style="width:100%;text-align:center;padding:14px;margin-top:6px">Create account</button>
+      <p class="muted" style="margin-top:12px;text-align:center">Already registered? Click the <strong>Login</strong> tab above.</p>
     </div>
-    <p class="muted" style="margin-top:12px">Educational prototype only. Accounts are stored in this browser.</p>
+
+    <p class="muted" style="margin-top:14px">Accounts stay in this browser only. Educational use.</p>
   </div>
 </div>
 
@@ -421,35 +434,89 @@ function updateUserProgress(patch){
 }
 function getProgress(){return(currentUser&&currentUser.progress)||{};}
 
-$("tabLogin").onclick=()=>{$("tabLogin").classList.add("active");$("tabRegister").classList.remove("active");$("loginForm").classList.remove("hidden");$("registerForm").classList.add("hidden");$("loginErr").textContent="";};
-$("tabRegister").onclick=()=>{$("tabRegister").classList.add("active");$("tabLogin").classList.remove("active");$("registerForm").classList.remove("hidden");$("loginForm").classList.add("hidden");$("regErr").textContent="";};
+function showLoginLayout(){
+  $("tabLogin").classList.add("active");
+  $("tabRegister").classList.remove("active");
+  $("loginForm").classList.remove("hidden");
+  $("registerForm").classList.add("hidden");
+  $("loginErr").textContent="";
+}
+function showRegisterLayout(){
+  $("tabRegister").classList.add("active");
+  $("tabLogin").classList.remove("active");
+  $("registerForm").classList.remove("hidden");
+  $("loginForm").classList.add("hidden");
+  $("regErr").textContent="";
+}
+$("tabLogin").addEventListener("click",function(e){e.preventDefault();e.stopPropagation();showLoginLayout();});
+$("tabRegister").addEventListener("click",function(e){e.preventDefault();e.stopPropagation();showRegisterLayout();});
 
-document.querySelectorAll("#avatarPick button").forEach(b=>{
-  b.onclick=()=>{document.querySelectorAll("#avatarPick button").forEach(x=>x.classList.remove("selected"));b.classList.add("selected");selectedAvatar=b.dataset.av;};
+document.querySelectorAll("#avatarPick button").forEach(function(b){
+  b.addEventListener("click",function(e){
+    e.preventDefault();e.stopPropagation();
+    document.querySelectorAll("#avatarPick button").forEach(function(x){x.classList.remove("selected");});
+    b.classList.add("selected");
+    selectedAvatar=b.getAttribute("data-av")||"�������������";
+  });
 });
 
-$("btnRegister").onclick=()=>{
-  const name=$("regName").value.trim(), user=$("regUser").value.trim().toLowerCase().replace(/�s�,""), pass=$("regPass").value, role=$("regRole").value;
-  $("regErr").textContent="";
-  if(!name||!user||!pass){$("regErr").textContent="Please fill name, username and password.";return;}
-  if(user.length<3){$("regErr").textContent="Username must be at least 3 characters.";return;}
-  if(pass.length<4){$("regErr").textContent="Password min 4 characters.";return;}
-  const users=getUsers();
-  if(users.some(u=>u.username===user)){$("regErr").textContent="That username is already registered. Login or choose another.";return;}
-  const nu={name,username:user,pass,role,avatar:selectedAvatar,createdAt:new Date().toISOString(),progress:{rouScore:0,rouTotal:0,streakBest:0,streakCorrect:0,telasScore:0,telasTotal:0}};
-  users.push(nu);saveUsers(users);setSession(nu);enterApp();
-};
+$("btnRegister").addEventListener("click",function(e){
+  e.preventDefault();e.stopPropagation();
+  try{
+    const name=($("regName").value||"").trim();
+    const user=($("regUser").value||"").trim().toLowerCase().replace(/�s�,"");
+    const pass=$("regPass").value||"";
+    const role=$("regRole").value||"Medical Student";
+    $("regErr").textContent="";
+    if(!name||!user||!pass){$("regErr").textContent="Please fill name, username and password.";return;}
+    if(user.length<3){$("regErr").textContent="Username must be at least 3 characters.";return;}
+    if(pass.length<4){$("regErr").textContent="Password min 4 characters.";return;}
+    const users=getUsers();
+    if(users.some(function(u){return u.username===user;})){$("regErr").textContent="That username is already taken. Choose another or use Login.";return;}
+    const nu={
+      name:name,
+      username:user,
+      pass:pass,
+      role:role,
+      avatar:selectedAvatar||"�������������",
+      createdAt:new Date().toISOString(),
+      progress:{rouScore:0,rouTotal:0,streakBest:0,streakCorrect:0,telasScore:0,telasTotal:0}
+    };
+    users.push(nu);
+    saveUsers(users);
+    setSession(nu);
+    enterApp();
+  }catch(err){
+    $("regErr").textContent="Registration error: "�(err.message||String(err));
+  }
+});
 
-$("btnLogin").onclick=()=>{
-  const user=$("loginUser").value.trim().toLowerCase().replace(/�s�,""), pass=$("loginPass").value;
-  $("loginErr").textContent="";
-  if(!user||!pass){$("loginErr").textContent="Enter username and password.";return;}
-  const u=getUsers().find(x=>x.username===user&&x.pass===pass);
-  if(!u){$("loginErr").textContent="Invalid username or password. Register if you are new.";return;}
-  setSession(u);enterApp();
-};
+$("btnLogin").addEventListener("click",function(e){
+  e.preventDefault();e.stopPropagation();
+  try{
+    const user=($("loginUser").value||"").trim().toLowerCase().replace(/�s�,"");
+    const pass=$("loginPass").value||"";
+    $("loginErr").textContent="";
+    if(!user||!pass){$("loginErr").textContent="Enter username and password.";return;}
+    const u=getUsers().find(function(x){return x.username===user&&x.pass===pass;});
+    if(!u){$("loginErr").textContent="Invalid username or password. Use the Register tab if you are new.";return;}
+    setSession(u);
+    enterApp();
+  }catch(err){
+    $("loginErr").textContent="Login error: "�(err.message||String(err));
+  }
+});
+
+// Allow Enter key to submit on login/register fields
+["loginUser","loginPass"].forEach(function(id){
+  $(id).addEventListener("keydown",function(e){if(e.key==="Enter"){$("btnLogin").click();}});
+});
+["regName","regUser","regPass"].forEach(function(id){
+  $(id).addEventListener("keydown",function(e){if(e.key==="Enter"){$("btnRegister").click();}});
+});
 
 function enterApp(){
+  document.body.classList.remove("auth-open");
   $("authGate").classList.add("hidden");
   $("welcome").classList.remove("hidden");
   $("topRight").classList.remove("hidden");
@@ -461,10 +528,13 @@ function enterApp(){
   mode="menu";
 }
 
-$("logoutBtn").onclick=()=>{clearSession();location.reload();};
+$("logoutBtn").addEventListener("click",function(){clearSession();location.reload();});
 
+// Start on auth screen unless already logged in
+document.body.classList.add("auth-open");
 const existing=loadSession();
 if(existing){currentUser=existing;enterApp();}
+else{showLoginLayout();}
 
 // ---- Search ----
 $("modSearch").addEventListener("input",()=>{
