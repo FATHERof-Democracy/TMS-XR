@@ -64,13 +64,23 @@ input,select,textarea{width:100%;padding:11px;border-radius:10px;border:1px soli
   <a-entity light="type:directional;intensity:1.15" position="-2 7 3"></a-entity>
   <a-plane rotation="-90 0 0" width="30" height="30" color="#d8e4ea"></a-plane>
 
-  <!-- PROCEDURES -->
+  <!-- PROCEDURES — full IV field -->
   <a-entity id="procScene" visible="false">
-    <a-box position="0 0.75 -2.2" width="3" height="0.1" depth="1.2" color="#f0f4f6"></a-box>
-    <a-cylinder position="-0.1 1.05 -2.15" rotation="0 0 90" radius="0.14" height="1.5" color="#c99578"></a-cylinder>
-    <a-sphere position="0.7 1.05 -2.15" radius="0.15" color="#c99578"></a-sphere>
-    <a-cylinder id="pVein" position="0.12 1.18 -2.0" rotation="0 0 90" radius="0.015" height="0.5" color="#2a7fd1" visible="false"></a-cylinder>
-    <a-cylinder id="pCann" position="0.45 1.2 -1.98" rotation="0 0 90" radius="0.02" height="0.32" color="#e8c44a" visible="false"></a-cylinder>
+    <a-box position="0 0.72 -2.2" width="3.4" height="0.1" depth="1.4" color="#f4f7f8"></a-box>
+    <a-box position="0 0.78 -1.55" width="1.2" height="0.04" depth="0.35" color="#2a6b4a"></a-box>
+    <a-cylinder id="procArm" position="-0.15 1.05 -2.2" rotation="0 0 90" radius="0.15" height="1.7" color="#c99578"></a-cylinder>
+    <a-sphere position="0.78 1.05 -2.2" radius="0.16" color="#c99578"></a-sphere>
+    <a-cylinder id="pSwab" class="clickable" position="1.15 1.0 -1.55" rotation="0 0 90" radius="0.035" height="0.22" color="#f7fff8"></a-cylinder>
+    <a-text value="SWAB" position="1.15 1.18 -1.55" width="1.2" color="#234" align="center"></a-text>
+    <a-torus id="pTourn" class="clickable" position="-0.25 1.18 -2.2" rotation="0 90 0" radius="0.18" radius-tubular="0.035" color="#1675c1"></a-torus>
+    <a-text value="TOURNIQUET" position="-0.25 1.42 -2.05" width="1.4" color="#234" align="center"></a-text>
+    <a-cylinder id="pVein" class="clickable" position="0.12 1.2 -2.05" rotation="0 0 90" radius="0.018" height="0.55" color="#297fd1" visible="false"></a-cylinder>
+    <a-cylinder id="pCann" class="clickable" position="0.48 1.22 -2.02" rotation="0 0 90" radius="0.022" height="0.34" color="#f0c84a" visible="false"></a-cylinder>
+    <a-cylinder id="pTube" class="clickable" position="0.95 0.95 -1.7" radius="0.04" height="0.16" color="#c0392b"></a-cylinder>
+    <a-text value="TUBE" position="0.95 1.12 -1.7" width="1" color="#234" align="center"></a-text>
+    <a-box id="pFlush" class="clickable" position="0.55 0.95 -1.55" width="0.12" height="0.18" depth="0.08" color="#5dade2"></a-box>
+    <a-text value="FLUSH" position="0.55 1.15 -1.55" width="1" color="#234" align="center"></a-text>
+    <a-text value="IV FIELD — click tools in order" position="0 1.55 -1.85" width="3" color="#183247" align="center"></a-text>
   </a-entity>
 
   <!-- ANATOMY: denser layered body -->
@@ -438,44 +448,74 @@ document.querySelectorAll("[data-mod]").forEach(b=>b.onclick=()=>setMode(b.getAt
 $("homeBtn").onclick=()=>setMode("menu");$("btnAdmin").onclick=()=>setMode("admin");
 $("modSearch").oninput=function(){const q=this.value.toLowerCase();document.querySelectorAll("#modGrid button[data-mod]").forEach(b=>{b.style.display=!q||((b.getAttribute("data-keys")||"")+b.textContent).toLowerCase().includes(q)?"":"none";});};
 
-// PROCEDURES
+// PROCEDURES — IV/blood are click-driven on 3D tools
 const PROCS={
-iv:{t:"IV cannulation",s:[
-{q:"First step",o:["Confirm indication, consent, prepare clean equipment","Skip consent","Reuse gloves"],a:0},
-{q:"Vein access",o:["Tourniquet, select vein, clean, insert, confirm flashback","Arterial stick intentionally","No cleaning"],a:0},
-{q:"Finish",o:["Advance cannula, secure, flush, document","Leave needle in","No documentation"],a:0}
+iv:{t:"IV cannulation — click tools in 3D",mode:"click",steps:[
+  {need:"pTourn",hint:"1/5 Click TOURNIQUET to apply it",pts:20},
+  {need:"pSwab",hint:"2/5 Click SWAB to clean the site",pts:20},
+  {need:"pVein",hint:"3/5 Click VEIN to select it",pts:20,reveal:"pVein"},
+  {need:"pCann",hint:"4/5 Click CANNULA to insert",pts:20,reveal:"pCann"},
+  {need:"pFlush",hint:"5/5 Click FLUSH — then secure and document",pts:20}
 ]},
-blood:{t:"Venepuncture",s:[
-{q:"Identity",o:["Check patient ID and explain procedure","Draw blood then ask name","Skip labels"],a:0},
-{q:"Collection",o:["Correct tubes, gentle handling, pressure after","Shake tubes violently","Recap needle with both hands"],a:0}
+blood:{t:"Venepuncture — click tools in 3D",mode:"click",steps:[
+  {need:"pTourn",hint:"1/4 Click TOURNIQUET",pts:25},
+  {need:"pSwab",hint:"2/4 Click SWAB to clean",pts:25},
+  {need:"pVein",hint:"3/4 Click VEIN",pts:25,reveal:"pVein"},
+  {need:"pTube",hint:"4/4 Click TUBE — fill, gentle invert, label at bedside",pts:25}
 ]},
-cath:{t:"Urethral catheter",s:[
+cath:{t:"Urethral catheter",mode:"choice",s:[
 {q:"Setup",o:["Indication, consent, strict asepsis","Catheter for staff convenience only","No sterile field"],a:0},
 {q:"Placement",o:["Advance until urine flows, inflate balloon in bladder","Inflate balloon in urethra","Force against fixed resistance"],a:0}
 ]},
-ngt:{t:"NGT",s:[
+ngt:{t:"NGT",mode:"choice",s:[
 {q:"Insertion",o:["Measure NEX, advance with patient swallowing","Force past resistance","No length measurement"],a:0},
 {q:"Before use",o:["Confirm tube position per local policy","Start feed without confirmation","Rely on auscultation alone always"],a:0}
 ]},
-trach:{t:"Tracheostomy care",s:[
+trach:{t:"Tracheostomy care",mode:"choice",s:[
 {q:"Safety",o:["Emergency kit available, know blocked-tube algorithm","No spare tube on ward","Ignore stridor"],a:0},
 {q:"Suctioning",o:["Pre-oxygenate if needed, brief sterile suction","Suction continuously for minutes","Never clear secretions"],a:0}
 ]}
 };
-
-let pk="iv",pi=0,ps=0;
-function loadProc(k){pk=k;pi=0;ps=0;document.querySelectorAll("#procNav button").forEach(b=>b.classList.toggle("on",b.getAttribute("data-p")===k));$("pVein").setAttribute("visible",false);$("pCann").setAttribute("visible",false);rp();}
+let pk="iv",pi=0,ps=0,pWaiting=null;
+function resetProc3D(){
+  ["pVein","pCann"].forEach(id=>{const e=$(id);if(e)e.setAttribute("visible","false");});
+  ["pTourn","pSwab","pTube","pFlush","pVein","pCann"].forEach(id=>{const e=$(id);if(e){e.setAttribute("material","emissive","#000000");e.setAttribute("material","emissiveIntensity","0");}});
+}
+function loadProc(k){
+  pk=k;pi=0;ps=0;pWaiting=null;
+  document.querySelectorAll("#procNav button").forEach(b=>b.classList.toggle("on",b.getAttribute("data-p")===k));
+  resetProc3D();rp();
+}
 function rp(){
-  const P=PROCS[pk];$("procTitle").textContent=P.t;$("procScore").textContent=ps;$("procBar").style.width=(pi/P.s.length*100)+"%";
+  const P=PROCS[pk];$("procTitle").textContent=P.t;$("procScore").textContent=ps;
+  if(P.mode==="click"){
+    $("procBar").style.width=(pi/P.steps.length*100)+"%";
+    if(pi>=P.steps.length){$("procText").textContent="Complete — score "+ps+"/100.";$("procChoices").innerHTML="";pWaiting=null;return;}
+    const s=P.steps[pi];pWaiting=s.need;
+    if(s.reveal){const r=$(s.reveal);if(r)r.setAttribute("visible","true");}
+    $("procText").textContent=s.hint;
+    $("procChoices").innerHTML="<p class='muted'>Click the labelled tool in the 3D field with the mouse.</p>";
+    return;
+  }
+  pWaiting=null;
+  $("procBar").style.width=(pi/P.s.length*100)+"%";
   if(pi>=P.s.length){$("procText").textContent="Complete — score "+ps;$("procChoices").innerHTML="";return;}
   const s=P.s[pi];$("procText").textContent=s.q;
   const opts=shuffle(s.o.map((t,i)=>({t,i})));
   $("procChoices").innerHTML=opts.map(o=>`<button type="button" data-i="${o.i}">${o.t}</button>`).join("");
   $("procChoices").querySelectorAll("button").forEach(b=>b.onclick=()=>{
-    if(+b.dataset.i===s.a){ps+=Math.round(100/P.s.length);if(pk==="iv"&&pi===1)$("pVein").setAttribute("visible",true);if(pk==="iv"&&pi===2)$("pCann").setAttribute("visible",true);pi++;rp();}
+    if(+b.dataset.i===s.a){ps+=Math.round(100/P.s.length);pi++;rp();}
     else{b.classList.add("wrong");ps=Math.max(0,ps-5);$("procScore").textContent=ps;}
   });
 }
+function onProcClick(id){
+  if(mode!=="proc"||!pWaiting)return;
+  if(id!==pWaiting){$("procText").textContent="Wrong tool — need "+pWaiting.replace(/^p/,"").toUpperCase()+" (step "+(pi+1)+")";return;}
+  const P=PROCS[pk];const s=P.steps[pi];
+  const el=$(id);if(el){el.setAttribute("material","emissive","#38e6ba");el.setAttribute("material","emissiveIntensity","0.45");}
+  ps+=s.pts;$("procScore").textContent=ps;pi++;rp();
+}
+["pTourn","pSwab","pVein","pCann","pTube","pFlush"].forEach(id=>{const el=$(id);if(el)el.addEventListener("click",function(){onProcClick(id);});});
 document.querySelectorAll("#procNav button").forEach(b=>b.onclick=()=>loadProc(b.getAttribute("data-p")));
 $("procReset").onclick=()=>loadProc(pk);$("procExit").onclick=()=>setMode("menu");
 
@@ -570,21 +610,56 @@ function showRad(){
 }
 $("radBack").onclick=showRad;$("radExit").onclick=()=>setMode("menu");
 
-// DRUGS
+// DRUGS — common Zambian / regional essential medicines (educational; always follow Zambian STGs / facility protocol)
 const DRUGS=[
-{t:"Adrenaline (anaphylaxis)",a:"IM 1:1000 into mid-outer thigh; repeat per protocol",moa:"α1 vasoconstriction; β2 bronchodilation",ci:"No absolute CI in true anaphylaxis"},
-{t:"Metformin",a:"First-line T2DM if tolerated; hold in severe AKI/sepsis hypoxia",moa:"↓hepatic gluconeogenesis",ci:"Severe renal impairment, acute hypoxia risk"},
-{t:"ACE inhibitors",a:"HTN, heart failure, post-MI (as indicated)",moa:"Block Ang I→II",ci:"Pregnancy, bilateral renal artery stenosis, hyperkalaemia caution"},
-{t:"Salbutamol",a:"Reliever in asthma/COPD bronchospasm",moa:"β2 agonist → bronchodilation",ci:"Caution with non-selective β-blockers"},
-{t:"Insulin (DKA protocol)",a:"Fixed-rate IV infusion per local DKA pathway with fluids & K+",moa:"Glucose uptake; suppresses ketogenesis",ci:"Hypoglycaemia if mismanaged"}
+{t:"Artemether–Lumefantrine (ACT)",ind:"Uncomplicated P. falciparum malaria",ad:"Weight-based 6-dose regimen over 3 days (e.g. 4 tabs at 0,8,24,36,48,60h if ≥35 kg — confirm chart)",ch:"Weight-band dosing per national malaria guidelines; with fatty food when possible",moa:"Artemisinin rapid parasite clearance; lumefantrine longer partner drug",ci:"Severe malaria needs parenteral artesunate first; allergy; caution severe hepatic disease"},
+{t:"Injectable Artesunate",ind:"Severe malaria",ad:"2.4 mg/kg IV/IM at 0,12,24h then daily until oral ACT possible",ch:"Same 2.4 mg/kg schedule (WHO); then complete oral ACT",moa:"Rapid blood schizonticide",ci:"Hypersensitivity; ensure transition to full ACT course"},
+{t:"Amoxicillin",ind:"Community infections (e.g. otitis, pneumonia per STG, UTI in some contexts)",ad:"500 mg–1 g TDS (or local STG)",ch:"Weight-based ~20–40 mg/kg/day divided; max adult dose limits",moa:"Beta-lactam cell-wall inhibition",ci:"Penicillin allergy; adjust in severe renal impairment"},
+{t:"Amoxicillin–Clavulanate",ind:"Broader cover when beta-lactamase likely (per STG)",ad:"Per product strength TDS or BD",ch:"Weight-based; watch diarrhoea",moa:"Amoxicillin + beta-lactamase inhibitor",ci:"Penicillin allergy; hepatic dysfunction caution"},
+{t:"Ceftriaxone",ind:"Severe bacterial infections, meningitis (per STG), typhoid options, gonorrhoea regimens vary",ad:"1–2 g IV/IM daily (higher in meningitis per protocol)",ch:"50–100 mg/kg/day (meningitis higher end); max adult caps",moa:"3rd-gen cephalosporin cell-wall inhibition",ci:"Severe cephalosporin allergy; neonates: calcium interaction with IV ceftriaxone"},
+{t:"Metronidazole",ind:"Anaerobes, amoebiasis, giardiasis, bacterial vaginosis, C. diff adjunct contexts",ad:"400–500 mg TDS oral; IV per severity",ch:"7.5 mg/kg TDS (max adult)",moa:"Disrupts anaerobic DNA",ci:"Avoid alcohol (disulfiram-like); caution 1st trimester — follow obstetric advice"},
+{t:"Ciprofloxacin",ind:"Selected Gram-negatives, typhoid (sensitivity), complicated UTI (stewardship)",ad:"500 mg BD oral typical",ch:"Often avoided in children unless benefit > risk (cartilage concerns); specialist",moa:"Fluoroquinolone DNA gyrase inhibition",ci:"Tendinopathy; QT; pregnancy/children restrictions; interactions (cations)"},
+{t:"Co-trimoxazole (TMP–SMX)",ind:"PCP prophylaxis/treatment in HIV; some UTIs/skin per resistance",ad:"Prophylaxis 960 mg daily (or per HIV guideline); treatment higher",ch:"Weight-based prophylaxis/treatment charts in HIV guidelines",moa:"Sequential folate pathway block",ci:"Sulfa allergy; G6PD caution; hyperkalaemia; pregnancy trimester rules"},
+{t:"Doxycycline",ind:"Malaria prophylaxis options, some STI, rickettsia, alternative pneumonia",ad:"100 mg daily or BD by indication",ch:"Avoid under 8–12 y when alternatives exist (tooth staining)",moa:"Tetracycline — protein synthesis 30S",ci:"Pregnancy; young children; photosensitivity; oesophagitis — sit upright"},
+{t:"Benzylpenicillin / X-pen",ind:"Strep infections, syphilis regimens, severe sepsis combinations per STG",ad:"IM/IV dosing highly regimen-specific",ch:"Unit/kg dosing per indication",moa:"Beta-lactam",ci:"Penicillin allergy — anaphylaxis risk"},
+{t:"Gentamicin",ind:"Gram-negative cover, synergy in some regimens; neonatal sepsis protocols",ad:"5–7 mg/kg ideal body weight daily (extended interval) if used — levels/renal monitor",ch:"Neonatal protocols mg/kg; monitor",moa:"Aminoglycoside 30S",ci:"Renal impairment, ototoxicity; avoid with other ototoxins"},
+{t:"ORS (Oral Rehydration Salt)",ind:"Dehydration from diarrhoea",ad:"Volume by dehydration severity; continue with feeds",ch:"Plan A/B/C per IMCI — teaspoon/cup measures; zinc co-therapy",moa:"Na–glucose cotransport rehydration",ci:"Severe shock needs IV fluids first"},
+{t:"Zinc sulfate",ind:"Adjunct in childhood diarrhoea",ad:"N/A primarily paediatric public health",ch:"20 mg daily ×10–14 days (≥6 mo); 10 mg if <6 mo",moa:"Supports mucosal recovery / reduces duration",ci:"Vomiting if on empty stomach — give with feeds"},
+{t:"Paracetamol (Acetaminophen)",ind:"Pain, fever",ad:"500 mg–1 g QDS (max 4 g/day)",ch:"15 mg/kg/dose QDS (max per age chart)",moa:"Central COX / analgesic antipyretic",ci:"Hepatic impairment; overdose → N-acetylcysteine pathway"},
+{t:"Ibuprofen",ind:"Pain, inflammation, fever",ad:"400 mg TDS with food typical",ch:"5–10 mg/kg/dose; avoid if dehydrated/renal risk",moa:"NSAID COX inhibition",ci:"Peptic ulcer, AKI, heart failure, 3rd trimester pregnancy"},
+{t:"Morphine",ind:"Moderate–severe pain, palliative, MI pain protocols",ad:"Oral/IV titrate; e.g. 2.5–10 mg IV careful titration",ch:"Weight-based; specialist caution",moa:"µ-opioid agonist",ci:"Respiratory depression; monitor; constipation"},
+{t:"Adrenaline (Epinephrine)",ind:"Anaphylaxis; cardiac arrest protocols (different dilutions!)",ad:"Anaphylaxis: IM 0.5 mg 1:1000 anterolateral thigh; arrest: IV 1:10000 per ALS",ch:"IM 0.01 mg/kg 1:1000 (max 0.3–0.5 mg) anaphylaxis",moa:"α1 vasoconstrict; β1/β2 cardiac & bronchial",ci:"No absolute CI in true anaphylaxis"},
+{t:"Salbutamol",ind:"Asthma/COPD bronchospasm",ad:"100–200 mcg inhaled PRN; nebuliser 5 mg in acute",ch:"Age-appropriate inhaler/spacer; neb 2.5–5 mg",moa:"β2 agonist bronchodilation",ci:"Tachyarrhythmia caution; hypokalaemia with high dose"},
+{t:"Prednisolone / Prednisone",ind:"Asthma exacerbations, allergy, autoimmune, PCP adjunct etc.",ad:"e.g. 40–50 mg daily short course asthma (guideline)",ch:"1–2 mg/kg (max adult) short courses common",moa:"Glucocorticoid anti-inflammatory",ci:"Infection risk; hyperglycaemia; taper if prolonged"},
+{t:"Hydrocortisone",ind:"Adrenal crisis; severe asthma/allergy IV options; topical other forms",ad:"IV stress doses per endocrine/emergency protocol",ch:"IV mg/kg stress dosing charts",moa:"Glucocorticoid (± mineralocorticoid activity)",ci:"Infection; hyperglycaemia"},
+{t:"Oxytocin",ind:"Induction/augmentation of labour; PPH prevention/treatment",ad:"PPH: 10 IU IM or IV infusion per obstetric protocol — never IV bolus high dose casually",ch:"N/A obstetric drug",moa:"Uterine smooth muscle contraction",ci:"Hyperstimulation; inappropriate use without monitoring; water intoxication prolonged IV"},
+{t:"Misoprostol",ind:"PPH, incomplete miscarriage, induction contexts per protocol",ad:"PPH doses differ from ulcer doses — use obstetric protocol only",ch:"N/A",moa:"PGE1 analogue uterine contraction",ci:"Must not confuse dosing indications; asthma caution"},
+{t:"Magnesium sulfate",ind:"Eclampsia prevention/treatment; severe asthma adjunct sometimes",ad:"Loading + maintenance per obstetric eclampsia protocol (e.g. Zuspan/Pritchard)",ch:"Not routine paediatric anticonvulsant first-line",moa:"NMDA / neuromuscular effects; cerebral vasodilatory theories",ci:"Respiratory depression; absent reflexes; calcium gluconate ready"},
+{t:"Amlodipine",ind:"Hypertension",ad:"5–10 mg once daily",ch:"Specialist paediatric hypertension only",moa:"Dihydropyridine CCB — vasodilate",ci:"Severe hypotension; gingival hyperplasia"},
+{t:"Enalapril / ACEI class",ind:"HTN, heart failure, diabetic nephropathy contexts",ad:"5–20 mg daily (enalapril) titrate",ch:"Specialist; avoid in neonates volume depletion",moa:"ACE inhibition ↓Ang II",ci:"Pregnancy; bilateral RAS; hyperkalaemia; angioedema history"},
+{t:"Hydrochlorothiazide",ind:"Hypertension, mild oedema",ad:"12.5–25 mg daily",ch:"Rare specialist use",moa:"Thiazide diuretic distal tubule",ci:"Gout, hyponatraemia, hypokalaemia, pregnancy caution"},
+{t:"Furosemide",ind:"Pulmonary oedema, fluid overload",ad:"20–80 mg oral/IV titrate",ch:"1 mg/kg IV cautious",moa:"Loop diuretic NKCC2 block",ci:"Dehydration, electrolyte loss, ototoxicity high IV dose"},
+{t:"Metformin",ind:"Type 2 diabetes first-line if tolerated",ad:"500 mg OD–BD up to 2 g/day with meals",ch:"Specialist only in paeds T2DM",moa:"↓hepatic glucose output; insulin sensitivity",ci:"eGFR low / AKI / hypoxia / contrast — lactic acidosis risk; hold when sick"},
+{t:"Insulin (soluble / NPH / analogues)",ind:"T1DM, T2DM escalation, DKA protocols, hyperkalaemia shift",ad:"Individualised units; DKA fixed-rate IV per protocol",ch:"Unit/kg basal-bolus education critical",moa:"Glucose uptake; anabolic",ci:"Hypoglycaemia; technique & storage education"},
+{t:"Omeprazole / PPI",ind:"PUD, GORD, ulcer prophylaxis selected",ad:"20–40 mg daily",ch:"Weight-based when used",moa:"Irreversible H+/K+ ATPase block",ci:"Mask malignancy; long-term B12/Mg concerns"},
+{t:"Oral iron (ferrous salts)",ind:"Iron-deficiency anaemia",ad:"e.g. ferrous sulfate 200 mg BD–TDS elemental dose aware",ch:"3–6 mg/kg/day elemental iron",moa:"Replenish iron stores / Hb synthesis",ci:"Constipation; overdose toxic in children — safe storage"},
+{t:"Folic acid",ind:"Deficiency, pregnancy supplementation, with antifolates",ad:"5 mg daily treatment; pregnancy 400 mcg–5 mg by risk",ch:"Age-based",moa:"DNA synthesis cofactor",ci:"May mask B12 deficiency neurological disease"},
+{t:"Vitamin A",ind:"Measles adjunct, deficiency, supplementation programmes",ad:"High-dose campaign doses by age — not daily adult multivitamin confusion",ch:"IMCI/measles: 200,000 IU ≥1 y; 100,000 IU 6–11 mo (protocol)",moa:"Epithelial / immune function",ci:"Pregnancy high-dose teratogenic risk"},
+{t:"TDF/3TC/DTG (example first-line ART)",ind:"HIV first-line adult (per national ART guidelines — confirm current)",ad:"One fixed-dose tablet daily typical",ch:"Paediatric regimens weight-band — national ART circulars",moa:"NRTI + integrase inhibitor",ci:"DTG neural-tube caution peri-conception counselling; TDF renal/bone; interactions (e.g. rifampicin → boost/adjust)"},
+{t:"RHZE (intensive phase TB)",ind:"Drug-susceptible TB intensive phase",ad:"Fixed-dose combination weight bands — national TB manual",ch:"Weight-band FDC paediatric formulations",moa:"Multi-target antimycobacterial",ci:"Hepatotoxicity; ethambutol visual; adherence critical; HIV co-treatment rules"},
+{t:"Rifampicin",ind:"TB, some staphylococcal adjuncts",ad:"10 mg/kg (max 600 mg) daily in TB regimens",ch:"Weight-based FDC",moa:"RNA polymerase inhibition",ci:"Potent enzyme inducer (ART, contraceptives!); orange body fluids; hepatitis"},
+{t:"Isoniazid (INH)",ind:"TB treatment/prevention",ad:"5 mg/kg (max 300 mg) daily with pyridoxine when indicated",ch:"Weight-based; pyridoxine if risk neuropathy",moa:"Mycolic acid synthesis block",ci:"Hepatitis; neuropathy; slow acetylators"},
+{t:"Nystatin / topical antifungals",ind:"Oral candidiasis",ad:"Oral suspension QDS swish",ch:"Same locally applied",moa:"Polyene membrane damage",ci:"Local irritation rare"},
+{t:"Diazepam / rectal diazepam",ind:"Seizure rescue (where benzos used)",ad:"IV/rectal per seizure protocol — respiratory monitor",ch:"Rectal 0.5 mg/kg (max caps) community protocols",moa:"GABA-A potentiation",ci:"Respiratory depression; avoid over-stacking sedatives"},
+{t:"ORS + Zinc + continue feeding",ind:"Integrated diarrhoea package (not a single drug)",ad:"ORS by plan; adults hydrate",ch:"IMCI cornerstone",moa:"Rehydration + mucosal recovery",ci:"Shock → IV first"}
 ];
 function showDrugs(){
   $("drugList").classList.remove("hidden");$("drugDetail").classList.add("hidden");
-  $("drugList").innerHTML=DRUGS.map((d,i)=>`<div class="case-card" data-i="${i}"><strong>${d.t}</strong></div>`).join("");
+  $("drugList").innerHTML=DRUGS.map((d,i)=>`<div class="case-card" data-i="${i}"><strong>${d.t}</strong><br><span class="muted">${d.ind}</span></div>`).join("");
   $("drugList").querySelectorAll(".case-card").forEach(el=>el.onclick=()=>{
     const d=DRUGS[+el.dataset.i];$("drugList").classList.add("hidden");$("drugDetail").classList.remove("hidden");
     $("drugStatus").innerHTML=`<strong>${d.t}</strong>`;
-    $("drugBody").innerHTML=`<p><b>Use:</b> ${d.a}</p><p><b>MOA:</b> ${d.moa}</p><p><b>Cautions/CI:</b> ${d.ci}</p>`;
+    $("drugBody").innerHTML=`<p><b>Indications:</b> ${d.ind}</p><p><b>Adult dosing (typical):</b> ${d.ad}</p><p><b>Children:</b> ${d.ch}</p><p><b>MOA:</b> ${d.moa}</p><p><b>Cautions / CI:</b> ${d.ci}</p><p class="muted">Educational summary — always confirm Zambia STG / hospital protocol / current national ART & malaria circulars before prescribing.</p>`;
   });
 }
 $("drugBack").onclick=showDrugs;$("drugExit").onclick=()=>setMode("menu");
