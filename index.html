@@ -2,726 +2,1024 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TMS-XR | Master Clinical Platform v3</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TMS-XR Clinical Platform</title>
 <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial,sans-serif;background:#071522;color:#fff}
-a-scene{position:fixed;inset:0;width:100%;height:100%}
-body.auth-open a-scene{pointer-events:none!important;visibility:hidden}
-.panel{position:fixed;z-index:20;left:10px;top:10px;width:min(420px,calc(100vw - 20px));max-height:calc(100vh - 20px);overflow-y:auto;padding:14px;border-radius:14px;background:rgba(7,21,34,.96);border:1px solid #34536b;box-shadow:0 8px 28px #0007}
-.panel.wide{width:min(580px,calc(100vw - 20px))}
-h1{font-size:18px;margin:0 0 4px}h2{font-size:14px;margin:12px 0 5px;color:#9fd4e8}h3{font-size:13px;margin:8px 0 3px;color:#c5e4f0}
-p{font-size:13px;line-height:1.4;margin:5px 0}.muted{color:#b9cedd;font-size:11.5px}
-button{border:1px solid #4d6c82;border-radius:8px;padding:9px 8px;color:#fff;background:#203e55;cursor:pointer;font-weight:600;font-size:12.5px;touch-action:manipulation;text-align:left}
-button.primary{background:#087f8c;border-color:#20a7ae}button.danger{background:#653341}button.success{background:#1a5c45}button:disabled{opacity:.45;cursor:default}
-.button-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
-.status{background:#142d41;border-radius:8px;padding:10px;min-height:44px;margin-bottom:8px;font-size:13px}
-.progress-bg{background:#30475a;height:8px;border-radius:20px;overflow:hidden;margin:8px 0}.progress{height:100%;width:0%;background:#43d6b4;transition:width .2s}
-#authGate,#welcome{position:fixed;z-index:9999;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(3,13,23,.97);padding:14px;overflow-y:auto;pointer-events:auto}
-#welcome{z-index:30}.card{width:min(720px,100%);padding:22px;border:1px solid #41637a;border-radius:16px;background:#102538;pointer-events:auto}
-#authGate .card{width:min(440px,100%)}
-input,select{width:100%;padding:11px;border-radius:8px;border:1px solid #4d6c82;background:#0d2233;color:#fff;font-size:14px;margin:6px 0 10px}
-.auth-tabs{display:flex;gap:6px;margin-bottom:14px}
-.auth-tabs button{flex:1;text-align:center;padding:12px;font-size:14px}
-.auth-tabs button.active{background:#087f8c;border-color:#20a7ae}
-#authGate button,#authGate input,#authGate select{pointer-events:auto;position:relative;z-index:10000}
-.auth-layout-title{font-size:15px;font-weight:700;color:#9fd4e8;margin:0 0 10px}
-.mod-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
-.mod-grid button{width:100%;padding:11px;font-size:12.5px;text-align:center}
+*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:"Segoe UI",system-ui,sans-serif;background:#050d16;color:#e8f1f6}
+a-scene{position:fixed;inset:0;z-index:1}
+body.no-vr a-scene{visibility:hidden!important;pointer-events:none!important}
+.panel{position:fixed;z-index:50;left:10px;top:10px;width:min(400px,calc(100vw - 20px));max-height:calc(100vh - 20px);overflow-y:auto;padding:16px;border-radius:16px;background:rgba(8,18,30,.98);border:1px solid rgba(80,130,160,.4);box-shadow:0 12px 40px #0008}
+.panel.wide{width:min(540px,calc(100vw - 20px))}
+.panel.full{width:min(640px,calc(100vw - 20px));left:50%;transform:translateX(-50%);top:12px;max-height:calc(100vh - 24px)}
+h1{font-size:18px;margin:0 0 6px}h2{font-size:11px;margin:12px 0 6px;color:#6a9aaf;text-transform:uppercase;letter-spacing:.07em}h3{font-size:13px;margin:8px 0 4px;color:#c5e4f0}
+p{font-size:13px;line-height:1.45;margin:5px 0}.muted{color:#8aa3b5;font-size:11.5px}
+button{border:1px solid rgba(90,130,155,.5);border-radius:10px;padding:10px 12px;color:#e8f1f6;background:#152a3d;cursor:pointer;font-weight:600;font-size:12.5px;touch-action:manipulation;text-align:left}
+button:hover{border-color:#5eb8c8}button.primary{background:linear-gradient(180deg,#0d9a9e,#087f8c);border-color:#2ab8b8;text-align:center}
+button.danger{background:#4a2430;border-color:#8a4055;text-align:center}button:disabled{opacity:.45}
+.button-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.status{background:#122838;border-radius:12px;padding:12px;margin-bottom:8px;font-size:13px;border:1px solid rgba(60,100,130,.3)}
+.progress-bg{background:#1a3040;height:6px;border-radius:20px;overflow:hidden;margin:8px 0}.progress{height:100%;width:0%;background:#43d6b4;transition:width .2s}
+#authGate,#welcome{position:fixed;z-index:9999;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 30% 20%,#0c2438,#050d16 55%);padding:14px;overflow-y:auto}
+.card{width:min(600px,100%);padding:24px;border-radius:20px;border:1px solid rgba(90,140,170,.3);background:linear-gradient(160deg,#102638,#0a1a28)}
+#authGate .card{width:min(400px,100%)}
+input,select,textarea{width:100%;padding:11px;border-radius:10px;border:1px solid rgba(80,120,150,.45);background:#0a1c2c;color:#fff;font-size:14px;margin:4px 0 10px}
+.auth-tabs{display:flex;gap:6px;margin:12px 0;background:#0a1a28;padding:4px;border-radius:12px}
+.auth-tabs button{flex:1;text-align:center;border:none;background:transparent;border-radius:10px;padding:11px}
+.auth-tabs button.active{background:#087f8c}
+.brand{display:flex;align-items:center;gap:10px}.brand-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#0d9a9e,#087f8c);display:flex;align-items:center;justify-content:center;font-weight:800}
+.mod-section{margin-top:12px}.mod-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mod-grid button{min-height:60px;padding:12px;border-radius:12px;display:flex;flex-direction:column;justify-content:center;gap:2px}
+.mod-grid .n{font-size:10px;opacity:.7}.mod-grid .t{font-weight:700;font-size:13px}
 .hidden{display:none!important}
-#topRight{position:fixed;z-index:21;top:10px;right:10px;display:flex;gap:6px;align-items:center}
-#topRight button{background:rgba(7,21,34,.94)}
-.case-card{background:#122a3d;border:1px solid #2d4f66;border-radius:10px;padding:10px;margin:7px 0;cursor:pointer}
-.case-card:hover{border-color:#4aa8c4}
-.tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:99px;background:#1e4a5c;margin-right:4px;color:#9fd4e8}
-.quiz-opt,.opt-btn{display:block;width:100%;text-align:left;margin:4px 0}
+#topRight{position:fixed;z-index:60;top:10px;right:10px;display:flex;gap:6px}
+#topRight button{background:rgba(8,18,30,.95);text-align:center;padding:10px 12px}
+.opt-btn{display:block;width:100%;margin:5px 0;padding:12px;text-align:left;border-radius:10px;background:#132a3d;line-height:1.4}
 .correct{border-color:#2ecc71!important;background:#1a4a35!important}
 .wrong{border-color:#e74c3c!important;background:#4a1f2a!important}
-ul.compact{margin:4px 0 8px 18px;padding:0;font-size:13px}ul.compact li{margin:3px 0}
-.step-num{color:#43d6b4;font-weight:700}
-.streak{font-size:22px;font-weight:700;color:#43d6b4}
-.feedback-box{background:#0f2a1f;border:1px solid #2a6b4a;border-radius:10px;padding:12px;margin:10px 0}
+.feedback-box{background:#0f2a1f;border:1px solid #2a6b4a;border-radius:10px;padding:12px;margin:8px 0;font-size:13px}
 .feedback-box.bad{background:#2a1218;border-color:#6b2a3a}
-.finding-log{background:#0d2233;border:1px solid #2a4a60;border-radius:8px;padding:8px;max-height:130px;overflow-y:auto;font-size:12.5px}
-.finding-log div{margin:4px 0;padding:3px 0;border-bottom:1px solid #1a3348}
-.finding-log .region{color:#43d6b4;font-weight:600}
-.vitals{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin:6px 0}
-.vital{background:#122a3d;border-radius:7px;padding:6px;text-align:center}
-.vital .val{font-size:15px;font-weight:700;color:#43d6b4}
-.vital .lbl{font-size:10px;color:#9bb8cc}
-.vital.warn .val{color:#f0a030}.vital.danger .val{color:#e74c3c}
-.vis-card{background:linear-gradient(145deg,#1a3548,#122a3d);border:1px solid #2d5a70;border-radius:12px;padding:14px;margin:10px 0}
-.vis-icon{font-size:42px;text-align:center;margin:8px 0;line-height:1}
-.vis-caption{font-size:11px;color:#8ab4c8;text-align:center;font-style:italic}
-.user-bar{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:13px;color:#9fd4e8}
-.avatar{width:42px;height:42px;border-radius:50%;background:#1e4a5c;display:flex;align-items:center;justify-content:center;font-size:22px;border:2px solid #4aa8c4;flex-shrink:0}
-.avatar-pick{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
-.avatar-pick button{width:48px;height:48px;border-radius:50%;font-size:22px;padding:0;text-align:center;display:flex;align-items:center;justify-content:center}
-.avatar-pick button.selected{border-color:#43d6b4;background:#1a4a35}
-.search-wrap{margin:10px 0}
-.search-wrap input{margin:0}
-.sarcasm{background:#2a1f12;border:1px solid #6b4a2a;border-radius:10px;padding:12px;margin:8px 0;font-size:13.5px;line-height:1.45}
-.sarcasm .label{color:#f0a030;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
-.telas-header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
-.telas-avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(145deg,#4a2a1a,#2a1f12);border:2px solid #c47a20;display:flex;align-items:center;justify-content:center;font-size:28px}
-.telas-progress{font-size:12px;color:#b9cedd}
-.auth-err{color:#e74c3c;font-size:12px;min-height:18px}
-@media(max-width:600px){.panel{max-height:50vh;top:6px;left:6px;width:calc(100vw - 12px)}#topRight{top:auto;bottom:8px;right:8px;flex-direction:column}.mod-grid{grid-template-columns:1fr}}
+.case-card{background:#122a3d;border:1px solid #2d4f66;border-radius:10px;padding:10px;margin:6px 0;cursor:pointer}
+.case-card:hover{border-color:#4aa8c4}
+.tag{font-size:10px;padding:2px 7px;border-radius:99px;background:#1e4a5c;color:#9fd4e8;margin-right:4px}
+.subnav{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.subnav button{flex:1;min-width:80px;text-align:center;font-size:11px;padding:8px}
+.subnav button.on{background:#087f8c;border-color:#20a7ae}
+.user-bar{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13px}
+.avatar{width:40px;height:40px;border-radius:50%;background:#1e4a5c;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid #4aa8c4}
+.list-btns button{width:100%;margin:4px 0;text-align:left}
+.rad-visual{background:#0a1520;border:1px solid #2a4a60;border-radius:12px;padding:16px;margin:10px 0;min-height:140px;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.rad-visual svg{max-width:100%;height:auto}
+.course-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:220px;overflow-y:auto;margin:8px 0}
+.course-grid button{text-align:center;padding:10px;font-size:11.5px}
+.stem{background:#122a3d;border-radius:12px;padding:14px;margin:8px 0;font-size:14px;line-height:1.5;border-left:3px solid #0d9a9e}
+.follow{font-size:12px;color:#9fd4e8;margin-top:6px}
+@media(max-width:600px){.panel,.panel.full{max-height:50vh;width:calc(100vw - 16px);left:8px;transform:none;top:8px}#topRight{top:auto;bottom:8px;right:8px;flex-direction:column}.mod-grid,.course-grid{grid-template-columns:1fr}}
 </style>
 </head>
-<body>
+<body class="no-vr">
 
-<a-scene background="color:#b8d1df" renderer="colorManagement:true;physicallyCorrectLights:true" vr-mode-ui="enabled:true" cursor="rayOrigin:mouse" raycaster="objects:.clickable" loading-screen="enabled:true">
-  <a-entity light="type:ambient;intensity:1.05"></a-entity>
-  <a-entity light="type:directional;intensity:1.15" position="-2 6 3"></a-entity>
-  <a-plane rotation="-90 0 0" width="24" height="24" color="#dce8ed" position="0 0 0"></a-plane>
+<a-scene id="vrScene" background="color:#c5d5e0" renderer="colorManagement:true" vr-mode-ui="enabled:true" cursor="rayOrigin:mouse" raycaster="objects:.clickable" loading-screen="enabled:false">
+  <a-entity light="type:ambient;intensity:1.1"></a-entity>
+  <a-entity light="type:directional;intensity:1.15" position="-2 7 3"></a-entity>
+  <a-plane rotation="-90 0 0" width="30" height="30" color="#d8e4ea"></a-plane>
 
-  <a-entity id="ivScene" visible="false">
-    <a-box position="0 0.72 -2.2" width="3.4" height="0.12" depth="1.4" color="#f4f7f8"></a-box>
-    <a-cylinder position="-0.9 0.35 -2.2" radius="0.06" height="0.7" color="#8195a0"></a-cylinder>
-    <a-cylinder position="0.9 0.35 -2.2" radius="0.06" height="0.7" color="#8195a0"></a-cylinder>
-    <a-cylinder id="ivArm" position="-0.15 1.02 -2.15" rotation="0 0 90" radius="0.16" height="1.75" color="#bd8d70"></a-cylinder>
-    <a-sphere position="0.78 1.02 -2.15" radius="0.17" color="#bd8d70"></a-sphere>
-    <a-box position="1.10 1.02 -2.15" width="0.35" height="0.10" depth="0.25" color="#bd8d70"></a-box>
-    <a-entity position="1.15 1.05 -1.55" rotation="0 0 -12">
-      <a-cylinder id="swab" class="clickable" position="0 0 0" rotation="0 0 90" radius="0.035" height="0.24" color="#f7fff8" material="emissive:#000"></a-cylinder>
-      <a-sphere position="-0.12 0 0" radius="0.055" color="#42b883"></a-sphere>
-    </a-entity>
-    <a-torus id="tourniquet" class="clickable" position="-0.24 1.13 -2.15" rotation="0 90 0" radius="0.18" radius-tubular="0.035" color="#1675c1" material="emissive:#000"></a-torus>
-    <a-cylinder id="vein" class="clickable" position="0.18 1.17 -1.99" rotation="0 0 90" radius="0.018" height="0.62" color="#297fd1" visible="false"></a-cylinder>
-    <a-entity id="cannulaGroup" visible="false" position="0.52 1.19 -1.98" rotation="0 0 90">
-      <a-cylinder id="cannula" class="clickable" position="0 0 0" radius="0.025" height="0.38" color="#f0c84a" material="emissive:#000"></a-cylinder>
-      <a-cylinder position="0 0.20 0" radius="0.04" height="0.08" color="#e8edf0"></a-cylinder>
-      <a-sphere id="flashback" position="0 0.06 0" radius="0.018" color="#b31d34" visible="false"></a-sphere>
-    </a-entity>
-    <a-box position="1.12 0.86 -2.25" width="0.58" height="0.08" depth="0.40" color="#b6c2c9"></a-box>
-    <a-text value="EQUIPMENT TRAY" position="0.86 0.95 -2.02" width="1.0" color="#183247" align="center"></a-text>
+  <!-- PROCEDURES -->
+  <a-entity id="procScene" visible="false">
+    <a-box position="0 0.75 -2.2" width="3" height="0.1" depth="1.2" color="#f0f4f6"></a-box>
+    <a-cylinder position="-0.1 1.05 -2.15" rotation="0 0 90" radius="0.14" height="1.5" color="#c99578"></a-cylinder>
+    <a-sphere position="0.7 1.05 -2.15" radius="0.15" color="#c99578"></a-sphere>
+    <a-cylinder id="pVein" position="0.12 1.18 -2.0" rotation="0 0 90" radius="0.015" height="0.5" color="#2a7fd1" visible="false"></a-cylinder>
+    <a-cylinder id="pCann" position="0.45 1.2 -1.98" rotation="0 0 90" radius="0.02" height="0.32" color="#e8c44a" visible="false"></a-cylinder>
   </a-entity>
 
-  <a-entity id="anatomyScene" visible="false" position="0 0 -0.3">
-    <a-box position="0 0.05 -2.4" width="4.2" height="0.08" depth="2.2" color="#e8f0f4"></a-box>
-    <a-text value="TMS-XR FULL-BODY ANATOMY" position="0 2.55 -2.1" width="3.0" color="#123047" align="center"></a-text>
-    <a-entity id="anatSkin">
-      <a-sphere class="anat-part clickable" id="skinHead" position="0 2.15 -2.2" radius="0.22" color="#d7a080"></a-sphere>
-      <a-cylinder class="anat-part clickable" id="skinNeck" position="0 1.88 -2.2" radius="0.09" height="0.18" color="#d7a080"></a-cylinder>
-      <a-box class="anat-part clickable" id="skinTorso" position="0 1.35 -2.2" width="0.72" height="0.85" depth="0.38" color="#d7a080"></a-box>
-      <a-box class="anat-part clickable" id="skinPelvis" position="0 0.82 -2.2" width="0.58" height="0.28" depth="0.32" color="#d7a080"></a-box>
-      <a-cylinder class="anat-part clickable" id="skinRUA" position="0.52 1.45 -2.2" rotation="0 0 90" radius="0.09" height="0.55" color="#d7a080"></a-cylinder>
-      <a-cylinder class="anat-part clickable" id="skinLUA" position="-0.52 1.45 -2.2" rotation="0 0 90" radius="0.09" height="0.55" color="#d7a080"></a-cylinder>
-      <a-cylinder class="anat-part clickable" id="skinRFA" position="0.95 1.45 -2.2" rotation="0 0 90" radius="0.07" height="0.48" color="#d7a080"></a-cylinder>
-      <a-cylinder class="anat-part clickable" id="skinLFA" position="-0.95 1.45 -2.2" rotation="0 0 90" radius="0.07" height="0.48" color="#d7a080"></a-cylinder>
-      <a-cylinder class="anat-part clickable" id="skinRThigh" position="0.18 0.45 -2.2" radius="0.12" height="0.55" color="#d7a080"></a-cylinder>
-      <a-cylinder class="anat-part clickable" id="skinLThigh" position="-0.18 0.45 -2.2" radius="0.12" height="0.55" color="#d7a080"></a-cylinder>
-      <a-cylinder class="anat-part clickable" id="skinRLeg" position="0.18 0.05 -2.2" radius="0.09" height="0.45" color="#d7a080"></a-cylinder>
-      <a-cylinder class="anat-part clickable" id="skinLLeg" position="-0.18 0.05 -2.2" radius="0.09" height="0.45" color="#d7a080"></a-cylinder>
+  <!-- ANATOMY: denser layered body -->
+  <a-entity id="anatScene" visible="false">
+    <a-box position="0 0.04 -2.5" width="5" height="0.06" depth="2.4" color="#e6eef3"></a-box>
+    <!-- skin -->
+    <a-entity id="layerSkin">
+      <a-sphere class="clickable anat" position="0 2.15 -2.3" radius="0.22" color="#d4a574" data-n="Cranium / scalp"></a-sphere>
+      <a-cylinder class="clickable anat" position="0 1.88 -2.3" radius="0.09" height="0.16" color="#d4a574" data-n="Neck"></a-cylinder>
+      <a-box class="clickable anat" position="0 1.4 -2.3" width="0.7" height="0.75" depth="0.36" color="#d4a574" data-n="Thoracoabdominal wall"></a-box>
+      <a-box class="clickable anat" position="0 0.9 -2.3" width="0.55" height="0.22" depth="0.3" color="#d4a574" data-n="Pelvic soft tissue"></a-box>
+      <a-cylinder class="clickable anat" position="0.48 1.45 -2.3" rotation="0 0 85" radius="0.085" height="0.55" color="#d4a574" data-n="R upper limb skin"></a-cylinder>
+      <a-cylinder class="clickable anat" position="-0.48 1.45 -2.3" rotation="0 0 -85" radius="0.085" height="0.55" color="#d4a574" data-n="L upper limb skin"></a-cylinder>
+      <a-cylinder class="clickable anat" position="0.16 0.4 -2.3" radius="0.11" height="0.75" color="#d4a574" data-n="R lower limb skin"></a-cylinder>
+      <a-cylinder class="clickable anat" position="-0.16 0.4 -2.3" radius="0.11" height="0.75" color="#d4a574" data-n="L lower limb skin"></a-cylinder>
     </a-entity>
-    <a-entity id="anatMuscles" visible="false">
-      <a-sphere class="anat-part clickable" id="mPecR" position="0.18 1.55 -2.05" scale="0.22 0.14 0.08" color="#a84d49"></a-sphere>
-      <a-sphere class="anat-part clickable" id="mBicepsR" position="0.52 1.48 -2.08" scale="0.18 0.09 0.08" color="#a84d49"></a-sphere>
-      <a-sphere class="anat-part clickable" id="mQuadR" position="0.18 0.5 -2.08" scale="0.14 0.22 0.09" color="#b45b51"></a-sphere>
+    <a-entity id="layerMuscle" visible="false">
+      <a-sphere class="clickable anat" position="0.18 1.55 -2.15" scale="0.2 0.12 0.07" color="#a34440" data-n="Pectoralis major"></a-sphere>
+      <a-sphere class="clickable anat" position="-0.18 1.55 -2.15" scale="0.2 0.12 0.07" color="#a34440" data-n="Pectoralis major L"></a-sphere>
+      <a-sphere class="clickable anat" position="0 1.15 -2.14" scale="0.25 0.18 0.06" color="#b35550" data-n="Rectus abdominis"></a-sphere>
+      <a-sphere class="clickable anat" position="0.48 1.48 -2.18" scale="0.14 0.08 0.07" color="#a34440" data-n="Biceps brachii"></a-sphere>
+      <a-sphere class="clickable anat" position="0.16 0.5 -2.18" scale="0.12 0.2 0.08" color="#b35550" data-n="Quadriceps"></a-sphere>
+      <a-sphere class="clickable anat" position="-0.16 0.5 -2.18" scale="0.12 0.2 0.08" color="#b35550" data-n="Quadriceps L"></a-sphere>
     </a-entity>
-    <a-entity id="anatBones" visible="false">
-      <a-sphere class="anat-part clickable" id="bSkull" position="0 2.15 -2.2" radius="0.19" color="#f0dfb4"></a-sphere>
-      <a-cylinder class="anat-part clickable" id="bSpine" position="0 1.35 -2.28" radius="0.04" height="0.9" color="#f0dfb4"></a-cylinder>
-      <a-cylinder class="anat-part clickable" id="bFemurR" position="0.18 0.45 -2.2" radius="0.045" height="0.5" color="#f0dfb4"></a-cylinder>
-      <a-cylinder class="anat-part clickable" id="bFemurL" position="-0.18 0.45 -2.2" radius="0.045" height="0.5" color="#f0dfb4"></a-cylinder>
+    <a-entity id="layerBone" visible="false">
+      <a-sphere class="clickable anat" position="0 2.15 -2.3" radius="0.18" color="#f2e2b8" data-n="Skull (cranial vault)"></a-sphere>
+      <a-cylinder class="clickable anat" position="0 1.4 -2.38" radius="0.035" height="0.9" color="#f2e2b8" data-n="Vertebral column"></a-cylinder>
+      <a-torus class="clickable anat" position="0 1.55 -2.28" rotation="90 0 0" radius="0.26" radius-tubular="0.02" color="#e8d9a8" data-n="Rib cage"></a-torus>
+      <a-box class="clickable anat" position="0 0.95 -2.3" width="0.4" height="0.1" depth="0.22" color="#e5d4a6" data-n="Pelvis"></a-box>
+      <a-cylinder class="clickable anat" position="0.48 1.45 -2.3" rotation="0 0 85" radius="0.03" height="0.5" color="#f2e2b8" data-n="Humerus"></a-cylinder>
+      <a-cylinder class="clickable anat" position="0.16 0.45 -2.3" radius="0.04" height="0.7" color="#f2e2b8" data-n="Femur"></a-cylinder>
+      <a-cylinder class="clickable anat" position="-0.16 0.45 -2.3" radius="0.04" height="0.7" color="#f2e2b8" data-n="Femur L"></a-cylinder>
+      <a-box class="clickable anat" position="0 1.7 -2.25" width="0.28" height="0.08" depth="0.18" color="#efe0b0" data-n="Sternum / manubrium"></a-box>
     </a-entity>
-    <a-entity id="anatVessels" visible="false">
-      <a-cylinder class="anat-part clickable" id="vAorta" position="0.05 1.4 -2.12" radius="0.03" height="0.7" color="#bd303b"></a-cylinder>
-      <a-cylinder class="anat-part clickable" id="vFemoralR" position="0.22 0.5 -2.08" radius="0.016" height="0.4" color="#bd303b"></a-cylinder>
+    <a-entity id="layerVessel" visible="false">
+      <a-cylinder class="clickable anat" position="0.05 1.4 -2.2" radius="0.028" height="0.7" color="#c02832" data-n="Aorta"></a-cylinder>
+      <a-cylinder class="clickable anat" position="-0.05 1.25 -2.2" radius="0.025" height="0.5" color="#2a5f9e" data-n="IVC"></a-cylinder>
+      <a-cylinder class="clickable anat" position="0.08 1.95 -2.2" radius="0.014" height="0.2" color="#c02832" data-n="Carotid"></a-cylinder>
+      <a-cylinder class="clickable anat" position="0.2 0.5 -2.15" radius="0.014" height="0.45" color="#c02832" data-n="Femoral artery"></a-cylinder>
+      <a-cylinder class="clickable anat" position="0.48 1.45 -2.18" rotation="0 0 85" radius="0.012" height="0.45" color="#c02832" data-n="Brachial artery"></a-cylinder>
     </a-entity>
-    <a-entity id="anatLabels" visible="false">
-      <a-text value="SKULL" position="0.35 2.3 -2.0" width="0.9" color="#51452f"></a-text>
-      <a-text value="AORTA" position="0.25 1.55 -1.95" width="0.9" color="#7b2929"></a-text>
+    <a-entity id="layerNerve" visible="false">
+      <a-cylinder class="clickable anat" position="0.12 1.7 -2.16" radius="0.01" height="0.35" color="#f5e6a0" data-n="Brachial plexus region"></a-cylinder>
+      <a-cylinder class="clickable anat" position="0.22 0.55 -2.12" radius="0.01" height="0.5" color="#f5e6a0" data-n="Sciatic / femoral nerve region"></a-cylinder>
+      <a-cylinder class="clickable anat" position="0.02 1.9 -2.18" radius="0.009" height="0.25" color="#f5e6a0" data-n="Cervical nerve roots"></a-cylinder>
     </a-entity>
-  </a-entity>
-
-  <a-entity id="patientScene" visible="false">
-    <a-box position="0 0.35 -2.4" width="2.4" height="0.5" depth="1.1" color="#e8eef2"></a-box>
-    <a-box position="0 0.62 -2.4" width="2.2" height="0.08" depth="0.95" color="#f5f8fa"></a-box>
-    <a-entity id="patientRoot" position="0 0.7 -2.35">
-      <a-sphere class="clickable body-part" id="pHead" position="0 1.05 0" radius="0.18" color="#d7a080" data-region="Head / Face"></a-sphere>
-      <a-cylinder class="clickable body-part" position="0 0.86 0" radius="0.07" height="0.12" color="#d7a080" data-region="Neck"></a-cylinder>
-      <a-box class="clickable body-part" position="0 0.55 0" width="0.48" height="0.42" depth="0.28" color="#d7a080" data-region="Chest"></a-box>
-      <a-box class="clickable body-part" position="0 0.22 0" width="0.44" height="0.28" depth="0.26" color="#d7a080" data-region="Abdomen"></a-box>
-      <a-box class="clickable body-part" position="0 0.02 0" width="0.4" height="0.14" depth="0.24" color="#d7a080" data-region="Pelvis / Groin"></a-box>
-      <a-cylinder class="clickable body-part" position="0.38 0.55 0" rotation="0 0 75" radius="0.065" height="0.55" color="#d7a080" data-region="Right arm"></a-cylinder>
-      <a-cylinder class="clickable body-part" position="-0.38 0.55 0" rotation="0 0 -75" radius="0.065" height="0.55" color="#d7a080" data-region="Left arm"></a-cylinder>
-      <a-cylinder class="clickable body-part" position="0.12 -0.28 0" radius="0.08" height="0.55" color="#d7a080" data-region="Right leg"></a-cylinder>
-      <a-cylinder class="clickable body-part" position="-0.12 -0.28 0" radius="0.08" height="0.55" color="#d7a080" data-region="Left leg"></a-cylinder>
+    <a-entity id="layerLymph" visible="false">
+      <a-sphere class="clickable anat" position="0.12 1.85 -2.15" radius="0.035" color="#7ec8a0" data-n="Cervical nodes"></a-sphere>
+      <a-sphere class="clickable anat" position="0.22 1.45 -2.12" radius="0.03" color="#7ec8a0" data-n="Axillary nodes"></a-sphere>
+      <a-sphere class="clickable anat" position="0.12 0.95 -2.12" radius="0.03" color="#7ec8a0" data-n="Inguinal nodes"></a-sphere>
+    </a-entity>
+    <!-- suture hand -->
+    <a-entity id="handSuture" visible="false" position="0.6 1.1 -1.9">
+      <a-box position="0 0 0" width="0.28" height="0.08" depth="0.5" color="#d4a574"></a-box>
+      <a-box position="0 0.06 0.15" width="0.06" height="0.04" depth="0.18" color="#d4a574"></a-box>
+      <a-box position="0.08 0.06 0.12" width="0.05" height="0.04" depth="0.16" color="#d4a574"></a-box>
+      <a-box position="-0.08 0.06 0.12" width="0.05" height="0.04" depth="0.16" color="#d4a574"></a-box>
+      <a-box id="cutLine" position="0 0.05 0" width="0.2" height="0.01" depth="0.015" color="#8b1e1e"></a-box>
+      <a-entity id="sutureMarks" visible="false">
+        <a-box position="-0.06 0.06 0" width="0.015" height="0.04" depth="0.015" color="#ddd"></a-box>
+        <a-box position="0 0.06 0" width="0.015" height="0.04" depth="0.015" color-color="#ddd" color="#ddd"></a-box>
+        <a-box position="0.06 0.06 0" width="0.015" height="0.04" depth="0.015" color="#ddd"></a-box>
+      </a-entity>
     </a-entity>
   </a-entity>
 
-  <a-entity camera look-controls position="0 1.6 1.0">
-    <a-entity cursor="fuse:false" raycaster="objects:.clickable;far:12" position="0 0 -1" geometry="primitive:ring;radiusInner:0.007;radiusOuter:0.012" material="color:#ff5c67;shader:flat"></a-entity>
+  <!-- SURGERY: full body on bed -->
+  <a-entity id="surgScene" visible="false">
+    <a-box position="0 0.55 -2.6" width="2.6" height="0.45" depth="1.2" color="#4a5560"></a-box>
+    <a-box position="0 0.8 -2.6" width="2.4" height="0.08" depth="1.05" color="#e8eef3"></a-box>
+    <a-box position="0 0.85 -3.0" width="0.7" height="0.2" depth="0.35" color="#d0d8e0"></a-box>
+    <a-entity id="surgPatient" position="0 0.9 -2.55">
+      <a-sphere position="0 0.95 0.35" radius="0.14" color="#d4a574"></a-sphere>
+      <a-box position="0 0.55 0" width="0.42" height="0.55" depth="0.28" color="#e8f0f4"></a-box>
+      <a-box position="0 0.2 0" width="0.4" height="0.25" depth="0.26" color="#e8f0f4"></a-box>
+      <a-cylinder position="0.28 0.55 0" rotation="0 0 70" radius="0.05" height="0.45" color="#d4a574"></a-cylinder>
+      <a-cylinder position="-0.28 0.55 0" rotation="0 0 -70" radius="0.05" height="0.45" color="#d4a574"></a-cylinder>
+      <a-cylinder position="0.1 -0.15 0" radius="0.06" height="0.4" color="#d4a574"></a-cylinder>
+      <a-cylinder position="-0.1 -0.15 0" radius="0.06" height="0.4" color="#d4a574"></a-cylinder>
+      <a-box id="surgIncision" class="clickable" position="0 0.55 -0.02" width="0.08" height="0.02" depth="0.2" color="#a03030"></a-box>
+    </a-entity>
+    <a-box position="1.0 0.95 -2.2" width="0.5" height="0.08" depth="0.4" color="#b0b8c0"></a-box>
+  </a-entity>
+
+  <!-- DELIVERY ward -->
+  <a-entity id="delScene" visible="false">
+    <a-box position="0 0.5 -2.8" width="3.2" height="0.5" depth="1.6" color="#5a6570"></a-box>
+    <a-box position="0 0.78 -2.8" width="2.9" height="0.1" depth="1.4" color="#f5f8fa"></a-box>
+    <a-box position="0 0.9 -3.3" width="0.9" height="0.35" depth="0.4" color="#dde5ec"></a-box>
+    <a-sphere position="0 1.35 -2.9" radius="0.16" color="#d4a574"></a-sphere>
+    <a-box position="0 1.0 -2.7" width="0.55" height="0.45" depth="0.7" color="#eef3f6"></a-box>
+    <a-cylinder position="0.35 0.95 -2.4" rotation="80 0 0" radius="0.07" height="0.5" color="#d4a574"></a-cylinder>
+    <a-cylinder position="-0.35 0.95 -2.4" rotation="80 0 0" radius="0.07" height="0.5" color="#d4a574"></a-cylinder>
+    <a-box position="1.3 1.1 -2.3" width="0.45" height="0.9" depth="0.35" color="#3a8a7a"></a-box>
+    <a-sphere id="babyProxy" position="0.9 1.0 -2.0" radius="0.1" color="#e8c4a8" visible="false"></a-sphere>
+    <a-text value="LABOUR WARD" position="0 1.9 -2.4" width="2.5" color="#234" align="center"></a-text>
+  </a-entity>
+
+  <a-entity camera look-controls position="0 1.5 1.0">
+    <a-entity cursor="fuse:false" raycaster="objects:.clickable;far:14" position="0 0 -1"
+      geometry="primitive:ring;radiusInner:0.006;radiusOuter:0.011" material="color:#ff5c67;shader:flat"></a-entity>
   </a-entity>
 </a-scene>
 
-<!-- AUTH: two separate layouts (Login / Register) -->
+<!-- AUTH -->
 <div id="authGate">
   <div class="card">
-    <h1>TMS-XR</h1>
-    <p class="muted">Each user has their own account. Register once, then login anytime on this device.</p>
-
-    <div class="auth-tabs">
-      <button type="button" class="active" id="tabLogin">Login</button>
-      <button type="button" id="tabRegister">Register</button>
-    </div>
-
-    <!-- LAYOUT 1: LOGIN -->
+    <div class="brand"><div class="brand-mark">TX</div><div><h1 style="margin:0">TMS-XR</h1><p class="muted" style="margin:0">Clinical learning platform</p></div></div>
+    <div class="auth-tabs"><button type="button" class="active" id="tabLogin">Login</button><button type="button" id="tabRegister">Register</button></div>
     <div id="loginForm">
-      <div class="auth-layout-title">Login to your account</div>
-      <label class="muted">Username</label>
-      <input id="loginUser" placeholder="Your username" autocomplete="username">
-      <label class="muted">Password</label>
-      <input id="loginPass" type="password" placeholder="Your password" autocomplete="current-password">
-      <div class="auth-err" id="loginErr"></div>
-      <button type="button" class="primary" id="btnLogin" style="width:100%;text-align:center;padding:14px;margin-top:6px">Login</button>
-      <p class="muted" style="margin-top:12px;text-align:center">New here? Click the <strong>Register</strong> tab above.</p>
+      <label class="muted">Username</label><input id="loginUser">
+      <label class="muted">Password</label><input id="loginPass" type="password">
+      <div id="loginErr" style="color:#e74c3c;font-size:12px;min-height:16px"></div>
+      <button type="button" class="primary" id="btnLogin" style="width:100%;padding:12px">Login</button>
     </div>
-
-    <!-- LAYOUT 2: REGISTER -->
     <div id="registerForm" class="hidden">
-      <div class="auth-layout-title">Create a new account</div>
-      <label class="muted">Full name</label>
-      <input id="regName" placeholder="e.g. Amina Okello" maxlength="60" autocomplete="name">
-      <label class="muted">Username (unique)</label>
-      <input id="regUser" placeholder="Choose a username" maxlength="30" autocomplete="username">
-      <label class="muted">Password (min 4 characters)</label>
-      <input id="regPass" type="password" placeholder="Choose a password" maxlength="40" autocomplete="new-password">
+      <label class="muted">Name</label><input id="regName">
+      <label class="muted">Username</label><input id="regUser">
+      <label class="muted">Password</label><input id="regPass" type="password">
       <label class="muted">Role</label>
-      <select id="regRole">
-        <option value="Medical Student">Medical Student</option>
-        <option value="Intern / House Officer">Intern / House Officer</option>
-        <option value="Resident / Registrar">Resident / Registrar</option>
-        <option value="Consultant / Specialist">Consultant / Specialist</option>
-        <option value="Nurse / Clinical Officer">Nurse / Clinical Officer</option>
-        <option value="Other">Other</option>
-      </select>
-      <label class="muted">Avatar</label>
-      <div class="avatar-pick" id="avatarPick">
-        <button type="button" data-av="�������������" class="selected" title="Female clinician">�������������</button>
-        <button type="button" data-av="�������������" title="Male clinician">�������������</button>
-        <button type="button" data-av="����" title="Female">����</button>
-        <button type="button" data-av="����" title="Male">����</button>
-        <button type="button" data-av="�����������" title="Tech">�����������</button>
-        <button type="button" data-av="����" title="Stethoscope">����</button>
-      </div>
-      <div class="auth-err" id="regErr"></div>
-      <button type="button" class="primary" id="btnRegister" style="width:100%;text-align:center;padding:14px;margin-top:6px">Create account</button>
-      <p class="muted" style="margin-top:12px;text-align:center">Already registered? Click the <strong>Login</strong> tab above.</p>
+      <select id="regRole"><option>Medical Student</option><option>Intern / House Officer</option><option>Resident / Registrar</option><option>Consultant / Specialist</option><option>Nurse / Clinical Officer</option></select>
+      <div id="regErr" style="color:#e74c3c;font-size:12px;min-height:16px"></div>
+      <button type="button" class="primary" id="btnRegister" style="width:100%;padding:12px">Create account</button>
     </div>
-
-    <p class="muted" style="margin-top:14px">Accounts stay in this browser only. Educational use.</p>
   </div>
 </div>
 
-<!-- WELCOME -->
 <div id="welcome" class="hidden">
   <div class="card">
-    <div class="user-bar">
-      <div class="avatar" id="userAvatar">�������������</div>
-      <div>
-        <div id="userBarName">User</div>
-        <div class="muted" id="userBarRole">Role</div>
+    <div class="user-bar"><div class="avatar" id="userAvatar">👩‍⚕️</div><div><div id="userBarName">User</div><div class="muted" id="userBarRole"></div></div></div>
+    <div class="brand" style="margin:8px 0"><div class="brand-mark">TX</div><div><h1 style="margin:0">TMS-XR</h1><p class="muted" style="margin:0">Select a module</p></div></div>
+    <input id="modSearch" placeholder="Search…" type="search">
+    <div id="modGrid">
+      <div class="mod-section"><h2>Skills</h2>
+        <div class="mod-grid">
+          <button type="button" data-mod="proc" data-keys="procedure iv catheter ngt"><span class="n">01</span><span class="t">Procedures</span></button>
+          <button type="button" data-mod="anat" data-keys="anatomy dissection suture"><span class="n">02</span><span class="t">Anatomy &amp; Dissection</span></button>
+          <button type="button" data-mod="delivery" data-keys="delivery labour resus"><span class="n">03</span><span class="t">Delivery &amp; Resus</span></button>
+          <button type="button" data-mod="surg" data-keys="surgery operation"><span class="n">04</span><span class="t">Virtual Surgeries</span></button>
+        </div>
+      </div>
+      <div class="mod-section"><h2>Knowledge</h2>
+        <div class="mod-grid">
+          <button type="button" data-mod="radiology" data-keys="xray ct mri ultrasound"><span class="n">05</span><span class="t">Radiology</span></button>
+          <button type="button" data-mod="drugs" data-keys="drug pharmacology"><span class="n">06</span><span class="t">Drug Physiology</span></button>
+        </div>
+      </div>
+      <div class="mod-section"><h2>Practice</h2>
+        <div class="mod-grid">
+          <button type="button" data-mod="telas" data-keys="telas quiz roast next step roulette revision"><span class="n">07</span><span class="t">Telas Doc · Revision</span></button>
+          <button type="button" data-mod="chat" data-keys="chat contacts"><span class="n">08</span><span class="t">Contacts &amp; Chat</span></button>
+        </div>
       </div>
     </div>
-    <h1>TMS-XR Master Platform</h1>
-    <div class="search-wrap">
-      <input id="modSearch" placeholder="Search modules��� e.g. anatomy, roulette, telas, IV" type="search">
+    <div class="button-grid" style="margin-top:12px">
+      <button type="button" id="btnAdmin" class="hidden">Admin</button>
+      <button type="button" id="btnLogoutHome" class="danger">Logout</button>
     </div>
-    <div class="mod-grid" id="modGrid">
-      <button class="primary" data-mod="iv" data-keys="iv cannula cannulation drip">1. IV Cannulation</button>
-      <button class="primary" data-mod="anatomy" data-keys="anatomy body bones muscles vessels">2. Full-Body Anatomy</button>
-      <button class="primary" data-mod="patient3d" data-keys="3d patient examine clinical examination" style="background:#0a5c4a;border-color:#1aaa8a">3. 3D Interactive Patient</button>
-      <button class="primary" data-mod="clinical" data-keys="presentation cases text visual signs">4. Patient Presentations</button>
-      <button class="primary" data-mod="delivery" data-keys="delivery birth resuscitation newborn who">5. Delivery & Resuscitation</button>
-      <button class="primary" data-mod="radiology" data-keys="radiology xray ct mri ultrasound imaging">6. Virtual Radiology</button>
-      <button class="primary" data-mod="surgery" data-keys="surgery surgical operation appendicectomy hernia">7. Surgical Conditions</button>
-      <button class="primary" data-mod="drugs" data-keys="drug dosage pharmacology medicine">8. Drug Physiology</button>
-      <button class="primary" data-mod="roulette" data-keys="roulette case random challenge diagnosis" style="background:#0a6b5c;border-color:#1ab39a">9. Case Roulette</button>
-      <button class="primary" data-mod="streak" data-keys="streak next step rapid fire" style="background:#6b3a0a;border-color:#c47a20">10. Next-Best-Step Streak</button>
-      <button class="primary" data-mod="telas" data-keys="telas doc sarcasm consultant humour humor fun" style="background:#4a1a5c;border-color:#a04ac4;grid-column:1/-1">11. Telas Doc �� Consultant Sarcasm Lounge</button>
-    </div>
-    <p class="muted" id="searchEmpty" class="hidden" style="display:none;margin-top:8px">No modules match your search.</p>
   </div>
 </div>
 
-<div id="topRight" class="hidden">
-  <button id="homeBtn">Main menu</button>
-  <button id="logoutBtn" class="danger">Logout</button>
-</div>
+<div id="topRight" class="hidden"><button type="button" id="homeBtn">Menu</button><button type="button" id="logoutBtn" class="danger">Logout</button></div>
 
-<!-- MODULE PANELS (abbreviated structure ��� full logic in script) -->
-<section id="ivPanel" class="panel hidden">
-  <h1>IV Cannulation</h1><p class="muted">4-stage scored sequence</p>
-  <div class="status"><strong id="ivStepTitle">STEP 1</strong><p id="ivStepText"></p><p class="muted" id="ivHint"></p></div>
-  <p>Score: <strong id="ivScore">0</strong>/100</p><div class="progress-bg"><div class="progress" id="ivProgress"></div></div>
-  <div class="button-grid"><button id="ivReset">Restart</button><button id="ivBack" class="danger">Exit</button></div>
+<!-- PROC -->
+<section id="procPanel" class="panel hidden">
+  <h1>Procedures</h1>
+  <div class="subnav" id="procNav">
+    <button type="button" data-p="iv" class="on">IV</button>
+    <button type="button" data-p="blood">Blood</button>
+    <button type="button" data-p="cath">Catheter</button>
+    <button type="button" data-p="ngt">NGT</button>
+    <button type="button" data-p="trach">Trach care</button>
+  </div>
+  <div class="status"><strong id="procTitle"></strong><p id="procText"></p></div>
+  <div id="procChoices" class="list-btns"></div>
+  <p>Score <strong id="procScore">0</strong></p><div class="progress-bg"><div class="progress" id="procBar"></div></div>
+  <div class="button-grid"><button type="button" id="procReset">Restart</button><button type="button" id="procExit" class="danger">Exit</button></div>
 </section>
 
-<section id="anatomyControls" class="panel hidden">
-  <h1>Full-Body Anatomy</h1><div class="status" id="anatStatus">Select a layer</div>
-  <div class="button-grid">
-    <button id="showSkin">Skin</button><button id="showMuscles">Muscles</button>
-    <button id="showBones">Bones</button><button id="showVessels">Vessels</button>
-    <button id="toggleLabels">Labels</button><button id="resetAnatomy">Reset</button>
-    <button class="primary" id="startGuide">Guide</button><button id="nextGuide">Next</button>
-    <button class="primary" id="startQuiz">Quiz</button><button id="resetQuiz">Reset quiz</button>
+<!-- ANAT -->
+<section id="anatPanel" class="panel hidden">
+  <h1>Anatomy &amp; Dissection</h1>
+  <p class="muted">Layered study model · not a full 206-bone mesh (needs dedicated anatomy software for that). Use layers + labels to revise.</p>
+  <div class="subnav">
+    <button type="button" data-a="layers" class="on">Layers</button>
+    <button type="button" data-a="suture">Suturing</button>
+    <button type="button" data-a="bones">Bone list</button>
   </div>
-  <p id="quizScore">Quiz: 0/0</p>
-  <button class="danger" id="anatBack" style="width:100%">Exit</button>
-</section>
-
-<section id="patient3DPanel" class="panel hidden">
-  <h1 id="p3dTitle">3D Interactive Patient</h1>
-  <div id="p3dCaseSelect">
-    <button class="opt-btn primary" data-pcase="app">Surgery �� Acute abdominal pain</button>
-    <button class="opt-btn primary" data-pcase="acs">Medicine �� Chest pain</button>
-    <button class="opt-btn primary" data-pcase="pre">Obs �� Headache in pregnancy</button>
-    <button class="opt-btn primary" data-pcase="asthma">Paeds �� Breathing difficulty</button>
-  </div>
-  <div id="p3dActive" class="hidden">
-    <div class="status" id="p3dInstruction">Click body regions to examine</div>
-    <div id="p3dHistory" style="background:#122a3d;border-radius:8px;padding:9px;font-size:13px"></div>
-    <div class="vitals" id="p3dVitals"></div>
-    <div class="finding-log" id="p3dLog"></div>
+  <div id="aLayers">
+    <div class="status" id="anatStatus">Choose a layer, then tap structures</div>
     <div class="button-grid">
-      <button id="p3dMoreHx" class="primary">More history</button><button id="p3dLabs">Investigations</button>
-      <button id="p3dDx" class="primary">Diagnosis</button><button id="p3dNext">Next step</button>
+      <button type="button" id="lySkin">Skin</button><button type="button" id="lyMus">Muscle</button>
+      <button type="button" id="lyBone">Bone</button><button type="button" id="lyVes">Vessels</button>
+      <button type="button" id="lyNer">Nerves</button><button type="button" id="lyLym">Lymph</button>
     </div>
-    <div id="p3dActionArea" class="hidden"></div>
-    <button id="p3dBackCases" style="width:100%;margin-top:8px">Back to cases</button>
   </div>
-  <button class="danger" id="p3dExit" style="width:100%;margin-top:8px">Exit</button>
-</section>
-
-<section id="clinicalPanel" class="panel wide hidden">
-  <h1>Patient Presentations</h1>
-  <div id="clinicalList"></div>
-  <div id="clinicalDetail" class="hidden">
-    <div class="status" id="clinicalStatus"></div>
-    <div id="clinicalBody"></div>
-    <div class="button-grid"><button id="clinicalQuizBtn" class="primary">Self-check</button><button id="clinicalBackList">Back</button></div>
-    <div id="clinicalQuizArea" class="hidden"></div>
+  <div id="aSuture" class="hidden">
+    <div class="status" id="sutStatus">Select cut type, then suture steps</div>
+    <div class="subnav" id="cutNav">
+      <button type="button" data-cut="linear" class="on">Linear</button>
+      <button type="button" data-cut="circular">Circular</button>
+      <button type="button" data-cut="irregular">Irregular</button>
+      <button type="button" data-cut="deep">Deep</button>
+    </div>
+    <div class="list-btns" id="sutOpts"></div>
+    <p>Score <strong id="sutScore">0</strong>/100</p>
   </div>
-  <button class="danger" id="clinicalExit" style="width:100%;margin-top:10px">Exit</button>
+  <div id="aBones" class="hidden">
+    <div class="status">Major bone groups (revision list — adult skeleton ≈206 bones)</div>
+    <div id="boneList" style="font-size:12px;max-height:200px;overflow-y:auto;background:#0d2233;padding:10px;border-radius:8px"></div>
+  </div>
+  <button type="button" id="anatExit" class="danger" style="width:100%;margin-top:8px">Exit</button>
 </section>
 
-<section id="deliveryPanel" class="panel wide hidden">
-  <h1>Delivery & Newborn Resuscitation</h1>
-  <div class="status" id="delStatus">Choose pathway</div>
-  <div class="button-grid"><button class="primary" id="delNormal">Normal delivery</button><button class="primary" id="delResus">Resuscitation</button></div>
-  <div id="delContent"></div>
-  <div class="button-grid"><button id="delNext" class="primary">Next</button><button id="delReset">Restart</button></div>
-  <button class="danger" id="delExit" style="width:100%;margin-top:8px">Exit</button>
+<!-- DELIVERY -->
+<section id="delPanel" class="panel hidden">
+  <h1>Delivery &amp; Resuscitation</h1>
+  <div class="button-grid">
+    <button type="button" class="primary" id="delNorm">Labour pathway</button>
+    <button type="button" class="primary" id="delRes">Newborn resus</button>
+  </div>
+  <div class="status" id="delStatus">Choose pathway · 3D labour ward behind panel</div>
+  <div id="delBody"></div>
+  <div class="button-grid"><button type="button" id="delNext" class="primary">Next</button><button type="button" id="delExit" class="danger">Exit</button></div>
 </section>
 
-<section id="radiologyPanel" class="panel wide hidden">
-  <h1>Virtual Radiology</h1>
+<!-- SURGERY -->
+<section id="surgPanel" class="panel hidden">
+  <h1>Virtual Surgeries</h1>
+  <p class="muted">Patient on theatre bed — step through safely</p>
+  <div id="surgList" class="list-btns"></div>
+  <div id="surgActive" class="hidden">
+    <div class="status"><strong id="surgTitle"></strong><p id="surgStep"></p></div>
+    <div id="surgChoices" class="list-btns"></div>
+    <div class="progress-bg"><div class="progress" id="surgBar"></div></div>
+  </div>
+  <button type="button" id="surgExit" class="danger" style="width:100%;margin-top:8px">Exit</button>
+</section>
+
+<!-- RADIOLOGY (no VR) -->
+<section id="radPanel" class="panel wide full hidden">
+  <h1>Radiology</h1>
   <div id="radList"></div>
   <div id="radDetail" class="hidden">
-    <div class="status" id="radStatus"></div><div id="radBody"></div>
-    <div class="button-grid"><button id="radQuizBtn" class="primary">Test</button><button id="radBackList">Back</button></div>
-    <div id="radQuizArea" class="hidden"></div>
+    <div class="status" id="radStatus"></div>
+    <div class="rad-visual" id="radVisual"></div>
+    <div id="radBody"></div>
+    <button type="button" id="radBack" style="width:100%;margin-top:8px">Back</button>
   </div>
-  <button class="danger" id="radExit" style="width:100%;margin-top:10px">Exit</button>
+  <button type="button" id="radExit" class="danger" style="width:100%;margin-top:8px">Exit</button>
 </section>
 
-<section id="surgeryPanel" class="panel wide hidden">
-  <h1>Surgical Conditions</h1>
-  <div id="surgList"></div>
-  <div id="surgDetail" class="hidden">
-    <div class="status" id="surgStatus"></div><div id="surgBody"></div>
-    <div class="button-grid"><button id="surgQuizBtn" class="primary">Quiz</button><button id="surgBackList">Back</button></div>
-    <div id="surgQuizArea" class="hidden"></div>
-  </div>
-  <button class="danger" id="surgExit" style="width:100%;margin-top:10px">Exit</button>
-</section>
-
-<section id="drugsPanel" class="panel wide hidden">
-  <h1>Drug Physiology & Dosage</h1>
+<!-- DRUGS (no VR) -->
+<section id="drugPanel" class="panel wide full hidden">
+  <h1>Drug Physiology</h1>
   <div id="drugList"></div>
   <div id="drugDetail" class="hidden">
-    <div class="status" id="drugStatus"></div><div id="drugBody"></div>
-    <button id="drugBackList" style="width:100%;margin-top:8px">Back</button>
+    <div class="status" id="drugStatus"></div>
+    <div id="drugBody"></div>
+    <button type="button" id="drugBack" style="width:100%;margin-top:8px">Back</button>
   </div>
-  <button class="danger" id="drugExit" style="width:100%;margin-top:10px">Exit</button>
+  <button type="button" id="drugExit" class="danger" style="width:100%;margin-top:8px">Exit</button>
 </section>
 
-<section id="roulettePanel" class="panel wide hidden">
-  <h1>Case Roulette</h1>
-  <div class="status" id="rouStatus">Press New Case</div>
-  <div id="rouCaseBox" class="hidden">
-    <div id="rouVignette" style="background:#122a3d;border-radius:10px;padding:12px;margin:8px 0;font-size:13.5px;line-height:1.5"></div>
-    <h3>Diagnosis</h3><div id="rouDxOpts"></div>
-    <h3>Next best step</h3><div id="rouNextOpts"></div>
-    <div id="rouFeedback" class="hidden"></div>
+<!-- TELAS full revision system (no VR) -->
+<section id="telasPanel" class="panel wide full hidden">
+  <h1>Telas Doc · Clinical Revision</h1>
+  <p class="muted">Shuffled options · sarcasm only on wrong answers · course-based</p>
+  <div id="telasHome">
+    <h2>Mode</h2>
+    <div class="button-grid">
+      <button type="button" class="primary" id="tModeFull">Course deep-dive</button>
+      <button type="button" class="primary" id="tModeShort">Short sharp (roulette)</button>
+      <button type="button" class="primary" id="tModeNbs">Next-best-step</button>
+      <button type="button" id="tModeMixed">Mixed random</button>
+    </div>
+    <h2>Course (for deep-dive)</h2>
+    <div class="course-grid" id="courseGrid"></div>
   </div>
-  <div class="button-grid"><button class="primary" id="rouNew">New Case</button><button id="rouShared">Today���s Shared</button></div>
-  <p>Score: <strong id="rouScore">0</strong>/<strong id="rouTotal">0</strong> �� <strong id="rouAcc">���</strong></p>
-  <button class="danger" id="rouExit" style="width:100%;margin-top:8px">Exit</button>
-</section>
-
-<section id="streakPanel" class="panel wide hidden">
-  <h1>Next-Best-Step Streak</h1>
-  <div style="text-align:center;margin:8px 0">
-    <div class="streak" id="streakCount">0</div>
-    <div class="muted">Best: <strong id="streakBest">0</strong> �� Correct: <strong id="streakCorrect">0</strong></div>
-  </div>
-  <div class="status" id="streakStatus">Press Start</div>
-  <div id="streakVignette" class="hidden" style="background:#122a3d;border-radius:10px;padding:12px;margin:8px 0;font-size:13.5px"></div>
-  <div id="streakOpts"></div>
-  <div id="streakFeedback" class="hidden"></div>
-  <div class="button-grid"><button class="primary" id="streakStart">Start / Next</button><button id="streakReset">Reset</button></div>
-  <button class="danger" id="streakExit" style="width:100%;margin-top:8px">Exit</button>
-</section>
-
-<section id="telasPanel" class="panel wide hidden">
-  <div class="telas-header">
-    <div class="telas-avatar">����</div>
-    <div>
-      <h1 style="margin:0">Telas Doc</h1>
-      <div class="telas-progress" id="telasProgress">Consultant of questionable bedside manner</div>
+  <div id="telasPlay" class="hidden">
+    <div class="status" id="telasMeta"></div>
+    <div class="stem" id="telasStem"></div>
+    <div id="telasOpts"></div>
+    <div id="telasFb" class="hidden"></div>
+    <div class="button-grid">
+      <button type="button" class="primary" id="telasNext">Next</button>
+      <button type="button" id="telasScoreBtn"><span id="tScore">0</span>/<span id="tTotal">0</span></button>
     </div>
   </div>
-  <p class="muted">20 scenarios �� Educational sarcasm �� Builds clinical standards (and humility)</p>
-  <div class="status" id="telasStatus">Press Start for your first encounter with Consultant Telas.</div>
-  <div id="telasBox" class="hidden">
-    <div class="sarcasm"><div class="label">Junior presents</div><div id="telasJunior"></div></div>
-    <div class="sarcasm"><div class="label">Consultant Telas replies</div><div id="telasConsult"></div></div>
-    <h3 id="telasQLabel">Telas tests you</h3>
-    <div id="telasOpts"></div>
-    <div id="telasFeedback" class="hidden"></div>
-  </div>
-  <div class="button-grid">
-    <button class="primary" id="telasStart">Start / Next</button>
-    <button id="telasScoreBtn">Score <span id="telasScore">0</span>/<span id="telasTotal">0</span></button>
-  </div>
-  <button class="danger" id="telasExit" style="width:100%;margin-top:8px">Leave the lounge</button>
+  <button type="button" id="telasExit" class="danger" style="width:100%;margin-top:8px">Exit</button>
+</section>
+
+<section id="chatPanel" class="panel wide hidden">
+  <h1>Contacts &amp; Chat</h1>
+  <div id="chatContacts"></div>
+  <div id="chatMsgs" style="max-height:140px;overflow-y:auto;background:#0d2233;padding:8px;border-radius:8px;font-size:12px;margin:8px 0"></div>
+  <input id="chatInput" placeholder="Message…">
+  <div class="button-grid"><button type="button" class="primary" id="chatSend">Send</button><button type="button" id="chatExit" class="danger">Exit</button></div>
+</section>
+
+<section id="adminPanel" class="panel wide hidden">
+  <h1>Admin</h1>
+  <div id="admLog" style="font-size:12px;max-height:240px;overflow-y:auto;background:#0d2233;padding:8px;border-radius:8px"></div>
+  <button type="button" id="admExit" class="danger" style="width:100%;margin-top:8px">Exit</button>
 </section>
 
 <script>
 (()=>{
 "use strict";
 const $=id=>document.getElementById(id);
-let mode="auth", currentUser=null, selectedAvatar="�������������";
+let mode="auth", currentUser=null, chatPeer=null;
 
-// ---- Auth (localStorage) ----
 function getUsers(){try{return JSON.parse(localStorage.getItem("tmsxr_users")||"[]");}catch(e){return[];}}
 function saveUsers(u){localStorage.setItem("tmsxr_users",JSON.stringify(u));}
 function setSession(u){localStorage.setItem("tmsxr_session",JSON.stringify({username:u.username}));currentUser=u;}
-function clearSession(){localStorage.removeItem("tmsxr_session");currentUser=null;}
-function loadSession(){
-  try{
-    const s=JSON.parse(localStorage.getItem("tmsxr_session")||"null");
-    if(!s)return null;
-    const u=getUsers().find(x=>x.username===s.username);
-    return u||null;
-  }catch(e){return null;}
-}
-/** Save fields onto the logged-in user's account (per-user progress). */
-function updateUserProgress(patch){
-  if(!currentUser)return;
-  const users=getUsers();
-  const i=users.findIndex(x=>x.username===currentUser.username);
-  if(i<0)return;
-  const prev=users[i].progress||{};
-  users[i]={...users[i],...patch,progress:{...prev,...(patch.progress||{})}};
-  currentUser=users[i];
-  saveUsers(users);
-}
-function getProgress(){return(currentUser&&currentUser.progress)||{};}
+function clearSession(){localStorage.removeItem("tmsxr_session");}
+function loadSession(){try{const s=JSON.parse(localStorage.getItem("tmsxr_session")||"null");if(!s)return null;return getUsers().find(x=>x.username===s.username)||null;}catch(e){return null;}}
+async function hashPass(p){try{const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("tmsxr_v1:"+p));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("");}catch(e){return "plain:"+p;}}
+function logAct(a,d){try{const L=JSON.parse(localStorage.getItem("tmsxr_activity")||"[]");L.unshift({user:currentUser?currentUser.username:"?",name:currentUser?currentUser.name:"?",action:a,detail:d||"",time:new Date().toISOString()});localStorage.setItem("tmsxr_activity",JSON.stringify(L.slice(0,400)));}catch(e){}}
+function shuffle(a){const x=a.slice();for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]];}return x;}
 
-function showLoginLayout(){
-  $("tabLogin").classList.add("active");
-  $("tabRegister").classList.remove("active");
-  $("loginForm").classList.remove("hidden");
-  $("registerForm").classList.add("hidden");
-  $("loginErr").textContent="";
-}
-function showRegisterLayout(){
-  $("tabRegister").classList.add("active");
-  $("tabLogin").classList.remove("active");
-  $("registerForm").classList.remove("hidden");
-  $("loginForm").classList.add("hidden");
-  $("regErr").textContent="";
-}
-$("tabLogin").addEventListener("click",function(e){e.preventDefault();e.stopPropagation();showLoginLayout();});
-$("tabRegister").addEventListener("click",function(e){e.preventDefault();e.stopPropagation();showRegisterLayout();});
-
-document.querySelectorAll("#avatarPick button").forEach(function(b){
-  b.addEventListener("click",function(e){
-    e.preventDefault();e.stopPropagation();
-    document.querySelectorAll("#avatarPick button").forEach(function(x){x.classList.remove("selected");});
-    b.classList.add("selected");
-    selectedAvatar=b.getAttribute("data-av")||"�������������";
-  });
-});
-
-$("btnRegister").addEventListener("click",function(e){
-  e.preventDefault();e.stopPropagation();
-  try{
-    const name=($("regName").value||"").trim();
-    var user=($("regUser").value||"").trim().toLowerCase().split(" ").join("").split("�t").join("");
-    var pass=$("regPass").value||"";
-    var role=$("regRole").value||"Medical Student";
-    $("regErr").textContent="";
-    if(!name||!user||!pass){$("regErr").textContent="Please fill name, username and password.";return;}
-    if(user.length<3){$("regErr").textContent="Username must be at least 3 characters.";return;}
-    if(pass.length<4){$("regErr").textContent="Password min 4 characters.";return;}
-    var users=getUsers();
-    if(users.some(function(u){return u.username===user;})){$("regErr").textContent="That username is already taken. Choose another or use Login.";return;}
-    var av=selectedAvatar||"�uD83D�uDC69�u200D�u2695�uFE0F";
-    var nu={
-      name:name,
-      username:user,
-      pass:pass,
-      role:role,
-      avatar:av,
-      createdAt:new Date().toISOString(),
-      progress:{rouScore:0,rouTotal:0,streakBest:0,streakCorrect:0,telasScore:0,telasTotal:0}
-    };
-    users.push(nu);
-    saveUsers(users);
-    setSession(nu);
-    enterApp();
-  }catch(err){
-    $("regErr").textContent="Registration error: "�(err.message||String(err));
-  }
-});
-
-$("btnLogin").addEventListener("click",function(e){
-  e.preventDefault();e.stopPropagation();
-  try{
-    var user=($("loginUser").value||"").trim().toLowerCase().split(" ").join("").split("�t").join("");
-    var pass=$("loginPass").value||"";
-    $("loginErr").textContent="";
-    if(!user||!pass){$("loginErr").textContent="Enter username and password.";return;}
-    var u=getUsers().find(function(x){return x.username===user&&x.pass===pass;});
-    if(!u){$("loginErr").textContent="Invalid username or password. Use the Register tab if you are new.";return;}
-    setSession(u);
-    enterApp();
-  }catch(err){
-    $("loginErr").textContent="Login error: "�(err.message||String(err));
-  }
-});
-
-// Allow Enter key to submit on login/register fields
-["loginUser","loginPass"].forEach(function(id){
-  $(id).addEventListener("keydown",function(e){if(e.key==="Enter"){$("btnLogin").click();}});
-});
-["regName","regUser","regPass"].forEach(function(id){
-  $(id).addEventListener("keydown",function(e){if(e.key==="Enter"){$("btnRegister").click();}});
-});
-
+$("tabLogin").onclick=()=>{$("tabLogin").classList.add("active");$("tabRegister").classList.remove("active");$("loginForm").classList.remove("hidden");$("registerForm").classList.add("hidden");};
+$("tabRegister").onclick=()=>{$("tabRegister").classList.add("active");$("tabLogin").classList.remove("active");$("registerForm").classList.remove("hidden");$("loginForm").classList.add("hidden");};
+$("btnRegister").onclick=async()=>{
+  const name=($("regName").value||"").trim(),user=($("regUser").value||"").trim().toLowerCase().split(" ").join(""),pass=$("regPass").value||"",role=$("regRole").value;
+  $("regErr").textContent="";if(!name||!user||pass.length<4){$("regErr").textContent="Complete all fields (password ≥4)";return;}
+  const users=getUsers();if(users.some(u=>u.username===user)){$("regErr").textContent="Username taken";return;}
+  users.push({name,username:user,passHash:await hashPass(pass),role,avatar:"👩‍⚕️",isAdmin:user==="admin"||role.indexOf("Consultant")>=0,createdAt:new Date().toISOString()});
+  saveUsers(users);setSession(users[users.length-1]);logAct("register");enterApp();
+};
+$("btnLogin").onclick=async()=>{
+  const user=($("loginUser").value||"").trim().toLowerCase().split(" ").join(""),pass=$("loginPass").value||"";
+  $("loginErr").textContent="";const h=await hashPass(pass);
+  const u=getUsers().find(x=>x.username===user&&(x.passHash===h||x.pass===pass));
+  if(!u){$("loginErr").textContent="Invalid login";return;}setSession(u);logAct("login");enterApp();
+};
 function enterApp(){
-  document.body.classList.remove("auth-open");
-  $("authGate").classList.add("hidden");
-  $("welcome").classList.remove("hidden");
-  $("topRight").classList.remove("hidden");
-  $("userAvatar").textContent=currentUser.avatar||"�������������";
-  $("userBarName").textContent=currentUser.name;
-  const p=getProgress();
-  $("userBarRole").textContent=currentUser.role�" �� @"狪答뇪�.username�(p.streakBest?` �� Best streak ${p.streakBest}`:"");
-  loadRouStats();loadStreakStats();loadTelasStats();
-  mode="menu";
+  $("authGate").classList.add("hidden");$("welcome").classList.remove("hidden");$("topRight").classList.remove("hidden");
+  $("userBarName").textContent=currentUser.name;$("userBarRole").textContent=currentUser.role+" · @"+currentUser.username;
+  if(currentUser.isAdmin||currentUser.username==="admin")$("btnAdmin").classList.remove("hidden");
+  document.body.classList.add("no-vr");mode="menu";
 }
+function logout(){clearSession();location.reload();}$("logoutBtn").onclick=logout;$("btnLogoutHome").onclick=logout;
 
-$("logoutBtn").addEventListener("click",function(){clearSession();location.reload();});
-
-// Start on auth screen unless already logged in
-document.body.classList.add("auth-open");
-const existing=loadSession();
-if(existing){currentUser=existing;enterApp();}
-else{showLoginLayout();}
-
-// ---- Search ----
-$("modSearch").addEventListener("input",()=>{
-  const q=$("modSearch").value.trim().toLowerCase();
-  let any=false;
-  document.querySelectorAll("#modGrid button").forEach(b=>{
-    const keys=(b.dataset.keys||"")�" "�.textContent;
-    const show=!q||keys.toLowerCase().includes(q);
-    b.style.display=show?"":"none";
-    if(show)any=true;
-  });
-  $("searchEmpty").style.display=any?"none":"block";
-});
-
-// ---- Navigation ----
+const needsVR={proc:1,anat:1,delivery:1,surg:1};
 function hideAll(){
-  ["ivPanel","anatomyControls","patient3DPanel","clinicalPanel","deliveryPanel","radiologyPanel","surgeryPanel","drugsPanel","roulettePanel","streakPanel","telasPanel"].forEach(id=>$(id).classList.add("hidden"));
-  $("ivScene").setAttribute("visible",false);$("anatomyScene").setAttribute("visible",false);$("patientScene").setAttribute("visible",false);
+  ["procPanel","anatPanel","delPanel","surgPanel","radPanel","drugPanel","telasPanel","chatPanel","adminPanel"].forEach(id=>{const e=$(id);if(e)e.classList.add("hidden");});
+  ["procScene","anatScene","delScene","surgScene"].forEach(id=>{const e=$(id);if(e)e.setAttribute("visible",false);});
 }
 function setMode(m){
   mode=m;$("welcome").classList.toggle("hidden",m!=="menu");hideAll();
-  if(m==="iv"){$("ivPanel").classList.remove("hidden");$("ivScene").setAttribute("visible",true);resetIV();}
-  else if(m==="anatomy"){$("anatomyControls").classList.remove("hidden");$("anatomyScene").setAttribute("visible",true);resetAnatomy();}
-  else if(m==="patient3d"){$("patient3DPanel").classList.remove("hidden");$("patientScene").setAttribute("visible",true);showP3dSelect();}
-  else if(m==="clinical"){$("clinicalPanel").classList.remove("hidden");showClinicalList();}
-  else if(m==="delivery"){$("deliveryPanel").classList.remove("hidden");resetDelivery();}
-  else if(m==="radiology"){$("radiologyPanel").classList.remove("hidden");showRadList();}
-  else if(m==="surgery"){$("surgeryPanel").classList.remove("hidden");showSurgList();}
-  else if(m==="drugs"){$("drugsPanel").classList.remove("hidden");showDrugList();}
-  else if(m==="roulette"){$("roulettePanel").classList.remove("hidden");loadRouStats();}
-  else if(m==="streak"){$("streakPanel").classList.remove("hidden");loadStreakStats();}
-  else if(m==="telas"){$("telasPanel").classList.remove("hidden");loadTelasStats();$("telasStatus").textContent="Press Start. Telas is already judging you.";};
+  if(needsVR[m]){document.body.classList.remove("no-vr");}else{document.body.classList.add("no-vr");}
+  if(m!=="menu")logAct("open",m);
+  if(m==="proc"){$("procPanel").classList.remove("hidden");$("procScene").setAttribute("visible",true);loadProc("iv");}
+  else if(m==="anat"){$("anatPanel").classList.remove("hidden");$("anatScene").setAttribute("visible",true);showAnat("layers");}
+  else if(m==="delivery"){$("delPanel").classList.remove("hidden");$("delScene").setAttribute("visible",true);}
+  else if(m==="surg"){$("surgPanel").classList.remove("hidden");$("surgScene").setAttribute("visible",true);showSurgList();}
+  else if(m==="radiology"){$("radPanel").classList.remove("hidden");showRad();}
+  else if(m==="drugs"){$("drugPanel").classList.remove("hidden");showDrugs();}
+  else if(m==="telas"){$("telasPanel").classList.remove("hidden");$("telasHome").classList.remove("hidden");$("telasPlay").classList.add("hidden");buildCourses();}
+  else if(m==="chat"){$("chatPanel").classList.remove("hidden");showChat();}
+  else if(m==="admin"){$("adminPanel").classList.remove("hidden");const L=JSON.parse(localStorage.getItem("tmsxr_activity")||"[]");$("admLog").innerHTML=L.slice(0,50).map(x=>`<div>${x.name} · ${x.action} ${x.detail||""} · ${new Date(x.time).toLocaleString()}</div>`).join("")||"Empty";}
 }
-document.querySelectorAll("[data-mod]").forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mod)));
-$("homeBtn").onclick=()=>setMode("menu");
+document.querySelectorAll("[data-mod]").forEach(b=>b.onclick=()=>setMode(b.getAttribute("data-mod")));
+$("homeBtn").onclick=()=>setMode("menu");$("btnAdmin").onclick=()=>setMode("admin");
+$("modSearch").oninput=function(){const q=this.value.toLowerCase();document.querySelectorAll("#modGrid button[data-mod]").forEach(b=>{b.style.display=!q||((b.getAttribute("data-keys")||"")+b.textContent).toLowerCase().includes(q)?"":"none";});};
 
-// ---- IV ----
-const ivSteps=[{id:"swab",title:"STEP 1 �� PREPARATION",text:"Select the antiseptic swab.",hint:"White/green swab",points:20},{id:"tourniquet",title:"STEP 2 �� TOURNIQUET",text:"Select the tourniquet.",hint:"Blue band",points:20},{id:"vein",title:"STEP 3 �� VEIN",text:"Identify the vein.",hint:"Blue vein",points:20},{id:"cannula",title:"STEP 4 �� CANNULA",text:"Select the cannula.",hint:"Yellow cannula",points:40}];
-let ivStep=0,ivScore=0,ivMistakes=0,ivLocked=false,ivTimer=null;const ivDone=new Set(),ivPen=new Set();
-function showIVStep(){$("ivScore").textContent=ivScore;$("ivProgress").style.width=(ivStep/4*100)�"%";if(ivStep>=4){$("ivStepTitle").textContent="COMPLETE";$("ivStepText").textContent=`Score ${ivScore}/100 �� Mistakes ${ivMistakes}`;$("ivHint").textContent="";$("ivProgress").style.width="100%";return;}const s=ivSteps[ivStep];$("ivStepTitle").textContent=s.title;$("ivStepText").textContent=s.text;$("ivHint").textContent=s.hint;}
-function resetIV(){clearTimeout(ivTimer);ivStep=0;ivScore=0;ivMistakes=0;ivLocked=false;ivDone.clear();ivPen.clear();$("vein").setAttribute("visible",false);$("cannulaGroup").setAttribute("visible",false);$("flashback").setAttribute("visible",false);document.querySelectorAll("#ivScene .clickable").forEach(e=>{e.setAttribute("material","emissive","#000");e.setAttribute("material","emissiveIntensity",0);});showIVStep();}
-$("ivReset").onclick=resetIV;$("ivBack").onclick=()=>setMode("menu");
-function ivSelect(id){if(mode!=="iv"||ivLocked||ivStep>=4)return;const exp=ivSteps[ivStep];if(id!==exp.id){if(ivPen.has(id))return;ivPen.add(id);ivMistakes�;ivScore=Math.max(0,ivScore-5);$("ivStepTitle").textContent="TRY AGAIN ���5";$("ivScore").textContent=ivScore;ivLocked=true;ivTimer=setTimeout(()=>{ivLocked=false;showIVStep();},900);return;}if(ivDone.has(id))return;ivDone.add(id);ivScore=Math.min(100,ivScore笚�.points);ivStep�;const t=$(id);if(t){t.setAttribute("material","emissive","#38e6ba");t.setAttribute("material","emissiveIntensity",0.35);}if(id==="tourniquet")$("vein").setAttribute("visible",true);if(id==="vein")$("cannulaGroup").setAttribute("visible",true);if(id==="cannula")$("flashback").setAttribute("visible",true);ivLocked=true;showIVStep();ivTimer=setTimeout(()=>{ivLocked=false;showIVStep();},600);}
-["swab","tourniquet","vein","cannula"].forEach(id=>$(id).addEventListener("click",()=>ivSelect(id)));
-
-// ---- Anatomy ----
-const layers={skin:["anatSkin"],muscles:["anatMuscles"],bones:["anatBones"],vessels:["anatVessels"]};
-function vis(id,y){const e=$(id);if(e)e.setAttribute("visible",y);}
-function anatomyLayer(l){Object.keys(layers).forEach(k=>layers[k].forEach(id=>vis(id,k===l)));$("anatStatus").textContent=l�" layer.";}
-function resetAnatomy(){anatomyLayer("skin");vis("anatLabels",false);$("anatStatus").textContent="Start with skin.";gIdx=-1;qActive=false;qIdx=0;qScore=0;$("quizScore").textContent="Quiz: 0/0";}
-$("showSkin").onclick=()=>anatomyLayer("skin");$("showMuscles").onclick=()=>anatomyLayer("muscles");$("showBones").onclick=()=>anatomyLayer("bones");$("showVessels").onclick=()=>anatomyLayer("vessels");
-$("toggleLabels").onclick=()=>{const n=!$("anatLabels").getAttribute("visible");vis("anatLabels",n);};$("resetAnatomy").onclick=resetAnatomy;$("anatBack").onclick=()=>setMode("menu");
-const guide=[["skin","Skin"],["muscles","Muscles"],["bones","Bones"],["vessels","Vessels"]];let gIdx=-1;
-function nextGuide(){gIdx�;if(gIdx>=guide.length){gIdx=-1;$("anatStatus").textContent="Guide complete";return;}anatomyLayer(guide[gIdx][0]);$("anatStatus").textContent=guide[gIdx][1];}
-$("startGuide").onclick=()=>{gIdx=-1;nextGuide();};$("nextGuide").onclick=nextGuide;
-const qQ=[{id:"bSkull",layer:"bones",name:"skull"},{id:"bFemurR",layer:"bones",name:"right femur"},{id:"vAorta",layer:"vessels",name:"aorta"},{id:"mBicepsR",layer:"muscles",name:"right biceps"}];
-let qOrder=[],qIdx=0,qScore=0,qActive=false,qAns=false;
-$("startQuiz").onclick=()=>{qOrder=qQ.slice().sort(()=>Math.random()-0.5);qIdx=0;qScore=0;qActive=true;nextQ();};
-$("resetQuiz").onclick=()=>{qActive=false;$("quizScore").textContent="Quiz: 0/0";};
-function nextQ(){if(qIdx>=qOrder.length){qActive=false;$("anatStatus").textContent=`Done ${qScore}/${qOrder.length}`;return;}qAns=false;const q=qOrder[qIdx];anatomyLayer(q.layer);$("anatStatus").textContent="Select: "�.name;$("quizScore").textContent=`Quiz: ${qScore}/${qIdx}`;}
-document.querySelectorAll(".anat-part").forEach(p=>p.addEventListener("click",()=>{if(mode!=="anatomy"||!qActive||qAns)return;qAns=true;if(p.id===qOrder[qIdx].id)qScore�;qIdx�;$("quizScore").textContent=`Quiz: ${qScore}/${qIdx}`;setTimeout(()=>{if(qActive)nextQ();},1000);}));
-
-// ---- 3D Patient ----
-const p3dCases={
-app:{title:"Acute abdominal pain",brief:"22F. Periumbilical pain ��� RIF 18h. Anorexia. LMP 3w ago.",vitals:[{l:"HR",v:"98",c:"warn"},{l:"BP",v:"118/72",c:""},{l:"Temp",v:"37.9",c:"warn"},{l:"SpO���",v:"98%",c:""},{l:"RR",v:"18",c:""},{l:"Pain",v:"7/10",c:"warn"}],
-findings:{"Head / Face":"Uncomfortable, mild pallor.","Neck":"No nodes.","Chest":"Clear.","Abdomen":"RIF tenderness � rebound � guarding.","Pelvis / Groin":"No hernia.","Right arm":"Warm.","Left arm":"Warm.","Right leg":"Normal.","Left leg":"Normal."},
-more:"No urinary sx. Never pregnant.",labs:"��-hCG neg �� WBC 14.2 �� CRP 48",dx:"Acute appendicitis",dxO:["Acute appendicitis","Ectopic","Pyelo","Torsion","GE"],next:"Urgent surgical review, NBM, IV fluids, Abx",nextO:["Urgent surgical review, NBM, IV fluids, Abx","Discharge oral Abx","Immediate laparotomy","Steroids","CT head"],ex:"Migratory pain � RIF peritonism � neg ��-hCG."},
-acs:{title:"Chest pain",brief:"58M. Crushing central pain ��� arm/jaw 40 min. Sweaty. Smoker, HTN.",vitals:[{l:"HR",v:"92",c:"warn"},{l:"BP",v:"148/88",c:"warn"},{l:"Temp",v:"36.8",c:""},{l:"SpO���",v:"96%",c:""},{l:"RR",v:"20",c:"warn"},{l:"Pain",v:"8/10",c:"danger"}],
-findings:{"Head / Face":"Diaphoretic.","Neck":"JVP not raised.","Chest":"Soft S4.","Abdomen":"Soft.","Pelvis / Groin":"Femoral �.","Right arm":"Equal BP.","Left arm":"Pulse �.","Right leg":"Warm.","Left leg":"Warm."},
-more:"Not relieved by rest. Father MI 54.",labs:"ECG ST��� V2���V4",dx:"STEMI (anterior)",dxO:["STEMI (anterior)","Unstable angina","Dissection","Pericarditis","PE"],next:"Activate primary PCI � DAPT",nextO:["Activate primary PCI � DAPT","Outpatient stress","CT aorta first","Discharge GTN","PPI only"],ex:"Classic � ST elevation = STEMI."},
-pre:{title:"Headache in pregnancy",brief:"29F 31/40. New headache, visual sparkles, epigastric discomfort.",vitals:[{l:"HR",v:"88",c:""},{l:"BP",v:"162/104",c:"danger"},{l:"Temp",v:"36.7",c:""},{l:"SpO���",v:"98%",c:""},{l:"RR",v:"16",c:""},{l:"Pain",v:"5/10",c:""}],
-findings:{"Head / Face":"Mild facial oedema.","Neck":"No meningism.","Chest":"Clear.","Abdomen":"Mild RUQ tenderness.","Pelvis / Groin":"No PV bleed.","Right arm":"Brisk reflexes, clonus.","Left arm":"Brisk.","Right leg":"Oedema.","Left leg":"Oedema."},
-more:"Reduced fetal movements.",labs:"Protein 2� �� Plt 142 �� ALT 68",dx:"Pre-eclampsia (concerning)",dxO:["Pre-eclampsia (concerning)","Migraine","Normal","HELLP full","UTI"],next:"Urgent obstetric assessment, BP control, CTG",nextO:["Urgent obstetric assessment, BP control, CTG","Reassure 1wk","Discharge","Immediate CS","Warfarin"],ex:"HTN � protein � symptoms = PET."},
-asthma:{title:"Breathing difficulty",brief:"6M. Wheeze 6h post viral. Known asthma. Frequent salbutamol.",vitals:[{l:"HR",v:"128",c:"warn"},{l:"BP",v:"98/62",c:""},{l:"Temp",v:"37.4",c:""},{l:"SpO���",v:"90%",c:"danger"},{l:"RR",v:"36",c:"danger"},{l:"Pain",v:"���",c:""}],
-findings:{"Head / Face":"Tired, short sentences, flaring.","Neck":"Tracheal tug.","Chest":"Wheeze, recession.","Abdomen":"Using abdo muscles.","Pelvis / Groin":"Normal.","Right arm":"Warm.","Left arm":"Warm.","Right leg":"Normal.","Left leg":"Normal."},
-more:"No choking episode.",labs:"SpO��� 90%",dx:"Acute severe asthma",dxO:["Acute severe asthma","Foreign body","Pneumonia","Croup","Anaphylaxis"],next:"O���, salbutamol �� ipratropium, steroids, senior",nextO:["O���, salbutamol �� ipratropium, steroids, senior","Discharge","Abx only","Immediate intubation","Physio only"],ex:"Hypoxia � recession = severe."}
+// PROCEDURES
+const PROCS={
+iv:{t:"IV cannulation",s:[
+{q:"First step",o:["Confirm indication, consent, prepare clean equipment","Skip consent","Reuse gloves"],a:0},
+{q:"Vein access",o:["Tourniquet, select vein, clean, insert, confirm flashback","Arterial stick intentionally","No cleaning"],a:0},
+{q:"Finish",o:["Advance cannula, secure, flush, document","Leave needle in","No documentation"],a:0}
+]},
+blood:{t:"Venepuncture",s:[
+{q:"Identity",o:["Check patient ID and explain procedure","Draw blood then ask name","Skip labels"],a:0},
+{q:"Collection",o:["Correct tubes, gentle handling, pressure after","Shake tubes violently","Recap needle with both hands"],a:0}
+]},
+cath:{t:"Urethral catheter",s:[
+{q:"Setup",o:["Indication, consent, strict asepsis","Catheter for staff convenience only","No sterile field"],a:0},
+{q:"Placement",o:["Advance until urine flows, inflate balloon in bladder","Inflate balloon in urethra","Force against fixed resistance"],a:0}
+]},
+ngt:{t:"NGT",s:[
+{q:"Insertion",o:["Measure NEX, advance with patient swallowing","Force past resistance","No length measurement"],a:0},
+{q:"Before use",o:["Confirm tube position per local policy","Start feed without confirmation","Rely on auscultation alone always"],a:0}
+]},
+trach:{t:"Tracheostomy care",s:[
+{q:"Safety",o:["Emergency kit available, know blocked-tube algorithm","No spare tube on ward","Ignore stridor"],a:0},
+{q:"Suctioning",o:["Pre-oxygenate if needed, brief sterile suction","Suction continuously for minutes","Never clear secretions"],a:0}
+]}
 };
-let p3dC=null,p3dEx=new Set(),p3dDx=false,p3dNx=false;
-function showP3dSelect(){$("p3dCaseSelect").classList.remove("hidden");$("p3dActive").classList.add("hidden");}
-function loadP3d(k){const c=p3dCases[k];if(!c)return;p3dC=c;p3dEx.clear();p3dDx=false;p3dNx=false;$("p3dCaseSelect").classList.add("hidden");$("p3dActive").classList.remove("hidden");$("p3dTitle").textContent=c.title;$("p3dHistory").textContent=c.brief;$("p3dVitals").innerHTML=c.vitals.map(v=>`<div class="vital ${v.c}"><div class="val">${v.v}</div><div class="lbl">${v.l}</div></div>`).join("");$("p3dLog").innerHTML='<div class="muted">Click the patient</div>';$("p3dActionArea").classList.add("hidden");}
-document.querySelectorAll("[data-pcase]").forEach(b=>b.onclick=()=>loadP3d(b.dataset.pcase));
-document.querySelectorAll(".body-part").forEach(p=>p.addEventListener("click",()=>{if(mode!=="patient3d"||!p3dC)return;const r=p.getAttribute("data-region");const f=p3dC.findings[r]||"No specific finding.";p.setAttribute("material","emissive","#38e6ba");p.setAttribute("material","emissiveIntensity",0.35);if(!p3dEx.has(r)){p3dEx.add(r);if(p3dEx.size===1)$("p3dLog").innerHTML="";const d=document.createElement("div");d.innerHTML=`<span class="region">${r}</span>: ${f}`;$("p3dLog").appendChild(d);}}));
-$("p3dMoreHx").onclick=()=>{if(!p3dC)return;$("p3dActionArea").classList.remove("hidden");$("p3dActionArea").innerHTML=`<p style="background:#122a3d;padding:9px;border-radius:8px">${p3dC.more}</p>`;};
-$("p3dLabs").onclick=()=>{if(!p3dC)return;$("p3dActionArea").classList.remove("hidden");$("p3dActionArea").innerHTML=`<pre style="background:#122a3d;padding:9px;border-radius:8px;white-space:pre-wrap;font-size:12.5px">${p3dC.labs}</pre>`;};
-$("p3dDx").onclick=()=>{if(!p3dC||p3dDx)return;const a=$("p3dActionArea");a.classList.remove("hidden");a.innerHTML="<h3>Diagnosis?</h3>"ꝷ�.dxO.map(o=>`<button class="opt-btn" data-v="${o}">${o}</button>`).join("");a.querySelectorAll(".opt-btn").forEach(b=>b.onclick=()=>{if(p3dDx)return;p3dDx=true;const ok=b.dataset.v===p3dC.dx;b.classList.add(ok?"correct":"wrong");if(!ok)a.querySelectorAll(".opt-btn").forEach(x=>{if(x.dataset.v===p3dC.dx)x.classList.add("correct");});a.innerHTML�=`<p>${p3dC.ex}</p>`;});};
-$("p3dNext").onclick=()=>{if(!p3dC||p3dNx)return;const a=$("p3dActionArea");a.classList.remove("hidden");a.innerHTML="<h3>Next step?</h3>"ꝷ�.nextO.map(o=>`<button class="opt-btn" data-v="${o}">${o}</button>`).join("");a.querySelectorAll(".opt-btn").forEach(b=>b.onclick=()=>{if(p3dNx)return;p3dNx=true;const ok=b.dataset.v===p3dC.next;b.classList.add(ok?"correct":"wrong");if(!ok)a.querySelectorAll(".opt-btn").forEach(x=>{if(x.dataset.v===p3dC.next)x.classList.add("correct");});});};
-$("p3dBackCases").onclick=showP3dSelect;$("p3dExit").onclick=()=>setMode("menu");
 
-// Clinical, Delivery, Rad, Surg, Drugs, Roulette, Streak ��� compact re-use from prior design
-const clinicalCases=[{id:"app",spec:"Surgery",title:"Acute appendicitis",icon:"����",classic:"Migratory pain ��� RIF, anorexia, fever.",general:"Atypical extremes of age.",signs:"Rebound, Rovsing.",workup:"FBC, CRP, ��-hCG, US/CT.",quiz:[{q:"Migration?",opts:["RUQ","Periumbilical to RIF","LIF","Epigastrium"],a:1}]},{id:"mi",spec:"Medicine",title:"STEMI",icon:"������",classic:"Crushing pain, diaphoresis, ST elevation.",general:"Atypical in women/elderly.",signs:"S4 possible.",workup:"ECG <10 min.",quiz:[{q:"First test?",opts:["Troponin only","12-lead ECG","CT","Echo"],a:1}]},{id:"pre",spec:"Obs",title:"Pre-eclampsia",icon:"����",classic:"���20w HTN � protein/symptoms.",general:"Postpartum possible.",signs:"Hyperreflexia.",workup:"BP, urine, FBC, LFT, CTG.",quiz:[{q:"Min gestation?",opts:["12w","20w","28w","Any"],a:1}]},{id:"asth",spec:"Paeds",title:"Acute asthma",icon:"�������",classic:"Wheeze, increased work of breathing.",general:"Silent chest dangerous.",signs:"Recession.",workup:"Clinical � SpO2.",quiz:[{q:"Danger?",opts:["Loud wheeze","Silent chest","Mild tachypnoea","Normal SpO2"],a:1}]},{id:"chole",spec:"Surgery",title:"Cholecystitis",icon:"����",classic:"RUQ pain, fever, Murphy���s.",general:"Acalculous in ICU.",signs:"Murphy���s.",workup:"US first.",quiz:[{q:"First imaging?",opts:["CT","Ultrasound","MRI","XR"],a:1}]},{id:"sbo",spec:"Surgery",title:"SBO",icon:"����",classic:"Colicky pain, distension, vomiting, absolute constipation.",general:"Check hernias.",signs:"Tympanic.",workup:"NBM, IV, NG, imaging.",quiz:[{q:"Must check?",opts:["Epigastrium","Hernial orifices","PR only","Chest"],a:1}]}];
-function showClinicalList(){$("clinicalList").classList.remove("hidden");$("clinicalDetail").classList.add("hidden");$("clinicalList").innerHTML=clinicalCases.map(c=>`<div class="case-card" data-id="${c.id}"><span class="tag">${c.spec}</span><strong>${c.icon} ${c.title}</strong></div>`).join("");$("clinicalList").querySelectorAll(".case-card").forEach(el=>el.onclick=()=>openClin(el.dataset.id));}
-function openClin(id){const c=clinicalCases.find(x=>x.id===id);$("clinicalList").classList.add("hidden");$("clinicalDetail").classList.remove("hidden");$("clinicalQuizArea").classList.add("hidden");$("clinicalStatus").innerHTML=`<strong>${c.icon} ${c.title}</strong>`;$("clinicalBody").innerHTML=`<div class="vis-card"><div class="vis-icon">${c.icon}</div></div><h3>Classic</h3><p>${c.classic}</p><h3>Variants</h3><p>${c.general}</p><h3>Signs</h3><p>${c.signs}</p><h3>Work-up</h3><p>${c.workup}</p>`;$("clinicalQuizBtn").onclick=()=>{const a=$("clinicalQuizArea");a.classList.remove("hidden");a.innerHTML=c.quiz.map((item,i)=>`<p><strong>Q.</strong> ${item.q}</p>${item.opts.map((o,j)=>`<button class="quiz-opt" data-a="${j}">${o}</button>`).join("")}`);a.querySelectorAll(".quiz-opt").forEach(btn=>btn.onclick=()=>{const ai=滙�.dataset.a;btn.classList.add(ai===c.quiz[0].a?"correct":"wrong");if(ai!==c.quiz[0].a)a.querySelectorAll(".quiz-opt")[c.quiz[0].a].classList.add("correct");});};}
-$("clinicalBackList").onclick=showClinicalList;$("clinicalExit").onclick=()=>setMode("menu");
-
-const normalD=[{t:"Prep",b:"History, clean area, resus kit."},{t:"Birth",b:"Support perineum, deliver, note time."},{t:"Golden Minute",b:"Dry, warm, assess. Clear only if needed."},{t:"Cord",b:"Delayed clamp ���60s if vigorous."},{t:"Third stage",b:"Uterotonic, monitor bleeding."},{t:"Post",b:"Skin-to-skin, monitor."}];
-const resusD=[{t:"Help",b:"Warmer, bag-mask, SpO2 ready."},{t:"Initial",b:"Warm, dry, stimulate, airway."},{t:"PPV",b:"If apnoeic/HR<100: PPV."},{t:"Reassess",b:"Optimise ventilation."},{t:"Compressions",b:"HR<60: 3:1."},{t:"Ongoing",b:"Thermal care, transfer, debrief."}];
-let delS=[],delI=0;
-function resetDelivery(){delS=[];delI=0;$("delStatus").textContent="Choose pathway";$("delContent").innerHTML="";}
-function showDel(){if(!delS.length)return;if(delI>=delS.length){$("delStatus").textContent="Complete";return;}const s=delS[delI];$("delStatus").innerHTML=`Step ${delI�} ��� ${s.t}`;$("delContent").innerHTML=`<p>${s.b}</p>`;}
-$("delNormal").onclick=()=>{delS=normalD;delI=0;showDel();};$("delResus").onclick=()=>{delS=resusD;delI=0;showDel();};
-$("delNext").onclick=()=>{if(delS.length){delI�;showDel();}};$("delReset").onclick=resetDelivery;$("delExit").onclick=()=>setMode("menu");
-
-const radCases=[{id:"ptx",m:"CXR",t:"Tension PTX",f:"Shift away, no markings.",c:"Dyspnoea, tracheal deviation.",tip:"Decompress if unstable.",q:{q:"Feature?",o:["Shift away","Shift toward","Normal","Bilateral"],a:0}},{id:"pe",m:"CTPA",t:"PE",f:"Filling defect.",c:"Dyspnoea, VTE risk.",tip:"Probability scores.",q:{q:"Imaging?",o:["CXR","CTPA","US","XR"],a:1}},{id:"gall",m:"US",t:"Gallstones",f:"Shadowing foci.",c:"RUQ, Murphy���s.",tip:"US first.",q:{q:"Feature?",o:["Shadowing","No shadow","Hypervascular","Anterior only"],a:0}},{id:"ich",m:"CT",t:"ICH",f:"Hyperdense blood.",c:"Thunderclap / focal.",tip:"Non-contrast first.",q:{q:"First?",o:["MRI","Non-contrast CT","Contrast","XR"],a:1}}];
-function showRadList(){$("radList").classList.remove("hidden");$("radDetail").classList.add("hidden");$("radList").innerHTML=radCases.map(c=>`<div class="case-card" data-id="${c.id}"><span class="tag">${c.m}</span><strong>${c.t}</strong></div>`).join("");$("radList").querySelectorAll(".case-card").forEach(el=>el.onclick=()=>openRad(el.dataset.id));}
-function openRad(id){const c=radCases.find(x=>x.id===id);$("radList").classList.add("hidden");$("radDetail").classList.remove("hidden");$("radQuizArea").classList.add("hidden");$("radStatus").innerHTML=`<strong>${c.t}</strong>`;$("radBody").innerHTML=`<p>${c.f}</p><p>${c.c}</p><p class="muted">${c.tip}</p>`;$("radQuizBtn").onclick=()=>{const a=$("radQuizArea");a.classList.remove("hidden");a.innerHTML=`<p>${c.q.q}</p>`�.q.o.map((o,j)=>`<button class="quiz-opt" data-a="${j}">${o}</button>`).join("");a.querySelectorAll(".quiz-opt").forEach(b=>b.onclick=()=>{const ai=�.dataset.a;b.classList.add(ai===c.q.a?"correct":"wrong");});};}
-$("radBackList").onclick=showRadList;$("radExit").onclick=()=>setMode("menu");
-
-const surgCases=[{id:"a",t:"Appendicectomy",p:"RIF pain.",s:["Consent, Abx","Lap preferred"],d:"Convert if needed.",q:{q:"Approach?",o:["Always open","Lap when available","Never","Abx only"],a:1}},{id:"h",t:"Inguinal hernia",p:"Groin swelling.",s:["Mesh repair","Emergency if strangulated"],d:"Painful irreducible = urgent.",q:{q:"Painful irreducible?",o:["Watch","Urgent surgery assessment","Home","CT later"],a:1}},{id:"c",t:"Lap cholecystectomy",p:"Symptomatic stones.",s:["Critical view of safety"],d:"Bailout if unclear.",q:{q:"Safety?",o:["Critical view","Clip all","Never convert","Ignore"],a:0}}];
-function showSurgList(){$("surgList").classList.remove("hidden");$("surgDetail").classList.add("hidden");$("surgList").innerHTML=surgCases.map(c=>`<div class="case-card" data-id="${c.id}"><strong>${c.t}</strong></div>`).join("");$("surgList").querySelectorAll(".case-card").forEach(el=>el.onclick=()=>openSurg(el.dataset.id));}
-function openSurg(id){const c=surgCases.find(x=>x.id===id);$("surgList").classList.add("hidden");$("surgDetail").classList.remove("hidden");$("surgQuizArea").classList.add("hidden");$("surgStatus").innerHTML=`<strong>${c.t}</strong>`;$("surgBody").innerHTML=`<p>${c.p}</p><ul class="compact">${c.s.map(x=>`<li>${x}</li>`).join("")}</ul><p>${c.d}</p>`;$("surgQuizBtn").onclick=()=>{const a=$("surgQuizArea");a.classList.remove("hidden");a.innerHTML=`<p>${c.q.q}</p>`�.q.o.map((o,j)=>`<button class="quiz-opt" data-a="${j}">${o}</button>`).join("");a.querySelectorAll(".quiz-opt").forEach(b=>b.onclick=()=>{b.classList.add(�.dataset.a===c.q.a?"correct":"wrong");});};}
-$("surgBackList").onclick=showSurgList;$("surgExit").onclick=()=>setMode("menu");
-
-const drugs=[{id:"htn",t:"Hypertension",a:"ACEi/ARB, CCB, thiazide-like.",ch:"Specialist dosing.",moa:"ACEi���AngII.",ci:"Pregnancy, bilateral RAS."},{id:"ast",t:"Asthma",a:"SABA � ICS.",ch:"Spacer preferred.",moa:"��2 agonist.",ci:"Non-selective ��-blockers."},{id:"dm",t:"Metformin / T2DM",a:"Metformin first-line.",ch:"Specialist.",moa:"���hepatic glucose.",ci:"Severe renal impairment."}];
-function showDrugList(){$("drugList").classList.remove("hidden");$("drugDetail").classList.add("hidden");$("drugList").innerHTML=drugs.map(c=>`<div class="case-card" data-id="${c.id}"><strong>${c.t}</strong></div>`).join("");$("drugList").querySelectorAll(".case-card").forEach(el=>el.onclick=()=>openDrug(el.dataset.id));}
-function openDrug(id){const c=drugs.find(x=>x.id===id);$("drugList").classList.add("hidden");$("drugDetail").classList.remove("hidden");$("drugStatus").innerHTML=`<strong>${c.t}</strong>`;$("drugBody").innerHTML=`<p><b>Adult:</b> ${c.a}</p><p><b>Child:</b> ${c.ch}</p><p><b>MOA:</b> ${c.moa}</p><p><b>CI:</b> ${c.ci}</p>`;}
-$("drugBackList").onclick=showDrugList;$("drugExit").onclick=()=>setMode("menu");
-
-function shuffle(a){const x=a.slice();for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i�));[x[i],x[j]]=[x[j],x[i]];}return x;}
-const rouBank=[{s:"migratory pain to RIF, anorexia, fever",dx:"Acute appendicitis",dxO:["Acute appendicitis","Cholecystitis","Pyelo","Ectopic","Diverticulitis"],n:"Urgent surgical review",nO:["Urgent surgical review","Discharge","Steroids","Thrombolysis","Colonoscopy"],e:"Classic migration."},{s:"crushing chest pain, ST elevation V2���V4",dx:"STEMI (anterior)",dxO:["STEMI (anterior)","Unstable angina","Pericarditis","Dissection","PE"],n:"Activate primary PCI",nO:["Activate primary PCI","Outpatient stress","Observe","CT abdo","Discharge"],e:"ST elevation = STEMI."},{s:"28w pregnant, new HTN, headache, proteinuria",dx:"Pre-eclampsia",dxO:["Pre-eclampsia","Normal pregnancy","Migraine","UTI","Thrombocytopenia"],n:"Urgent obstetric assessment",nO:["Urgent obstetric assessment","Reassure 4w","Warfarin","Immediate CS","Paracetamol"],e:"HTN � protein ���20w."},{s:"fever, flank pain, CVA tenderness",dx:"Pyelonephritis",dxO:["Pyelonephritis","Cystitis","Appendicitis","Cholecystitis","Strain"],n:"Culture � empirical Abx",nO:["Culture � empirical Abx","Laparotomy","No Abx","CT head","Steroids"],e:"Systemic � flank."},{s:"elderly fall, shortened ER leg",dx:"NOF fracture",dxO:["NOF fracture","Ankle sprain","Disc","Soft tissue","Pelvic only"],n:"Analgesia, IV, G&S, XR, ortho",nO:["Analgesia, IV, G&S, XR, ortho","Crutches","Thrombolysis","Physio","CT head only"],e:"Classic deformity."},{s:"thunderclap headache, photophobia",dx:"SAH until proven otherwise",dxO:["SAH until proven otherwise","Tension","Migraine","Meningitis","Sinus"],n:"Urgent non-contrast CT",nO:["Urgent non-contrast CT","Discharge","MRI weeks","Abx","Reassure"],e:"Thunderclap needs exclusion."},{s:"���-hCG, unilateral pain, spotting",dx:"Ectopic until excluded",dxO:["Ectopic until excluded","Miscarriage","Torsion","PID","Appendicitis"],n:"��-hCG, TVUS, senior",nO:["��-hCG, TVUS, senior","Discharge 1wk","Antenatal","CT","Steroids"],e:"Ectopic until excluded."},{s:"trauma, absent BS, trachea away",dx:"Tension pneumothorax",dxO:["Tension pneumothorax","Simple PTX","Haemothorax","PE","Asthma"],n:"Immediate decompression then drain",nO:["Immediate decompression then drain","CT first","Observe","Nebs","Thrombolysis"],e:"Clinical if unstable."},{s:"anaphylaxis: urticaria, wheeze, low BP",dx:"Anaphylaxis",dxO:["Anaphylaxis","Anxiety","Asthma","Sepsis","Vasovagal"],n:"IM adrenaline 1:1000 now",nO:["IM adrenaline 1:1000 now","Oral antihistamine","IV fluids first","Steroids first","Observe"],e:"IM adrenaline first."},{s:"newborn apnoeic, HR 70",dx:"Needs PPV",dxO:["Needs PPV","Normal","Observe","Adrenaline first","Compressions first"],n:"Warm, airway, start PPV",nO:["Warm, airway, start PPV","Observe 10 min","Adrenaline first","Compressions first","Ward"],e:"Ventilation is priority."}];
-let rouScore=0,rouTotal=0,rouAns=false;
-function loadRouStats(){const p=getProgress();rouScore=p.rouScore||0;rouTotal=p.rouTotal||0;if($("rouScore")){$("rouScore").textContent=rouScore;$("rouTotal").textContent=rouTotal;$("rouAcc").textContent=rouTotal?Math.round(rouScore/rouTotal*100)�"%":"���";}}
-function pickRou(shared){let idx;if(shared){const d=new Date();idx=Math.abs(Math.floor(Math.sin(d.getFullYear()*10000�.getMonth()*100�.getDate())*10000))%rouBank.length;}else idx=Math.floor(Math.random()*rouBank.length);const b=rouBank[idx];const age=[22,34,45,58,67][Math.floor(Math.random()*5)];const sex=Math.random()>0.5?"male":"female";return{v:`${sex==="male"?"Mr":"Ms"} X, ${age}y ${sex}, ${b.s}.`,dx:b.dx,dxO:shuffle(b.dxO),n:b.n,nO:shuffle(b.nO),e:b.e};}
-function renderRou(c){rouAns=false;$("rouCaseBox").classList.remove("hidden");$("rouFeedback").classList.add("hidden");$("rouVignette").textContent=c.v;$("rouDxOpts").innerHTML=c.dxO.map(o=>`<button class="opt-btn" data-v="${o}">${o}</button>`).join("");$("rouNextOpts").innerHTML=c.nO.map(o=>`<button class="opt-btn" data-v="${o}">${o}</button>`).join("");let cd=null,cn=null;
-$("rouDxOpts").querySelectorAll("button").forEach(b=>b.onclick=()=>{if(rouAns)return;cd=b.dataset.v;$("rouDxOpts").querySelectorAll("button").forEach(x=>x.classList.remove("correct","wrong"));b.classList.add(cd===c.dx?"correct":"wrong");if(cd!==c.dx)$("rouDxOpts").querySelectorAll("button").forEach(x=>{if(x.dataset.v===c.dx)x.classList.add("correct");});chk();});
-$("rouNextOpts").querySelectorAll("button").forEach(b=>b.onclick=()=>{if(rouAns)return;cn=b.dataset.v;$("rouNextOpts").querySelectorAll("button").forEach(x=>x.classList.remove("correct","wrong"));b.classList.add(cn===c.n?"correct":"wrong");if(cn!==c.n)$("rouNextOpts").querySelectorAll("button").forEach(x=>{if(x.dataset.v===c.n)x.classList.add("correct");});chk();});
-function chk(){if(cd===null||cn===null)return;rouAns=true;rouTotal�;const both=cd===c.dx&&cn===c.n;if(both)rouScore�;$("rouScore").textContent=rouScore;$("rouTotal").textContent=rouTotal;$("rouAcc").textContent=Math.round(rouScore/rouTotal*100)�"%";updateUserProgress({progress:{rouScore,rouTotal}});const box=$("rouFeedback");box.classList.remove("hidden");box.className="feedback-box"�(both?"":" bad");box.innerHTML=both?`<strong>Excellent.</strong> ${c.e}`:`<strong>Review:</strong> ${c.dx} �� ${c.n}. ${c.e}`;}}
-$("rouNew").onclick=()=>renderRou(pickRou(false));$("rouShared").onclick=()=>renderRou(pickRou(true));$("rouExit").onclick=()=>setMode("menu");
-
-const streakBank=[{v:"STEMI on ECG. Next?",a:"Activate primary PCI",o:["Activate primary PCI","Outpatient stress","Discharge","CT abdo"]},{v:"Ectopic suspected, hypotensive. Next?",a:"Resuscitate � urgent senior",o:["Resuscitate � urgent senior","Discharge 1wk","Antenatal","Oral Abx"]},{v:"Child asthma SpO2 89%. First?",a:"O2 � salbutamol � steroids � senior",o:["O2 � salbutamol � steroids � senior","Abx only","Discharge","Immediate intubation"]},{v:"NOF deformity after fall. Next?",a:"Analgesia, IV, G&S, XR, ortho",o:["Analgesia, IV, G&S, XR, ortho","Crutches","Thrombolysis","Physio"]},{v:"Tension PTX clinically. Next?",a:"Immediate needle decompression",o:["Immediate needle decompression","Wait CXR","Nebs","Observe"]},{v:"PET features 28w. Next?",a:"Urgent obstetric assessment",o:["Urgent obstetric assessment","Reassure","Warfarin","Discharge"]},{v:"Rigid abdomen. Next?",a:"ABC, IV fluids, urgent surgical review",o:["ABC, IV fluids, urgent surgical review","Oral fluids","Outpatient","Analgesia only"]},{v:"Thunderclap headache. Next?",a:"Urgent non-contrast CT",o:["Urgent non-contrast CT","Discharge","MRI weeks","Abx"]},{v:"Anaphylaxis. Drug?",a:"IM adrenaline 1:1000",o:["IM adrenaline 1:1000","Oral antihistamine","IV fluids first","Steroids first"]},{v:"Newborn apnoeic HR 70. Priority?",a:"Warm, airway, PPV",o:["Warm, airway, PPV","Observe","Adrenaline first","Compressions first"]},{v:"Sepsis elderly confusion. Next?",a:"Sepsis bundle: cultures, Abx, fluids",o:["Sepsis bundle: cultures, Abx, fluids","Observe","Oral fluids","Discharge"]},{v:"DKA picture. Next?",a:"ABC, IV fluids, fixed-rate insulin, senior",o:["ABC, IV fluids, fixed-rate insulin, senior","Oral fluids","SC insulin only","Discharge"]}];
-let streak=0,best=0,stCorrect=0,stAns=false,stCase=null;
-function loadStreakStats(){const p=getProgress();best=p.streakBest||0;stCorrect=p.streakCorrect||0;if($("streakBest")){$("streakBest").textContent=best;$("streakCorrect").textContent=stCorrect;}}
-function loadStreak(){stAns=false;$("streakFeedback").classList.add("hidden");stCase=streakBank[Math.floor(Math.random()*streakBank.length)];$("streakVignette").classList.remove("hidden");$("streakVignette").textContent=stCase.v;$("streakOpts").innerHTML=shuffle(stCase.o).map(o=>`<button class="opt-btn" data-v="${o}">${o}</button>`).join("");
-$("streakOpts").querySelectorAll("button").forEach(b=>b.onclick=()=>{if(stAns)return;stAns=true;const ok=b.dataset.v===stCase.a;b.classList.add(ok?"correct":"wrong");if(!ok){$("streakOpts").querySelectorAll("button").forEach(x=>{if(x.dataset.v===stCase.a)x.classList.add("correct");});streak=0;}else{streak�;stCorrect�;if(streak>best)best=streak;}$("streakCount").textContent=streak;$("streakBest").textContent=best;$("streakCorrect").textContent=stCorrect;updateUserProgress({progress:{streakBest:best,streakCorrect:stCorrect}});const box=$("streakFeedback");box.classList.remove("hidden");box.className="feedback-box"�(ok?"":" bad");box.innerHTML=ok?`Correct! Streak ${streak}`:`Wrong. ${stCase.a}`;} );}
-$("streakStart").onclick=loadStreak;$("streakReset").onclick=()=>{streak=0;$("streakCount").textContent="0";};$("streakExit").onclick=()=>setMode("menu");
-
-// ---- TELAS DOC improved ----
-const telasScenarios=[
-{j:"The potassium is 6.9 but I���m waiting for the formal printed report before treating.",c:"Charming. Shall we also wait for the autopsy report before calling the arrest team?",q:"Severe hyperkalaemia with ECG changes ��� priority action?",o:["Protect the heart (calcium), shift and remove K�, treat cause ��� act on ECG, don���t wait for stationery","Wait for three lab confirmations","Oral kayexalate and tea","Ignore ECG"],a:0,fb:"Calcium stabilises membranes. Paperwork does not."},
-{j:"I���ve ordered a full-body CT for classic appendicitis in a thin 20-year-old.",c:"Excellent. Why stop at the body? Add a dental panoramic while we���re celebrating radiation.",q:"Preferred first imaging for suspected appendicitis when expertise allows?",o:["Ultrasound first in appropriate patients; CT if needed","Full-body CT for all","MRI only ever","No imaging ever"],a:0,fb:"Clinical judgement still exists. So does ALARA."},
-{j:"Saturations 85%, patient ���looks okay���, so no oxygen yet.",c:"���Looks okay��� ��� the last words before many rapid responses.",q:"Oxygen principle?",o:["Correct hypoxia to an appropriate target range for that patient","100% for everyone","Never give oxygen","Only if blue"],a:0,fb:"Hypoxia is not a vibe check."},
-{j:"STEMI on ECG but I���m waiting for troponin before calling PCI.",c:"Troponin is fashionably late. ST elevation is the fire alarm. You don���t wait for the smoke detector���s formal letter.",q:"STEMI action?",o:["Activate reperfusion on ECG � clinical picture; do not wait for troponin","Always wait for troponin","Troponin replaces ECG","Discharge if pain free"],a:0,fb:"Minutes of myocardium. Not minutes of bureaucracy."},
-{j:"Febrile neutropenic ��� I diagnosed ���viral��� and sent them home.",c:"Neutropenic sepsis would like a word. And a lawyer.",q:"Febrile neutropenia?",o:["Urgent assessment, cultures, broad-spectrum antibiotics without delay","Home with paracetamol","Wait all cultures","Oral Abx always"],a:0,fb:"Fever � neutropenia = emergency pathway."},
-{j:"GCS 8, still debating intubation after 25 minutes.",c:"The brain is patient. Until it isn���t.",q:"Low GCS airway?",o:["Protect airway early; call skilled help","Debate until 3","Never intubate medical patients","Only if family requests"],a:0,fb:"A comes before everything, including your meeting."},
-{j:"Copied last week���s discharge summary and changed the name.",c:"Efficient plagiarism. The lawyers will admire your productivity.",q:"Documentation?",o:["Accurate, contemporaneous, original for this patient","Copy-paste forever","Minimal notes","Write after the complaint"],a:0,fb:"Your notes outlive your memory and your excuses."},
-{j:"Child with stridor ��� I���m forcing a throat exam with a spatula.",c:"Yes, convert partial obstruction to complete. Very thorough. The anaesthetist will send flowers.",q:"Suspected severe upper airway obstruction in a child?",o:["Keep calm, minimal disturbance, senior/anaesthetics/ENT early ��� do not force exam","Force a good look","Lie flat","Waiting room"],a:0,fb:"Some exams can kill. This is one."},
-{j:"Asymptomatic bacteriuria in a non-pregnant adult ��� I started antibiotics.",c:"Bacteria in urine is not a personality disorder requiring treatment.",q:"Asymptomatic bacteriuria?",o:["Generally do not treat (exceptions: pregnancy, before certain urological procedures)","Always treat","Treat all elderly with bacteria","Abx for every positive dip"],a:0,fb:"Treat people, not lab printouts."},
-{j:"Patient refused the procedure. I wrote ���non-compliant��� and left.",c:"���Non-compliant��� ��� Latin for ���I didn���t ask why���.",q:"When a patient declines?",o:["Explore understanding and concerns, assess capacity, document, respect informed refusal","Label and leave","Coerce","Ignore capacity"],a:0,fb:"Autonomy is the point, not the obstacle."},
-{j:"I���ve been awake 16 hours and I���m still doing complex decisions alone.",c:"Hero complex is not a clinical competency. Error rates don���t care about your pride.",q:"Fatigue?",o:["Escalate, hand over, use checklists ��� do not solo complex decisions when exhausted","Push alone","Hide tiredness","More coffee, faster decisions"],a:0,fb:"Knowing your limits is a skill. Using them is wisdom."},
-{j:"���See one, do one, teach one��� on LP with no supervision plan.",c:"See one, do one, settle one claim.",q:"Procedural supervision?",o:["Supervision matched to experience; competence before independence","Unsupervised day one","Students teach immediately","Never let juniors try"],a:0,fb:"Patients are not practice dummies."},
-{j:"Chest pain, normal troponin at 1 hour, non-diagnostic ECG ��� discharged.",c:"Bold. I���ll keep the crash trolley warm for the comeback tour.",q:"ACS rule-out?",o:["Follow validated pathways (troponin timing, ECG, risk tools)","One blood test cures all","Discharge if pain free","CT every chest pain"],a:0,fb:"Pathways exist because gut feeling is not a biomarker."},
-{j:"Sepsis ��� still choosing antibiotics at 90 minutes.",c:"Sepsis six is not sepsis ninety. Bacteria don���t respect your indecision.",q:"Septic shock antibiotics?",o:["Give appropriate antibiotics urgently after cultures where possible","Wait all results","Oral Abx in shock","Abx after CT only"],a:0,fb:"Delay has a mortality curve. You���re on it."},
-{j:"Asthmatic still distressed after one nebuliser ��� I left them ���to settle���.",c:"Wheeze is not ambient music.",q:"After initial asthma treatment?",o:["Reassess objectively; escalate early if poor response","One neb is enough","Discharge if speaking","Ignore silent chest"],a:0,fb:"Reassessment separates clinicians from spectators."},
-{j:"Warfarin INR 8.5, no bleed ��� I did nothing overnight.",c:"High INR is not a silent meditation.",q:"High INR, no major bleed?",o:["Follow protocol: withhold, consider vitamin K by INR/risk, senior input","Ignore if not bleeding","Double next dose","PCC for every high INR"],a:0,fb:"Protocols beat improvisation with clotting."},
-{j:"I put the only working cannula in the foot ���because arms were hard���.",c:"Feet walk. Arms drip. Unless both arms are on fire, rethink.",q:"IV site preference?",o:["Upper limbs preferred; lower limb only with clear reason","Always feet first","Central line for every bloods","No preference"],a:0,fb:"Infection and thrombosis enjoy the scenic route via the foot."},
-{j:"Told the family the scan was ���a bit funny��� and walked off.",c:"Kafka called. He wants his communication style back.",q:"Communicating significant results?",o:["Clear language, check understanding, time for questions, support, document","Maximum jargon","Voicemail","Smile and leave"],a:0,fb:"Families remember the manner more than the median."},
-{j:"Query UTI, normal dip, no symptoms ��� antibiotics ���just in case���.",c:"���Just in case��� is how we breed resistance and C. difficile.",q:"Treat asymptomatic / dip-only?",o:["Do not treat asymptomatic bacteriuria outside defined exceptions","Always treat positive cultures","Treat every elderly positive dip","Abx for all cloudy urine"],a:0,fb:"Stewardship is not optional fashion."},
-{j:"Beta-blocker held because HR was 56 in a stable ACS patient without other contraindications.",c:"56 is not asystole. It���s a number that still allows blood to leave the heart.",q:"Early beta-blockade caution in ACS?",o:["Avoid/caution if hypotensive, acute failure, bradycardia, heart block, severe asthma ��� otherwise often useful if stable","Never use beta-blockers in ACS","Max dose immediately always","Only after discharge"],a:0,fb:"Guidelines > folklore."}
-];
-let telasIdx=-1,telasScore=0,telasTotal=0,telasAns=false;
-function loadTelasStats(){const p=getProgress();telasScore=p.telasScore||0;telasTotal=p.telasTotal||0;if($("telasScore")){$("telasScore").textContent=telasScore;$("telasTotal").textContent=telasTotal;}}
-function loadTelas(){
-  telasIdx=(telasIdx�)%telasScenarios.length;telasAns=false;
-  const s=telasScenarios[telasIdx];
-  $("telasBox").classList.remove("hidden");$("telasFeedback").classList.add("hidden");
-  $("telasJunior").textContent=s.j;$("telasConsult").textContent=s.c;
-  $("telasOpts").innerHTML=s.o.map(o=>`<button class="opt-btn" data-v="${o}">${o}</button>`).join("");
-  $("telasStatus").textContent=`Encounter ${telasIdx�} of ${telasScenarios.length}`;
-  $("telasProgress").textContent=`Score ${telasScore}/${telasTotal||0} �� Telas remains unimpressed`;
-  $("telasOpts").querySelectorAll("button").forEach(b=>b.onclick=()=>{
-    if(telasAns)return;telasAns=true;telasTotal�;
-    const ok=b.dataset.v===s.o[s.a];
-    b.classList.add(ok?"correct":"wrong");
-    if(!ok)$("telasOpts").querySelectorAll("button")[s.a].classList.add("correct");
-    if(ok)telasScore�;
-    $("telasScore").textContent=telasScore;$("telasTotal").textContent=telasTotal;
-    $("telasProgress").textContent=`Score ${telasScore}/${telasTotal}`;
-    updateUserProgress({progress:{telasScore,telasTotal}});
-    const box=$("telasFeedback");box.classList.remove("hidden");
-    box.className="feedback-box"�(ok?"":" bad");
-    box.innerHTML=ok
-      ?`<strong>Telas (grudgingly):</strong> Acceptable. ${s.fb}`
-      :`<strong>Telas:</strong> Predictable. ${s.fb}`;
+let pk="iv",pi=0,ps=0;
+function loadProc(k){pk=k;pi=0;ps=0;document.querySelectorAll("#procNav button").forEach(b=>b.classList.toggle("on",b.getAttribute("data-p")===k));$("pVein").setAttribute("visible",false);$("pCann").setAttribute("visible",false);rp();}
+function rp(){
+  const P=PROCS[pk];$("procTitle").textContent=P.t;$("procScore").textContent=ps;$("procBar").style.width=(pi/P.s.length*100)+"%";
+  if(pi>=P.s.length){$("procText").textContent="Complete — score "+ps;$("procChoices").innerHTML="";return;}
+  const s=P.s[pi];$("procText").textContent=s.q;
+  const opts=shuffle(s.o.map((t,i)=>({t,i})));
+  $("procChoices").innerHTML=opts.map(o=>`<button type="button" data-i="${o.i}">${o.t}</button>`).join("");
+  $("procChoices").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    if(+b.dataset.i===s.a){ps+=Math.round(100/P.s.length);if(pk==="iv"&&pi===1)$("pVein").setAttribute("visible",true);if(pk==="iv"&&pi===2)$("pCann").setAttribute("visible",true);pi++;rp();}
+    else{b.classList.add("wrong");ps=Math.max(0,ps-5);$("procScore").textContent=ps;}
   });
 }
-$("telasStart").onclick=loadTelas;$("telasExit").onclick=()=>setMode("menu");
+document.querySelectorAll("#procNav button").forEach(b=>b.onclick=()=>loadProc(b.getAttribute("data-p")));
+$("procReset").onclick=()=>loadProc(pk);$("procExit").onclick=()=>setMode("menu");
 
+// ANATOMY
+function showAnat(tab){
+  document.querySelectorAll("#anatPanel .subnav button").forEach(b=>b.classList.toggle("on",b.getAttribute("data-a")===tab));
+  $("aLayers").classList.toggle("hidden",tab!=="layers");$("aSuture").classList.toggle("hidden",tab!=="suture");$("aBones").classList.toggle("hidden",tab!=="bones");
+  $("handSuture").setAttribute("visible",tab==="suture");
+  if(tab==="bones")$("boneList").innerHTML="<b>Axial:</b> skull bones, ossicles, hyoid, vertebrae (C/T/L/S/coccyx), ribs, sternum.<br><b>Appendicular:</b> clavicle, scapula, humerus, radius, ulna, carpals, metacarpals, phalanges; pelvis, femur, patella, tibia, fibula, tarsals, metatarsals, phalanges.<br><i>Adult total typically 206 — individual variants exist (e.g. sesamoids).</i>";
+}
+document.querySelectorAll("#anatPanel .subnav button").forEach(b=>b.onclick=()=>showAnat(b.getAttribute("data-a")));
+function onlyLayer(id){["layerSkin","layerMuscle","layerBone","layerVessel","layerNerve","layerLymph"].forEach(L=>$(L).setAttribute("visible",L===id));}
+$("lySkin").onclick=()=>{onlyLayer("layerSkin");$("anatStatus").textContent="Skin / soft tissue layer";};
+$("lyMus").onclick=()=>{onlyLayer("layerMuscle");$("anatStatus").textContent="Muscle layer";};
+$("lyBone").onclick=()=>{onlyLayer("layerBone");$("anatStatus").textContent="Bone layer — major bones shown";};
+$("lyVes").onclick=()=>{onlyLayer("layerVessel");$("anatStatus").textContent="Major vessels";};
+$("lyNer").onclick=()=>{onlyLayer("layerNerve");$("anatStatus").textContent="Nerve regions (schematic)";};
+$("lyLym").onclick=()=>{onlyLayer("layerLymph");$("anatStatus").textContent="Lymph node groups (schematic)";};
+document.querySelectorAll(".anat").forEach(el=>el.addEventListener("click",()=>{$("anatStatus").textContent="Selected: "+(el.getAttribute("data-n")||"?");el.setAttribute("material","emissive","#38e6ba");el.setAttribute("material","emissiveIntensity","0.35");}));
+
+const SUT=[
+{q:"Wound assessment",o:["Assess depth, contamination, need for exploration","Close obviously contaminated wound tightly without wash","Ignore neurovascular exam"],a:0},
+{q:"Suture choice (general skin)",o:["Choose appropriate material & size for site (e.g. non-absorbable skin or local policy)","Always silk for everything","Wire for facial skin routinely"],a:0},
+{q:"Interrupted suture technique",o:["Equal bites, evert edges, secure square knots","Massive unequal bites, invert edges","Leave long loose loops in the wound"],a:0},
+{q:"Aftercare",o:["Advise wound care, signs of infection, suture removal timing","Soak continuously first day","No follow-up ever"],a:0}
+];
+let si=0,ss=0,cut="linear";
+function startSut(){si=0;ss=0;rsut();}
+function rsut(){
+  $("sutScore").textContent=ss;
+  if(si>=SUT.length){$("sutStatus").textContent="Complete ("+cut+" wound) — "+ss+"/100";$("sutOpts").innerHTML="";$("sutureMarks").setAttribute("visible",true);return;}
+  const s=SUT[si];$("sutStatus").textContent=s.q+" · cut: "+cut;
+  const opts=shuffle(s.o.map((t,i)=>({t,i})));
+  $("sutOpts").innerHTML=opts.map(o=>`<button type="button" data-i="${o.i}">${o.t}</button>`).join("");
+  $("sutOpts").querySelectorAll("button").forEach(b=>b.onclick=()=>{if(+b.dataset.i===s.a){ss+=25;si++;rsut();}else{b.classList.add("wrong");ss=Math.max(0,ss-5);$("sutScore").textContent=ss;}});
+}
+document.querySelectorAll("#cutNav button").forEach(b=>b.onclick=()=>{cut=b.getAttribute("data-cut");document.querySelectorAll("#cutNav button").forEach(x=>x.classList.toggle("on",x===b));$("cutLine").setAttribute("width",cut==="circular"?"0.12":"0.2");startSut();});
+$("anatExit").onclick=()=>setMode("menu");
+
+// DELIVERY
+const DEL={norm:["Prepare room, equipment, call help if needed","Support perineum; controlled delivery of head","Deliver shoulders and body; note time of birth","Dry, stimulate, assess breathing (golden minute)","Delayed cord clamping if baby vigorous","Active management of third stage; check bleeding","Skin-to-skin, monitor mother and baby"],
+res:["Call for help; radiant warmer on","Warm, dry, stimulate; open airway","If apnoeic or HR <100 → start PPV","Reassess chest rise; correct ventilation first","If HR <60 despite ventilation → compressions 3:1","Consider advanced support; document; support parents"]};
+let dA=[],dI=0;
+function showDel(){if(dI>=dA.length){$("delStatus").textContent="Pathway complete";$("delBody").innerHTML="";$("babyProxy").setAttribute("visible",true);return;}$("delStatus").textContent="Step "+(dI+1)+"/"+dA.length;$("delBody").innerHTML="<p>"+dA[dI]+"</p>";if(dI>=3)$("babyProxy").setAttribute("visible",true);}
+$("delNorm").onclick=()=>{dA=DEL.norm;dI=0;$("babyProxy").setAttribute("visible",false);showDel();};
+$("delRes").onclick=()=>{dA=DEL.res;dI=0;$("babyProxy").setAttribute("visible",true);showDel();};
+$("delNext").onclick=()=>{dI++;showDel();};$("delExit").onclick=()=>setMode("menu");
+
+// SURGERY
+const SURGS=[
+{t:"Appendicectomy",steps:[{q:"Before knife",o:["WHO checklist, antibiotics, consent confirmed","Skip checklist","No antibiotics when indicated"],a:0},{q:"Find appendix",o:["Follow taeniae coli to base","Divide random small bowel","Ignore mesoappendix"],a:0},{q:"Resect",o:["Control mesoappendix, secure appendix base","Pull off only","Leave stump open"],a:0}]},
+{t:"Inguinal hernia repair",steps:[{q:"Identify",o:["Identify cord structures and hernia sac","Ignore ilioinguinal nerve","Divide cord routinely"],a:0},{q:"Repair",o:["Tension-free mesh principles (when used)","Repair under extreme tension always","No haemostasis"],a:0}]},
+{t:"Cholecystectomy safety",steps:[{q:"Critical view",o:["Achieve critical view of safety before clipping","Clip any tubular structure","Never convert when stuck"],a:0},{q:"Clip & retrieve",o:["Clip cystic duct/artery only when identified","Blind diathermy in Calot","Leave specimen in abdomen"],a:0}]},
+{t:"Abscess I&D",steps:[{q:"Incision",o:["Incise over fluctuance, drain, break locules, culture","Needle aspiration only always","Close infected cavity tightly primary"],a:0}]},
+{t:"Skin lesion excision",steps:[{q:"Plan",o:["Plan margins and ellipse along skin lines","Round punch always for melanoma suspicion without plan","No pathology request when indicated"],a:0}]},
+{t:"Lumbar puncture",steps:[{q:"Safety",o:["Indication, consent, check coagulation / contraindications","Ignore infection over site","No sterile field"],a:0},{q:"Space",o:["Landmark safe interspace (e.g. L3/4 or L4/5)","Aim high thoracic","Aspirate CSF forcefully"],a:0}]},
+{t:"Chest drain",steps:[{q:"Site",o:["Safe triangle / US guidance as appropriate, consent, analgesia","Any interspace blindly","No confirmation imaging after"],a:0}]},
+{t:"Wound exploration",steps:[{q:"Priority",o:["ABC first, then explore with good light and wash","Explore before airway","Close contaminated wound without wash"],a:0}]}
+];
+// fix appendicectomy typo
+let sg=null,sgi=0;
+function showSurgList(){$("surgList").classList.remove("hidden");$("surgActive").classList.add("hidden");$("surgList").innerHTML=SURGS.map((s,i)=>`<button type="button" data-i="${i}">${s.t}</button>`).join("");
+$("surgList").querySelectorAll("button").forEach(b=>b.onclick=()=>{sg=SURGS[+b.dataset.i];sgi=0;$("surgList").classList.add("hidden");$("surgActive").classList.remove("hidden");$("surgTitle").textContent=sg.t;rsg();});}
+function rsg(){
+  $("surgBar").style.width=(sgi/sg.steps.length*100)+"%";
+  if(sgi>=sg.steps.length){$("surgStep").textContent="Complete";$("surgChoices").innerHTML=`<button type="button" class="primary" id="sBack">Back to list</button>`;$("sBack").onclick=showSurgList;return;}
+  const s=sg.steps[sgi];$("surgStep").textContent=s.q;
+  const opts=shuffle(s.o.map((t,i)=>({t,i})));
+  $("surgChoices").innerHTML=opts.map(o=>`<button type="button" data-i="${o.i}">${o.t}</button>`).join("");
+  $("surgChoices").querySelectorAll("button").forEach(b=>b.onclick=()=>{if(+b.dataset.i===s.a){sgi++;rsg();}else b.classList.add("wrong");});
+}
+$("surgExit").onclick=()=>setMode("menu");
+
+// RADIOLOGY with SVG schematics
+const RAD=[
+{t:"Tension pneumothorax",m:"CXR",f:"No lung markings one side, mediastinum shifted away, depressed diaphragm.",tip:"If unstable — decompress immediately; do not wait for the film.",svg:'<svg viewBox="0 0 200 120" width="220"><rect x="20" y="10" width="70" height="100" rx="30" fill="#1a3038" stroke="#5af" stroke-width="2"/><rect x="110" y="10" width="70" height="100" rx="30" fill="#0a1520" stroke="#5af" stroke-width="2"/><line x1="145" y1="20" x2="145" y2="100" stroke="#3a8" stroke-width="1" stroke-dasharray="4"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Shift →</text></svg>'},
+{t:"Lobar consolidation",m:"CXR",f:"Dense opacity in a lobe ± air bronchograms.",tip:"Correlate with fever, hypoxia, CURB-65/local severity.",svg:'<svg viewBox="0 0 200 120" width="220"><rect x="30" y="10" width="140" height="100" rx="40" fill="#1a3038" stroke="#5af"/><path d="M50,30 Q100,50 50,90" fill="#8ac" opacity="0.7"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Opacity</text></svg>'},
+{t:"Gallstones",m:"Ultrasound",f:"Bright echogenic foci with posterior acoustic shadowing.",tip:"US first-line for suspected gallstones.",svg:'<svg viewBox="0 0 200 120" width="220"><ellipse cx="100" cy="55" rx="50" ry="35" fill="#1a3840" stroke="#5af"/><circle cx="90" cy="50" r="8" fill="#eee"/><polygon points="86,58 94,58 90,100" fill="#234" opacity="0.6"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Shadowing</text></svg>'},
+{t:"Acute ICH",m:"CT head",f:"Hyperdense blood on non-contrast CT.",tip:"Non-contrast CT is first-line for suspected ICH.",svg:'<svg viewBox="0 0 200 120" width="220"><ellipse cx="100" cy="60" rx="55" ry="45" fill="#1a3038" stroke="#5af"/><ellipse cx="120" cy="55" rx="18" ry="14" fill="#ccc"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Hyperdense blood</text></svg>'},
+{t:"Pulmonary embolism",m:"CTPA",f:"Intraluminal filling defect in pulmonary arteries.",tip:"Use clinical probability + D-dimer pathways.",svg:'<svg viewBox="0 0 200 120" width="220"><circle cx="100" cy="60" r="40" fill="#1a3038" stroke="#5af"/><line x1="100" y1="25" x2="100" y2="95" stroke="#5af"/><circle cx="100" cy="60" r="10" fill="#c45"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Filling defect</text></svg>'},
+{t:"Small bowel obstruction",m:"AXR/CT",f:"Dilated loops, air-fluid levels; look for transition point on CT.",tip:"Examine hernial orifices clinically.",svg:'<svg viewBox="0 0 200 120" width="220"><path d="M30,60 Q60,20 90,60 Q120,100 150,60 Q170,40 180,60" fill="none" stroke="#8cf" stroke-width="8"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Dilated loops</text></svg>'}
+];
+function showRad(){
+  $("radList").classList.remove("hidden");$("radDetail").classList.add("hidden");
+  $("radList").innerHTML=RAD.map((r,i)=>`<div class="case-card" data-i="${i}"><span class="tag">${r.m}</span><strong>${r.t}</strong></div>`).join("");
+  $("radList").querySelectorAll(".case-card").forEach(el=>el.onclick=()=>{
+    const r=RAD[+el.dataset.i];$("radList").classList.add("hidden");$("radDetail").classList.remove("hidden");
+    $("radStatus").innerHTML=`<span class="tag">${r.m}</span> <strong>${r.t}</strong>`;
+    $("radVisual").innerHTML=r.svg+'<p class="muted" style="margin-top:8px">Teaching schematic (not a real patient image)</p>';
+    $("radBody").innerHTML=`<p><b>Classic finding:</b> ${r.f}</p><p><b>Clinical tip:</b> ${r.tip}</p>`;
+  });
+}
+$("radBack").onclick=showRad;$("radExit").onclick=()=>setMode("menu");
+
+// DRUGS
+const DRUGS=[
+{t:"Adrenaline (anaphylaxis)",a:"IM 1:1000 into mid-outer thigh; repeat per protocol",moa:"α1 vasoconstriction; β2 bronchodilation",ci:"No absolute CI in true anaphylaxis"},
+{t:"Metformin",a:"First-line T2DM if tolerated; hold in severe AKI/sepsis hypoxia",moa:"↓hepatic gluconeogenesis",ci:"Severe renal impairment, acute hypoxia risk"},
+{t:"ACE inhibitors",a:"HTN, heart failure, post-MI (as indicated)",moa:"Block Ang I→II",ci:"Pregnancy, bilateral renal artery stenosis, hyperkalaemia caution"},
+{t:"Salbutamol",a:"Reliever in asthma/COPD bronchospasm",moa:"β2 agonist → bronchodilation",ci:"Caution with non-selective β-blockers"},
+{t:"Insulin (DKA protocol)",a:"Fixed-rate IV infusion per local DKA pathway with fluids & K+",moa:"Glucose uptake; suppresses ketogenesis",ci:"Hypoglycaemia if mismanaged"}
+];
+function showDrugs(){
+  $("drugList").classList.remove("hidden");$("drugDetail").classList.add("hidden");
+  $("drugList").innerHTML=DRUGS.map((d,i)=>`<div class="case-card" data-i="${i}"><strong>${d.t}</strong></div>`).join("");
+  $("drugList").querySelectorAll(".case-card").forEach(el=>el.onclick=()=>{
+    const d=DRUGS[+el.dataset.i];$("drugList").classList.add("hidden");$("drugDetail").classList.remove("hidden");
+    $("drugStatus").innerHTML=`<strong>${d.t}</strong>`;
+    $("drugBody").innerHTML=`<p><b>Use:</b> ${d.a}</p><p><b>MOA:</b> ${d.moa}</p><p><b>Cautions/CI:</b> ${d.ci}</p>`;
+  });
+}
+$("drugBack").onclick=showDrugs;$("drugExit").onclick=()=>setMode("menu");
+
+// ===================== TELAS DOC — courses, shuffled, follow-ups =====================
+// Each item: {c:course, stem, opts:[], a:index of correct in opts, why, roast, follow?:{stem,opts,a,why,roast}}
+const BANK=[];
+function add(c,stem,correct,wrongs,why,roast,follow){
+  const opts=[correct].concat(wrongs);
+  const item={c,stem,opts,correct,why,roast};
+  if(follow)item.follow=follow;
+  BANK.push(item);
+}
+// Helper to add follow-up object
+function F(stem,correct,wrongs,why,roast){return {stem,opts:[correct].concat(wrongs),correct,why,roast};}
+
+// Surgery
+add("Surgery","A 22-year-old has 18 hours of abdominal pain that began peri-umbilically and is now maximal in the RIF, with anorexia and low-grade fever. What is the most likely diagnosis?",
+"Acute appendicitis",["Acute cholecystitis","Right lower lobe pneumonia","Ureteric colic only"],
+"Migration of pain to RIF with anorexia is classic for appendicitis.","Hoping it is gas will not impress the surgeon.",
+F("What is an appropriate next step in a stable patient?",
+"Urgent surgical assessment and work-up (bloods, pregnancy test if relevant, imaging as needed)","Discharge with oral antibiotics alone","Immediate laparotomy without assessment","High-dose steroids",
+"Confirm diagnosis pathway and prepare for theatre if indicated.","Guessing and sending home is how peritonism presents at 3 a.m."));
+
+add("Surgery","A patient has a painful, irreducible groin swelling with vomiting. What is the major concern?",
+"Strangulated hernia until proven otherwise",["Lipoma","Inguinal lymphadenopathy only","Hydrocele"],
+"Painful irreducible hernia raises obstruction/strangulation concern.","Calling it a lipoma does not make bowel safer.",
+F("Immediate management priority?",
+"Keep NBM, IV fluids, urgent surgical review","Elective clinic in 6 weeks","Manual reduction under false reassurance at home","Oral laxatives only",
+"Strangulation is time-critical.","Clinic in June is not a management plan."));
+
+add("Surgery","Before clipping structures during laparoscopic cholecystectomy, what safety principle is essential?",
+"Critical view of safety",["Clip the first tubular structure seen","Never convert to open","Maximal traction only"],
+"Critical view reduces bile duct injury.","Speed is not a substitute for anatomy.");
+
+add("Surgery","A febrile patient has a fluctuant abscess. Best initial surgical management principle?",
+"Incision and drainage with appropriate antibiotics when indicated",["Antibiotics alone for all fluctuance","Primary closure of infected cavity always","Ignore diabetes control"],
+"Source control matters.","Antibiotics do not drain pus by email.");
+
+add("Surgery","Trauma patient with rigid abdomen after blunt injury. Priority?",
+"Resuscitation and urgent surgical evaluation",["CT only then go home","Oral fluids","Outpatient review"],
+"Peritonism after trauma is a surgical emergency pathway.","The abdomen is not optional.");
+
+// Obs/Gyn
+add("Obs/Gyn","A woman at 31 weeks has new BP 162/104, headache, and 2+ proteinuria. What is the working diagnosis?",
+"Pre-eclampsia",["Normal pregnancy BP","Migraine only","UTI alone"],
+"New hypertension ≥20 weeks with protein/symptoms suggests pre-eclampsia.","Migraine does not explain the proteinuria.",
+F("What is an appropriate action?",
+"Urgent obstetric assessment, BP control, fetal monitoring as indicated","Reassure for routine clinic in a month","Start warfarin","Discharge with paracetamol only",
+"Pre-eclampsia can progress rapidly.","A month is a long time in obstetrics."));
+
+add("Obs/Gyn","Reproductive-age woman with abdominal pain, spotting, and positive pregnancy test. Until proven otherwise?",
+"Ectopic pregnancy",["Inevitable miscarriage only","IBS","Appendicitis only without pregnancy test"],
+"Any positive test with pain/bleeding needs ectopic excluded.","Assume intrauterine at your peril.",
+F("If she is hypotensive, what dominates?",
+"Resuscitation and emergency gynaecology/surgical pathway","Discharge and repeat β-hCG in a week","Oral antibiotics","Outpatient scan in 10 days",
+"Shock first.","Outpatient plans are for stable patients."));
+
+add("Obs/Gyn","Rh-negative mother after a sensitising event. What should not be forgotten?",
+"Anti-D prophylaxis per protocol",["Vitamin K to mother only","No blood group matters","Warfarin"],
+"Anti-D prevents sensitisation.","Future pregnancies keep the score.");
+
+add("Obs/Gyn","Postpartum: boggy uterus and heavy bleeding. First actions?",
+"Call help, uterine massage, uterotonics, resuscitate",["Observe only","CT abdomen first","Discharge"],
+"Atony is the commonest cause of PPH.","Observation is not a uterotonic.");
+
+add("Obs/Gyn","Severe pre-eclampsia with clonus and visual symptoms. Alongside BP control, which drug is used for seizure prevention?",
+"Magnesium sulfate (per protocol)",["Phenytoin first-line always","Diazepam only at home","No prophylaxis ever"],
+"MgSO4 is standard for eclampsia prevention in severe disease.","Improvising seizure prevention is unsafe.");
+
+// Paediatrics
+add("Paediatrics","A 6-year-old with known asthma has recessions, SpO2 90% in air, and only short phrases. Severity?",
+"Acute severe (or life-threatening if silent chest / exhaustion)",["Mild — home inhaler only","Normal variation","Anxiety attack only"],
+"Hypoxia and increased work of breathing define severity.","Short phrases are not fine.",
+F("Initial treatment?",
+"Oxygen, inhaled salbutamol (± ipratropium), steroids, senior review",["Oral antibiotics only","Discharge immediately","Immediate intubation without medical therapy attempt"],
+"Follow asthma guidelines stepwise.","Abx do not bronchodilate."));
+
+add("Paediatrics","Infant with fever, lethargy, and non-blanching rash. Action?",
+"Treat as suspected meningococcal sepsis: senior help and immediate antibiotics",["Home with viral advice","Wait for blood cultures before any treatment","Oral fluids in waiting room"],
+"Do not delay antibiotics for tests in this picture.","Waiting rooms are not ICUs.");
+
+add("Paediatrics","Child with barking cough and stridor at rest. Approach?",
+"Keep child calm, minimal intervention, senior support, nebulised adrenaline if protocol indicates",["Force tongue-depressor exam","Lie flat forcibly","Send home alone"],
+"Agitation worsens obstruction.","A spatula is not always your friend.");
+
+add("Paediatrics","Neonate not breathing effectively, HR 70 after stimulation. Priority?",
+"Effective PPV after airway positioning",["Chest compressions first always","Observe 10 more minutes","Adrenaline before ventilation"],
+"Ventilation is the key in newborn resuscitation.","Compressions without air achieve little.");
+
+add("Paediatrics","Toddler with suspected dehydration from gastroenteritis. Best initial assessment?",
+"Clinical hydration status (AVPU, eyes, skin, urine, HR, CRT)",["CT abdomen first","Sodium only without exam","Immediate central line for all"],
+"Clinical assessment guides resuscitation.","Scan does not replace looking at the child.");
+
+// Internal medicine
+add("Internal Medicine","ECG shows ST elevation in V2–V4 with crushing chest pain. Next?",
+"Activate primary PCI / reperfusion pathway immediately",["Wait for troponin before any action","Discharge if pain eases","CT abdomen"],
+"STEMI is an ECG diagnosis for activation purposes.","Troponin is late to the party.",
+F("What must be given early as part of ACS care (unless contraindicated)?",
+"Dual antiplatelet therapy as per protocol plus anticoagulation strategy",["Only paracetamol","Oral PPI alone","No drugs until next day"],
+"Time-sensitive pharmacology matters.","Paracetamol is not reperfusion."));
+
+add("Internal Medicine","SpO2 84%, respiratory distress. First principle?",
+"Provide oxygen and assess ABCs while diagnosing cause",["No oxygen until blood gas returns","Ignore sats if patient speaks","Discharge"],
+"Correct hypoxia while you think.","Speaking does not mean saturating.");
+
+add("Internal Medicine","K+ 6.8 with peaked T waves. Priority?",
+"Protect the heart with IV calcium, then shift and remove potassium",["Wait for printed lab only","Oral resonium alone and leave","Ignore ECG"],
+"ECG changes mean act now.","Printers do not prevent arrhythmias.");
+
+add("Internal Medicine","Suspected anaphylaxis with hypotension and bronchospasm after a drug. First drug?",
+"IM adrenaline 1:1000",["IV steroid first only","Oral antihistamine only","IV fluid without adrenaline"],
+"Adrenaline is first-line.","Steroids are adjuncts, not the opener.");
+
+add("Internal Medicine","Elderly patient: confusion, fever, HR 120, BP 88/50. Framework?",
+"Sepsis — take cultures and give antibiotics urgently with fluids per bundle",["Observe overnight without treatment","CT head only","Oral fluids only"],
+"Sepsis kills by delay.","Confusion is a presentation, not a personality change.");
+
+// Anatomy
+add("Anatomy","Which structure passes through the carpal tunnel?",
+"Median nerve",["Ulnar nerve only","Radial artery","Musculocutaneous nerve"],
+"Median nerve compression causes carpal tunnel syndrome.","Ulnar nerve is in Guyon's canal region.");
+
+add("Anatomy","The femoral artery lies at the mid-inguinal point. What is that landmark?",
+"Midway between ASIS and pubic symphysis",["Midpoint of inguinal ligament only exactly identical always","Midway pubic tubercle to umbilicus","Lateral to ASIS"],
+"Mid-inguinal point ≈ midway ASIS to pubic symphysis.","Landmark errors miss the pulse.");
+
+add("Anatomy","Which nerve is at risk in the posterior triangle of the neck with careless dissection?",
+"Spinal accessory nerve (CN XI)",["Optic nerve","Olfactory nerve","Phrenic is never in the neck"],
+"CN XI is vulnerable in the posterior triangle.","Shoulder weakness is a clue.");
+
+add("Anatomy","Portal triad at the porta hepatis includes portal vein, hepatic artery, and?",
+"Common bile duct (bile duct)",["Ureter","Azygos vein","Thoracic duct only"],
+"Portal triad: portal vein, hepatic artery, bile duct.","Ureters do not enter the liver hilum.");
+
+add("Anatomy","Which vertebra level is commonly used as a landmark for lumbar puncture (iliac crest line)?",
+"Approx. L4 (Tuffier's line ~ L4)",["C7","T1","S2 only"],
+"Supercristal plane aids L3/4 or L4/5 interspace choice.","Cervical LP is not the plan.");
+
+// Physiology
+add("Physiology","In the renin–angiotensin–aldosterone system, angiotensin II mainly causes?",
+"Vasoconstriction and aldosterone release",["Only bradycardia","Insulin release primarily","Decreased ADH only"],
+"Ang II raises BP via vasoconstriction and volume effects.","It is not an insulin secretagogue primarily.");
+
+add("Physiology","Surfactant reduces alveolar surface tension. Deficiency in prem neonates causes?",
+"Respiratory distress syndrome",["Asthma exclusively","Croup","Epiglottitis"],
+"Lack of surfactant → alveolar collapse.","Not the same as viral croup.");
+
+add("Physiology","Frank–Starling law relates?",
+"Stroke volume increases with increased end-diastolic volume (within limits)",["Heart rate equals BP","Cardiac output independent of preload","Valves determine only HR"],
+"More preload (within range) → stronger contraction.","Not infinite — failure intervenes.");
+
+add("Physiology","Primary stimulus for ventilation under normal conditions?",
+"PaCO2 via central chemoreceptors (mostly)",["Only PaO2 always","Blood glucose","Hb concentration alone"],
+"CO2 is the main drive in health.","Hypoxia drives more when severe/chronic.");
+
+add("Physiology","ADH (vasopressin) acts on the kidney to?",
+"Increase water reabsorption in collecting ducts",["Increase free water excretion always","Block all sodium reabsorption","Stimulate renin only"],
+"ADH inserts aquaporins.","Water follows the channels.");
+
+// Pathology
+add("Pathology","Caseous necrosis is classically associated with?",
+"Tuberculosis",["Abscess only always","Amyloid only","Apoptosis exclusively"],
+"Caseous necrosis ↔ TB (granulomatous).","Not every necrosis is caseous.");
+
+add("Pathology","Metaplasia is?",
+"Reversible change of one differentiated cell type to another",["Always irreversible cancer","Cell death only","Nuclear fragmentation only"],
+"Metaplasia can be reversible; dysplasia is different.","Not automatically malignancy.");
+
+add("Pathology","Virchow's triad for thrombosis includes stasis, endothelial injury, and?",
+"Hypercoagulability",["Hypoglycaemia","Hypocalcaemia only","Hypernatraemia only"],
+"Stasis + wall injury + hypercoagulability.","Glucose is not the third pillar.");
+
+add("Pathology","Reed–Sternberg cells are associated with?",
+"Hodgkin lymphoma",["TB only","Melanoma","Osteosarcoma"],
+"Classic RS cells → Hodgkin.","Not a TB pathognomonic cell.");
+
+add("Pathology","Free radical damage is a key mechanism in?",
+"Reperfusion injury (among other processes)",["Only blunt trauma mechanics","Vitamin overdose exclusively","Always bacterial only"],
+"Reperfusion generates ROS.","Not limited to one disease.");
+
+// Pharmacology
+add("Pharmacology","First-line treatment of anaphylaxis?",
+"IM adrenaline",["IV steroid alone first","Oral antihistamine alone","Nebulised saline only"],
+"Adrenaline first — everything else supports.","Saline nebulisers do not raise BP.");
+
+add("Pharmacology","Major contraindication to ACE inhibitors?",
+"Pregnancy (and bilateral renal artery stenosis, etc.)",["Hypertension","Heart failure indication","Diabetic nephropathy indication"],
+"ACEIs are teratogenic / fetotoxic concerns.","They are used for HTN when appropriate — not a CI.");
+
+add("Pharmacology","Warfarin effect is monitored using?",
+"INR",["APTT only always","Bleeding time only","HbA1c"],
+"INR guides warfarin.","APTT is more for heparin pathways.");
+
+add("Pharmacology","Naloxone is used to reverse?",
+"Opioid toxicity",["Benzodiazepines primarily","Malignant hyperthermia","Local anaesthetic systemic toxicity (first-line)"],
+"Naloxone → opioid receptors.","Flumazenil is the benzo story.");
+
+add("Pharmacology","Gentamicin toxicity notably affects?",
+"Ear and kidney (ototoxicity, nephrotoxicity)",["Only hair growth","Only mood","Only vision exclusively"],
+"Monitor levels and renal function.","Not a cosmetic side effect.");
+
+// Dermatology
+add("Dermatology","Non-blanching purpuric rash with fever in a child — worry about?",
+"Meningococcal sepsis until proven otherwise",["Eczema only","Psoriasis only","Urticaria only"],
+"Non-blanching + unwell = emergency treatment.","Eczema blanches differently and itches more than kills acutely.");
+
+add("Dermatology","Target lesions after infection/drug — classic for?",
+"Erythema multiforme",["Psoriasis plaques only","Vitiligo","Melasma"],
+"Target lesions suggest EM.","Not every rash is psoriasis.");
+
+add("Dermatology","Nikolsky sign is associated with?",
+"Pemphigus vulgaris (and SJS/TEN spectrum in context)",["Simple dry skin only","Urticaria exclusively","Melanocytic naevi"],
+"Nikolsky: shearing of epidermis.","Serious skin failure until proven otherwise.");
+
+add("Dermatology","ABCDE criteria help screen for?",
+"Melanoma",["Tinea only","Scabies only","Psoriasis only"],
+"Asymmetry, Border, Colour, Diameter, Evolving.","Not for fungal infections primarily.");
+
+add("Dermatology","Impetigo is commonly caused by?",
+"Staphylococcus aureus / Streptococcus pyogenes",["Herpes only","Candida only","Mycobacterium only"],
+"Bacterial; contagious.","Not primarily viral.");
+
+// Radiology
+add("Radiology","First-line imaging for suspected gallstones?",
+"Ultrasound abdomen",["MRI always first","PET","Plain skull film"],
+"US is sensitive for stones and available.","Skull films do not see the gallbladder.");
+
+add("Radiology","Unstable tension pneumothorax. Imaging first?",
+"No — clinical decompression first if unstable",["Always wait for CT","Always wait for portable CXR even if peri-arrest","MRI chest"],
+"Treat first when dying.","Scanners are not resuscitation bays.");
+
+add("Radiology","Best initial imaging for suspected SAH?",
+"Non-contrast CT head",["Skull X-ray","US carotids only","Abdominal X-ray"],
+"CT is fast for blood.","AXR is irrelevant here.");
+
+add("Radiology","Air bronchograms on CXR suggest?",
+"Alveolar consolidation (e.g. pneumonia)",["Pneumothorax exclusively","Always normal","Only fibrosis"],
+"Patent bronchi within consolidated lung.","Not the hallmark of PTX.");
+
+add("Radiology","Ultrasound acoustic shadowing behind a bright focus in the gallbladder suggests?",
+"Gallstone",["Simple cyst fluid only","Always polyp without shadow","Haemangioma typical"],
+"Stones shadow; polyps usually do not.","Shadow is the clue.");
+
+// Ophthalmology
+add("Ophthalmology","Painful red eye, fixed semi-dilated pupil, vomiting. Emergency?",
+"Acute angle-closure glaucoma",["Viral conjunctivitis only","Refractive error","Blepharitis only"],
+"This can blind quickly — urgent ophthalmology.","Conjunctivitis does not fix the pupil mid-dilated.");
+
+add("Ophthalmology","Sudden painless monocular vision loss — consider?",
+"Central retinal artery/vein occlusion, vitreous haemorrhage, etc. — urgent assessment",["Presbyopia only","Need new glasses only","Ignore for a month"],
+"Acute vision loss is emergency territory.","Spectacles do not fix vascular occlusion.");
+
+add("Ophthalmology","Afferent pupillary defect (RAPD) suggests?",
+"Optic nerve or severe retinal disease",["Cataract alone always","Refractive error only","Normal finding always"],
+"RAPD is about afferent pathway.","Cataracts do not typically cause RAPD.");
+
+add("Ophthalmology","Fluorescein staining used to detect?",
+"Corneal epithelial defects / abrasion",["Intraocular pressure primarily","Retinal detachment directly","Optic disc cupping only"],
+"Stain highlights epithelial loss.","IOP needs tonometry.");
+
+add("Ophthalmology","Sympathetic ophthalmia relates to?",
+"Bilateral granulomatous uveitis after injury to one eye",["Simple dry eyes","Conjunctival foreign body only","Myopia progression"],
+"Rare but serious after penetrating injury.","Not routine dryness.");
+
+// Anaesthesia
+add("Anaesthesia","Before RSI, essential preparation includes?",
+"Airway assessment, pre-oxygenation, equipment/suction/drugs checked, plan A/B",["No monitoring","Skip suction","No IV access ever"],
+"Failing to prepare is preparing to fail.","RSI is not casual.");
+
+add("Anaesthesia","Suxamethonium can raise?",
+"Serum potassium",["Only sodium","Only glucose","Only calcium exclusively"],
+"Avoid in hyperkalaemia when alternatives exist.","K+ spikes can arrest.");
+
+add("Anaesthesia","Malignant hyperthermia trigger agents include?",
+"Volatile anaesthetics and suxamethonium",["Propofol only always","Local anaesthetics only","Opioids only"],
+"MH is a pharmacogenetic emergency.","Dantrolene is the specific therapy context.");
+
+add("Anaesthesia","Minimum monitoring for GA typically includes?",
+"ECG, SpO2, BP, capnography (and more as indicated)",["No monitoring if short case","Temperature only","Urine output only"],
+"Standards exist for a reason.","Short does not mean safe unmonitored.");
+
+add("Anaesthesia","Cricoid pressure is used in classic RSI to?",
+"Reduce risk of aspiration by compressing oesophagus",["Intubate the stomach","Replace laryngoscopy","Replace suction"],
+"Part of traditional RSI teaching — practice varies by protocol.","Not a substitute for skill.");
+
+// Medical forensics
+add("Medical Forensics","Forensic documentation of injuries should be?",
+"Accurate, contemporaneous, dated, preferably with body charts/photos per protocol",["Guessed later from memory only","Copied from another patient","Destroyed after shift"],
+"Notes are legal evidence.","Memory is not a secure server.");
+
+add("Medical Forensics","Chain of custody matters for?",
+"Forensic samples (e.g. toxicology, sexual assault kits)",["Hospital cafeteria food only","Routine urea sample only without context","Waste disposal only"],
+"Broken chain undermines evidence.","Not optional paperwork.");
+
+add("Medical Forensics","In assessing capacity, disagreement with the doctor means?",
+"Not automatically incapacity — capacity is decision-specific",["Automatic incapacity","Family always decides without assessment","Capacity never assessed in ED"],
+"Unwise decisions can still be capacious.","Respect autonomy with proper assessment.");
+
+add("Medical Forensics","When reporting gunshot/knife injuries, clinicians should?",
+"Follow local legal reporting duties while prioritising emergency care",["Never inform authorities when required by law","Delay all care until police arrive","Post details on social media"],
+"Law and emergency care coexist.","Social media is not a channel of notification.");
+
+add("Medical Forensics","Post-mortem lividity (livor mortis) helps estimate?",
+"Position after death and approximate timing context",["Exact DNA always","Exact time of birth","Blood group only"],
+"Lividity patterns aid forensic interpretation.","Not a DNA test.");
+
+// Microbiology
+add("Microbiology","Gram-positive cocci in clusters most suggest?",
+"Staphylococcus species",["E. coli","Pseudomonas","Clostridium only"],
+"Clusters ↔ staph; chains ↔ strep often.","Gram morphology guides early therapy.");
+
+add("Microbiology","First-line imaging is not culture — but before antibiotics in sepsis you should ideally?",
+"Take blood cultures when it does not delay antibiotics significantly",["Delay antibiotics many hours for cultures","Never take cultures","Culture only after full recovery"],
+"Cultures then prompt Abx.","Delay kills.");
+
+add("Microbiology","Clostridium difficile risk rises with?",
+"Broad-spectrum antibiotic exposure",["Vitamin C only","Exercise","Hand washing only as cause"],
+"Abx disrupt flora → C. diff.","Stewardship matters.");
+
+add("Microbiology","Acid-fast bacilli on Ziehl–Neelsen stain suggest?",
+"Mycobacteria (e.g. TB)",["Staph only","Candida only","Viruses"],
+"AFB ↔ mycobacteria.","Not routine Gram positives.");
+
+add("Microbiology","MRSA is resistant to?",
+"Many beta-lactams including meticillin/flucloxacillin class",["All antibiotics in existence","Only topical agents","Vancomycin always by definition"],
+"Resistance pattern defines MRSA.","Vanc is a treatment option depending on site — not the definition of resistance to itself.");
+
+// NBS-style short items
+const NBS=[
+{stem:"ECG: anterior STEMI. Next best step?",correct:"Activate primary PCI pathway",wrongs:["Home with GTN","Outpatient clinic","CT abdomen first"],why:"Reperfusion saves muscle.",roast:"The cath lab is not optional entertainment."},
+{stem:"Unstable tension PTX. Next?",correct:"Immediate needle decompression then drain",wrongs:["Wait for CT","Nebulisers","Observe on air"],why:"Clinical diagnosis if peri-arrest.",roast:"X-ray is not a prerequisite for dying."},
+{stem:"Anaphylaxis. Drug?",correct:"IM adrenaline",wrongs:["Oral antihistamine only","Steroid only first","Saline neb only"],why:"Adrenaline first-line.",roast:"Antihistamines do not restart perfusion."},
+{stem:"GCS 8 after head injury. Priority?",correct:"Airway protection / senior airway help",wrongs:["Wait morning CT slot without review","Oral fluids","Discharge"],why:"Airway before everything.",roast:"Brains dislike waiting lists."},
+{stem:"Suspected ectopic, shocked. Next?",correct:"Resuscitate and emergency gynae pathway",wrongs:["Home pregnancy kit repeat","Routine scan in 2 weeks","Oral Abx"],why:"Shock + positive test = emergency.",roast:"Outpatient plans need outpatient vital signs."},
+{stem:"Neonatal HR 60 after stimulation. Priority?",correct:"Effective ventilation (PPV)",wrongs:["Compressions before any airway","Observe further without support","Adrenaline first"],why:"Air precedes adrenaline.",roast:"Blue babies need air, not philosophy."}
+];
+
+const COURSES=[...new Set(BANK.map(x=>x.c))];
+
+let tMode="full", tCourse=null, tQ=null, tPhase="main", tScore=0, tTotal=0, tLocked=false;
+
+function buildCourses(){
+  $("courseGrid").innerHTML=COURSES.map(c=>`<button type="button" data-c="${c}">${c}</button>`).join("");
+  $("courseGrid").querySelectorAll("button").forEach(b=>b.onclick=()=>{tCourse=b.getAttribute("data-c");tMode="full";startTelas();});
+}
+$("tModeFull").onclick=()=>{$("telasMeta").textContent="Pick a course below";};
+$("tModeShort").onclick=()=>{tMode="short";tCourse=null;startTelas();};
+$("tModeNbs").onclick=()=>{tMode="nbs";startTelas();};
+$("tModeMixed").onclick=()=>{tMode="mixed";tCourse=null;startTelas();};
+
+function pickQuestion(){
+  if(tMode==="nbs"){
+    const n=NBS[Math.floor(Math.random()*NBS.length)];
+    return {stem:n.stem,opts:shuffle([n.correct].concat(n.wrongs)),correct:n.correct,why:n.why,roast:n.roast,c:"Next-best-step",follow:null};
+  }
+  let pool=BANK;
+  if(tMode==="full"&&tCourse)pool=BANK.filter(x=>x.c===tCourse);
+  if(tMode==="short")pool=BANK;
+  if(!pool.length)pool=BANK;
+  const base=pool[Math.floor(Math.random()*pool.length)];
+  // deep copy with shuffled opts
+  const opts=shuffle(base.opts.slice());
+  const q={stem:base.stem,opts:opts,correct:base.correct,why:base.why,roast:base.roast,c:base.c,follow:null};
+  if(base.follow&&tMode==="full"){
+    q.follow={stem:base.follow.stem,opts:shuffle(base.follow.opts.slice()),correct:base.follow.correct,why:base.follow.why,roast:base.follow.roast};
+  }
+  return q;
+}
+
+function startTelas(){
+  $("telasHome").classList.add("hidden");$("telasPlay").classList.remove("hidden");
+  tPhase="main";loadT();
+}
+function loadT(){
+  tLocked=false;tQ=pickQuestion();
+  $("telasFb").classList.add("hidden");
+  $("telasMeta").textContent=(tQ.c||"")+" · Score "+tScore+"/"+tTotal+(tPhase==="follow"?" · Follow-up":"");
+  $("telasStem").textContent=tQ.stem;
+  $("telasOpts").innerHTML=tQ.opts.map(o=>`<button type="button" class="opt-btn" data-v="${o.replace(/"/g,'&quot;')}">${o}</button>`).join("");
+  $("telasOpts").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    if(tLocked)return;tLocked=true;tTotal++;
+    const ok=b.getAttribute("data-v")===tQ.correct;
+    b.classList.add(ok?"correct":"wrong");
+    $("telasOpts").querySelectorAll("button").forEach(x=>{if(x.getAttribute("data-v")===tQ.correct)x.classList.add("correct");});
+    if(ok)tScore++;
+    $("tScore").textContent=tScore;$("tTotal").textContent=tTotal;
+    const fb=$("telasFb");fb.classList.remove("hidden");
+    if(ok){fb.className="feedback-box";fb.innerHTML="<b>Correct.</b> "+tQ.why;}
+    else{fb.className="feedback-box bad";fb.innerHTML="<b>Not quite.</b> "+tQ.roast+" <i>"+tQ.why+"</i>";}
+  });
+}
+$("telasNext").onclick=()=>{
+  if(tPhase==="main"&&tQ&&tQ.follow&&tLocked){
+    tPhase="follow";
+    const f=tQ.follow;
+    tQ={stem:f.stem,opts:f.opts,correct:f.correct,why:f.why,roast:f.roast,c:tQ.c,follow:null};
+    tLocked=false;$("telasFb").classList.add("hidden");
+    $("telasMeta").textContent=tQ.c+" · Follow-up · Score "+tScore+"/"+tTotal;
+    $("telasStem").textContent=tQ.stem;
+    $("telasOpts").innerHTML=tQ.opts.map(o=>`<button type="button" class="opt-btn" data-v="${o.replace(/"/g,'&quot;')}">${o}</button>`).join("");
+    $("telasOpts").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+      if(tLocked)return;tLocked=true;tTotal++;
+      const ok=b.getAttribute("data-v")===tQ.correct;
+      b.classList.add(ok?"correct":"wrong");
+      $("telasOpts").querySelectorAll("button").forEach(x=>{if(x.getAttribute("data-v")===tQ.correct)x.classList.add("correct");});
+      if(ok)tScore++;$("tScore").textContent=tScore;$("tTotal").textContent=tTotal;
+      const fb=$("telasFb");fb.classList.remove("hidden");
+      if(ok){fb.className="feedback-box";fb.innerHTML="<b>Correct.</b> "+tQ.why;}
+      else{fb.className="feedback-box bad";fb.innerHTML="<b>Not quite.</b> "+tQ.roast+" <i>"+tQ.why+"</i>";}
+    });
+    return;
+  }
+  tPhase="main";loadT();
+};
+$("telasExit").onclick=()=>setMode("menu");
+
+// CHAT
+function showChat(){
+  const users=getUsers().filter(u=>currentUser&&u.username!==currentUser.username);
+  $("chatContacts").innerHTML=users.map(u=>`<div class="case-card" data-p="${u.username}"><b>${u.name}</b> @${u.username}</div>`).join("")||"<p class='muted'>No other local users</p>";
+  $("chatContacts").querySelectorAll("[data-p]").forEach(el=>el.onclick=()=>{chatPeer=el.getAttribute("data-p");rmsg();});
+}
+function rmsg(){
+  const all=JSON.parse(localStorage.getItem("tmsxr_chat")||"[]").filter(m=>currentUser&&((m.from===currentUser.username&&m.to===chatPeer)||(m.from===chatPeer&&m.to===currentUser.username)));
+  $("chatMsgs").innerHTML=all.slice(-20).map(m=>`<div><b>${m.from===currentUser.username?"You":m.from}</b>: ${m.text}</div>`).join("")||"<div class='muted'>No messages</div>";
+}
+$("chatSend").onclick=()=>{
+  if(!currentUser||!chatPeer)return;const t=($("chatInput").value||"").trim();if(!t)return;
+  const all=JSON.parse(localStorage.getItem("tmsxr_chat")||"[]");all.push({from:currentUser.username,to:chatPeer,text:t,time:new Date().toISOString()});
+  localStorage.setItem("tmsxr_chat",JSON.stringify(all.slice(-500)));$("chatInput").value="";rmsg();
+};
+$("chatExit").onclick=()=>setMode("menu");$("admExit").onclick=()=>setMode("menu");
+
+const ex=loadSession();if(ex){currentUser=ex;enterApp();}
 })();
 </script>
 </body>
