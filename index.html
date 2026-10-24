@@ -2,8 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#050d16">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <title>TMS-XR Clinical Platform</title>
+<link rel="manifest" href="data:application/manifest+json,{"name":"TMS-XR","short_name":"TMS-XR","start_url":".","display":"standalone","background_color":"%23050d16","theme_color":"%23050d16"}">
 <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
 <style>
 *{box-sizing:border-box}html,body{margin:0;height:100%;font-family:"Segoe UI",system-ui,sans-serif;background:#050d16;color:#e8f1f6}
@@ -54,7 +58,21 @@ input,select,textarea{width:100%;padding:11px;border-radius:10px;border:1px soli
 .course-grid button{text-align:center;padding:10px;font-size:11.5px}
 .stem{background:#122a3d;border-radius:12px;padding:14px;margin:8px 0;font-size:14px;line-height:1.5;border-left:3px solid #0d9a9e}
 .follow{font-size:12px;color:#9fd4e8;margin-top:6px}
-@media(max-width:600px){.panel,.panel.full{max-height:50vh;width:calc(100vw - 16px);left:8px;transform:none;top:8px}#topRight{top:auto;bottom:8px;right:8px;flex-direction:column}.mod-grid,.course-grid{grid-template-columns:1fr}}
+@media(max-width:600px){
+.panel,.panel.full{max-height:min(58vh,calc(100dvh - 72px));width:calc(100vw - 12px);left:6px;right:6px;transform:none;top:6px;padding:12px}
+.panel.full{max-height:min(70vh,calc(100dvh - 80px))}
+#topRight{top:auto;bottom:calc(8px + env(safe-area-inset-bottom));right:8px;flex-direction:column}
+.mod-grid,.course-grid{grid-template-columns:1fr}
+.stem{font-size:13px;padding:12px}
+button,.opt-btn{min-height:44px}
+#arStage{max-width:100%}
+body.auth-open a-scene{visibility:hidden!important;pointer-events:none!important}
+}
+.debrief{margin-top:12px;padding:12px;border-radius:12px;background:rgba(13,40,55,.95);border:1px solid rgba(56,230,186,.25);font-size:13px;line-height:1.45}
+.debrief h3{margin:0 0 8px;color:#38e6ba}
+.due-card{border-color:rgba(240,200,74,.5)!important;background:rgba(240,200,74,.08)}
+.chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;background:#1a3a4a;margin-right:4px}
+#osceChecks label{display:block;margin:6px 0;font-size:13px}
 </style>
 </head>
 <body class="no-vr">
@@ -179,8 +197,9 @@ input,select,textarea{width:100%;padding:11px;border-radius:10px;border:1px soli
     <a-text value="LABOUR WARD" position="0 1.9 -2.4" width="2.5" color="#234" align="center"></a-text>
   </a-entity>
 
-  <a-entity camera look-controls position="0 1.5 1.0">
-    <a-entity cursor="fuse:false" raycaster="objects:.clickable;far:14" position="0 0 -1"
+  <!-- Fixed camera: full field visible without tilting phone -->
+  <a-entity id="mainCam" camera="active:true" look-controls="enabled:false" wasd-controls="enabled:false" position="0 1.55 2.6" rotation="-8 0 0">
+    <a-entity cursor="fuse:false" raycaster="objects:.clickable;far:20" position="0 0 -1"
       geometry="primitive:ring;radiusInner:0.006;radiusOuter:0.011" material="color:#ff5c67;shader:flat"></a-entity>
   </a-entity>
 </a-scene>
@@ -212,6 +231,11 @@ input,select,textarea{width:100%;padding:11px;border-radius:10px;border:1px soli
   <div class="card">
     <div class="user-bar"><div class="avatar" id="userAvatar">👩‍⚕️</div><div><div id="userBarName">User</div><div class="muted" id="userBarRole"></div></div></div>
     <div class="brand" style="margin:8px 0"><div class="brand-mark">TX</div><div><h1 style="margin:0">TMS-XR</h1><p class="muted" style="margin:0">Select a module</p></div></div>
+    <div id="twinCard" class="case-card" style="margin:10px 0;cursor:pointer;border:1px solid rgba(56,230,186,.35);background:rgba(56,230,186,.08)">
+      <span class="tag">LONGITUDINAL</span>
+      <strong id="twinCardTitle">Your Patient Twin</strong>
+      <p class="muted" id="twinCardSub" style="margin:4px 0 0">Ongoing case with doses, routes &amp; calculations — continues across visits</p>
+    </div>
     <input id="modSearch" placeholder="Search…" type="search">
     <div id="modGrid">
       <div class="mod-section"><h2>Skills</h2>
@@ -244,6 +268,47 @@ input,select,textarea{width:100%;padding:11px;border-radius:10px;border:1px soli
 
 <div id="topRight" class="hidden"><button type="button" id="homeBtn">Menu</button><button type="button" id="logoutBtn" class="danger">Logout</button></div>
 
+<!-- PATIENT TWIN (longitudinal — not a separate module tile) -->
+<section id="twinPanel" class="panel wide full hidden">
+  <h1>Patient Twin · Ward Roster</h1>
+  <p class="muted">Max <b>5</b> patients under your care. Discharge unlocks a new slot. A death costs you a slot (floor: 1) and may remove another patient. Collapse to 1 slot after deaths — rebuild carefully. Orders need correct <b>dose, route, calculations</b>.</p>
+  <div id="twinRosterBar" class="user-bar" style="margin-bottom:10px">
+    <div class="muted" id="twinRosterMeta">Slots —</div>
+    <button type="button" id="twinResetSoft" class="danger" style="display:none">Restart roster (after collapse)</button>
+  </div>
+  <div id="twinPick">
+    <h2 id="twinPickTitle">Your roster</h2>
+    <p class="muted" id="twinPickHelp">Select patients to admit (up to your slot limit).</p>
+    <div id="twinList"></div>
+  </div>
+  <div id="twinPlay" class="hidden">
+    <div class="user-bar" style="margin-bottom:10px">
+      <div><div id="twinName" style="font-weight:700"></div><div class="muted" id="twinMeta"></div></div>
+      <div><span class="tag" id="twinDayTag">Day 1</span> <span class="tag" id="twinStateTag">—</span></div>
+    </div>
+    <div class="progress"><i id="twinBar" style="width:10%"></i></div>
+    <div id="twinHx" style="margin-top:10px;padding:10px;border-radius:10px;background:rgba(255,255,255,.04);font-size:.92rem"></div>
+    <div id="twinExam" style="margin-top:8px;padding:10px;border-radius:10px;background:rgba(255,255,255,.04);font-size:.92rem"></div>
+    <div id="twinStem" class="quiz-stem" style="margin-top:12px"></div>
+    <div id="twinVitals" class="muted" style="margin:8px 0"></div>
+    <h3 style="margin:12px 0 6px">Write the order (full regimen)</h3>
+    <div id="twinOpts" class="quiz-opts"></div>
+    <div id="twinCalc" class="hidden" style="margin-top:12px;padding:10px;border-radius:10px;background:rgba(255,255,255,.04)">
+      <b>Calculation check</b>
+      <p id="twinCalcQ" class="muted"></p>
+      <div id="twinCalcOpts" class="quiz-opts"></div>
+    </div>
+    <div id="twinFb" class="feedback-box hidden" style="margin-top:12px"></div>
+    <div class="button-grid" style="margin-top:14px">
+      <button type="button" class="primary" id="twinNext">Continue / Next day</button>
+      <button type="button" id="twinSwitch">Roster</button>
+      <button type="button" id="twinExit">Menu</button>
+    </div>
+    <div id="twinDebrief" class="debrief hidden"></div>
+    <div id="twinLog" class="muted" style="margin-top:14px;max-height:140px;overflow:auto"></div>
+  </div>
+</section>
+
 <!-- PROC -->
 <section id="procPanel" class="panel hidden">
   <h1>Procedures</h1>
@@ -253,10 +318,42 @@ input,select,textarea{width:100%;padding:11px;border-radius:10px;border:1px soli
     <button type="button" data-p="cath">Catheter</button>
     <button type="button" data-p="ngt">NGT</button>
     <button type="button" data-p="trach">Trach care</button>
+    <button type="button" data-p="ar">AR guide</button>
   </div>
-  <div class="status"><strong id="procTitle"></strong><p id="procText"></p></div>
-  <div id="procChoices" class="list-btns"></div>
-  <p>Score <strong id="procScore">0</strong></p><div class="progress-bg"><div class="progress" id="procBar"></div></div>
+  <div id="procSimBlock">
+    <div class="status"><strong id="procTitle"></strong><p id="procText"></p></div>
+    <div id="procChoices" class="list-btns"></div>
+    <p>Score <strong id="procScore">0</strong></p><div class="progress-bg"><div class="progress" id="procBar"></div></div>
+  </div>
+  <div id="arBlock" class="hidden">
+    <p class="muted">Uses your <b>phone camera</b>. Point at an arm/pillow. Follow on-screen angle &amp; steps. Needs HTTPS + camera permission.</p>
+    <div class="subnav" id="arNav">
+      <button type="button" data-ar="iv" class="on">IV angle</button>
+      <button type="button" data-ar="im">IM site</button>
+      <button type="button" data-ar="neonate">Neonatal airway</button>
+    </div>
+    <div id="arStage" style="position:relative;width:100%;max-width:480px;margin:8px auto;aspect-ratio:3/4;background:#000;border-radius:12px;overflow:hidden">
+      <video id="arVideo" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover"></video>
+      <div id="arOverlay" style="pointer-events:none;position:absolute;inset:0">
+        <svg id="arSvg" width="100%" height="100%" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid meet">
+          <line id="arAngleLine" x1="90" y1="280" x2="210" y2="200" stroke="#38e6ba" stroke-width="3" stroke-dasharray="6 4"/>
+          <circle id="arTarget" cx="150" cy="220" r="16" fill="none" stroke="#ff5c67" stroke-width="3"/>
+          <text id="arLabel" x="150" y="50" fill="#fff" font-size="14" text-anchor="middle">IV ~15–30°</text>
+        </svg>
+      </div>
+      <div id="arStepBox" style="position:absolute;left:8px;right:8px;bottom:8px;background:rgba(5,15,25,.82);color:#e8f4ff;padding:10px;border-radius:10px;font-size:.9rem"></div>
+    </div>
+    <div id="arCheckList" style="margin:8px 0"></div>
+    <p>AR score <strong id="arScore">0</strong>/<span id="arScoreMax">0</span></p>
+    <div class="button-grid">
+      <button type="button" class="primary" id="arStartCam">Start camera</button>
+      <button type="button" id="arNextStep">Next step</button>
+      <button type="button" id="arStopCam">Stop camera</button>
+    </div>
+    <p class="muted" id="arStatus">Camera off</p>
+    <div id="arDebrief" class="debrief hidden"></div>
+  </div>
+  <div id="procDebrief" class="debrief hidden"></div>
   <div class="button-grid"><button type="button" id="procReset">Restart</button><button type="button" id="procExit" class="danger">Exit</button></div>
 </section>
 
@@ -350,21 +447,43 @@ input,select,textarea{width:100%;padding:11px;border-radius:10px;border:1px soli
   <h1>Telas Doc · Clinical Revision</h1>
   <p class="muted">Clinical revision by course</p>
   <div id="telasHome">
+    <div id="dueBox" class="case-card due-card" style="cursor:pointer;margin-bottom:10px">
+      <span class="tag">SPACED REVIEW</span>
+      <strong id="dueTitle">Due today: 0</strong>
+      <p class="muted" id="dueSub" style="margin:4px 0 0">Missed items return after 1 day · strengthen weak spots</p>
+    </div>
     <h2>Mode</h2>
     <div class="button-grid">
       <button type="button" class="primary" id="tModeFull">Course deep-dive</button>
       <button type="button" class="primary" id="tModeShort">Short sharp (roulette)</button>
       <button type="button" class="primary" id="tModeNbs">Next-best-step</button>
       <button type="button" id="tModeMixed">Mixed random</button>
+      <button type="button" class="primary" id="tModeStrat">Resource-stratified</button>
+      <button type="button" class="primary" id="tModeShift">Golden Minute shift</button>
+      <button type="button" class="primary" id="tModeOsce">OSCE checklist</button>
+      <button type="button" id="tModeDue">Review due items</button>
+    </div>
+    <div id="stratSettings" class="hidden" style="margin:10px 0;padding:10px;border-radius:10px;background:rgba(255,255,255,.04)">
+      <b>Hospital setting</b>
+      <div class="subnav" id="stratNav">
+        <button type="button" data-set="central" class="on">Central</button>
+        <button type="button" data-set="district">District</button>
+        <button type="button" data-set="post">Health post</button>
+      </div>
+      <p class="muted">Same patient — correct next step changes with what you have available.</p>
+      <button type="button" class="primary" id="stratGo">Start stratified cases</button>
     </div>
     <h2>Course (for deep-dive)</h2>
     <div class="course-grid" id="courseGrid"></div>
   </div>
   <div id="telasPlay" class="hidden">
     <div class="status" id="telasMeta"></div>
+    <div id="shiftBoard" class="hidden" style="margin:8px 0"></div>
     <div class="stem" id="telasStem"></div>
     <div id="telasOpts"></div>
+    <div id="osceChecks" class="hidden"></div>
     <div id="telasFb" class="hidden"></div>
+    <div id="telasDebrief" class="debrief hidden"></div>
     <div class="button-grid">
       <button type="button" class="primary" id="telasNext">Next</button>
       <button type="button" id="telasScoreBtn"><span id="tScore">0</span>/<span id="tTotal">0</span></button>
@@ -419,6 +538,7 @@ $("btnLogin").onclick=async()=>{
 };
 function enterApp(){
   $("authGate").classList.add("hidden");$("welcome").classList.remove("hidden");$("topRight").classList.remove("hidden");
+  try{refreshTwinCard();}catch(e){}
   $("userBarName").textContent=currentUser.name;$("userBarRole").textContent=currentUser.role+" · @"+currentUser.username;
   if(currentUser.isAdmin||currentUser.username==="admin")$("btnAdmin").classList.remove("hidden");
   document.body.classList.add("no-vr");mode="menu";
@@ -427,12 +547,26 @@ function logout(){clearSession();location.reload();}$("logoutBtn").onclick=logou
 
 const needsVR={proc:1,anat:1,delivery:1,surg:1};
 function hideAll(){
-  ["procPanel","anatPanel","delPanel","surgPanel","radPanel","drugPanel","telasPanel","chatPanel","adminPanel"].forEach(id=>{const e=$(id);if(e)e.classList.add("hidden");});
+  ["procPanel","anatPanel","delPanel","surgPanel","radPanel","drugPanel","telasPanel","chatPanel","adminPanel","twinPanel"].forEach(id=>{const e=$(id);if(e)e.classList.add("hidden");});
   ["procScene","anatScene","delScene","surgScene"].forEach(id=>{const e=$(id);if(e)e.setAttribute("visible",false);});
+}
+function fixCam(){
+  var cam=$("mainCam");
+  if(!cam)return;
+  // Static overview — no phone tilt needed
+  cam.setAttribute("look-controls","enabled:false");
+  cam.setAttribute("wasd-controls","enabled:false");
+  if(mode==="proc"){cam.setAttribute("position","0 1.45 2.3");cam.setAttribute("rotation","-6 0 0");}
+  else if(mode==="anat"){cam.setAttribute("position","0 1.5 2.8");cam.setAttribute("rotation","-10 0 0");}
+  else if(mode==="delivery"){cam.setAttribute("position","0 1.5 2.9");cam.setAttribute("rotation","-8 0 0");}
+  else if(mode==="surg"){cam.setAttribute("position","0 1.5 2.8");cam.setAttribute("rotation","-8 0 0");}
+  else{cam.setAttribute("position","0 1.55 2.6");cam.setAttribute("rotation","-8 0 0");}
 }
 function setMode(m){
   mode=m;$("welcome").classList.toggle("hidden",m!=="menu");hideAll();
+  if(m==="menu"){try{refreshTwinCard();refreshDueBox();}catch(e){}}
   if(needsVR[m]){document.body.classList.remove("no-vr");}else{document.body.classList.add("no-vr");}
+  if(needsVR[m])setTimeout(fixCam,50);
   if(m!=="menu")logAct("open",m);
   if(m==="proc"){$("procPanel").classList.remove("hidden");$("procScene").setAttribute("visible",true);loadProc("iv");}
   else if(m==="anat"){$("anatPanel").classList.remove("hidden");$("anatScene").setAttribute("visible",true);showAnat("layers");}
@@ -440,13 +574,672 @@ function setMode(m){
   else if(m==="surg"){$("surgPanel").classList.remove("hidden");$("surgScene").setAttribute("visible",true);showSurgList();}
   else if(m==="radiology"){$("radPanel").classList.remove("hidden");showRad();}
   else if(m==="drugs"){$("drugPanel").classList.remove("hidden");showDrugs();}
-  else if(m==="telas"){$("telasPanel").classList.remove("hidden");$("telasHome").classList.remove("hidden");$("telasPlay").classList.add("hidden");buildCourses();}
+  else if(m==="telas"){$("telasPanel").classList.remove("hidden");$("telasHome").classList.remove("hidden");$("telasPlay").classList.add("hidden");buildCourses();refreshDueBox();}
   else if(m==="chat"){$("chatPanel").classList.remove("hidden");showChat();}
   else if(m==="admin"){$("adminPanel").classList.remove("hidden");const L=JSON.parse(localStorage.getItem("tmsxr_activity")||"[]");$("admLog").innerHTML=L.slice(0,50).map(x=>`<div>${x.name} · ${x.action} ${x.detail||""} · ${new Date(x.time).toLocaleString()}</div>`).join("")||"Empty";}
+  else if(m==="twin"){$("twinPanel").classList.remove("hidden");openTwin();}
 }
 document.querySelectorAll("[data-mod]").forEach(b=>b.onclick=()=>setMode(b.getAttribute("data-mod")));
 $("homeBtn").onclick=()=>setMode("menu");$("btnAdmin").onclick=()=>setMode("admin");
 $("modSearch").oninput=function(){const q=this.value.toLowerCase();document.querySelectorAll("#modGrid button[data-mod]").forEach(b=>{b.style.display=!q||((b.getAttribute("data-keys")||"")+b.textContent).toLowerCase().includes(q)?"":"none";});};
+
+
+// ========== PATIENT TWIN (roster + Hx/Exam + deaths/slots) ==========
+const TWIN_MAX_SLOTS=5;
+const TWIN_DEFS=[
+{id:"malaria_c",name:"Chisomo Banda",age:"3y",sex:"F",weight:14,dx:"Severe malaria",
+ hx:"Fever 3d, vomiting, not drinking. From rural health post. No known G6PD. Vaccinations incomplete.",
+ exam:"Drowsy but rousable. No neck stiffness. CRT 2s. Mild jaundice. Liver edge soft. No rash.",
+ days:[
+  {day:1,state:"ill",stem:"RDT positive. Needs parenteral therapy now.",
+   vitals:"14 kg · HR 140 · RR 38 · T 39.2 · Glu 3.8 · RDT+",
+   orders:[
+    {t:"Artesunate 2.4 mg/kg IV at 0,12,24h (≈34 mg) then oral ACT when able",ok:1,calc:1},
+    {t:"Oral ACT only (adult pack) and discharge",ok:0},
+    {t:"IM quinine loading without glucose plan",ok:0},
+    {t:"Paracetamol only",ok:0}],
+   calc:{q:"2.4 mg/kg × 14 kg ≈ ?",opts:["33.6 mg (≈34 mg)","14 mg","140 mg","2.4 mg"],a:"33.6 mg (≈34 mg)"},
+   fb_ok:"Parenteral artesunate first, then full ACT.",fb_bad:"Oral ACT alone is not for severe disease.",
+   next_ok:"improving",next_bad:"critical"},
+  {day:2,state:"improving",stem:"More alert, sipping fluids. Complete transition.",
+   vitals:"Alert · Tolerating sips",
+   orders:[
+    {t:"Finish artesunate schedule then weight-band ACT with food if possible",ok:1},
+    {t:"Stop antimalarials — fever gone",ok:0},
+    {t:"Adult 4-tablet ACT dose",ok:0},
+    {t:"Doxycycline 100 mg BD (child)",ok:0}],
+   fb_ok:"Weight-band ACT after parenteral phase.",fb_bad:"Do not stop early or use adult packs.",
+   next_ok:"stable",next_bad:"worse"},
+  {day:3,state:"stable",stem:"Afebrile, playing. Hb 8.1. Discharge plan?",
+   vitals:"Afebrile · Hb 8.1",
+   orders:[
+    {t:"Complete ACT at home; danger signs; Hb/iron plan; bed net",ok:1},
+    {t:"Transfuse for Hb 8.1 alone",ok:0},
+    {t:"Stop ACT early",ok:0},
+    {t:"IM iron today, no follow-up",ok:0}],
+   fb_ok:"Finish ACT + safety-net + anaemia plan.",fb_bad:"Transfusion is not automatic at 8.1.",
+   next_ok:"recovered",next_bad:"stable"}]
+},
+{id:"pph",name:"Thandiwe Moyo",age:"28y P2",sex:"F",weight:62,dx:"PPH",
+ hx:"SVD 20 min ago. Antenatal care ×3. No prior PPH. Oxytocin was given at delivery (confirm).",
+ exam:"Pale, anxious. Uterus boggy above umbilicus. Heavy pad soak. Perineum — check for tears. Bladder palpable.",
+ days:[
+  {day:1,state:"acute",stem:"BP 90/55, HR 118, ongoing bleeding >500 mL.",
+   vitals:"BP 90/55 · HR 118 · Boggy uterus",
+   orders:[
+    {t:"Help; uterine massage; oxytocin 10 IU IM (or protocol IV infusion); IV crystalloid; empty bladder; examine 4 Ts",ok:1},
+    {t:"Observe — normal lochia",ok:0},
+    {t:"Ergometrine first without knowing BP",ok:0},
+    {t:"Home on oral TXA only",ok:0}],
+   fb_ok:"Help, massage, oxytocin 10 IU IM/protocol infusion, fluids, find cause.",fb_bad:"Major PPH is not observation.",
+   next_ok:"stabilising",next_bad:"dead"},
+  {day:1,state:"stabilising",stem:"Bleeding slowed. BP 100/60. Next?",
+   vitals:"BP 100/60 · HR 105",
+   orders:[
+    {t:"TXA 1 g IV if timed/protocol; confirm placenta complete; repair tears; group & save/crossmatch as needed",ok:1},
+    {t:"Undiluted oxytocin 20 IU IV push in 5 seconds",ok:0},
+    {t:"Immediate laparotomy without exam",ok:0},
+    {t:"Discharge now",ok:0}],
+   fb_ok:"TXA, systematic cause check, monitoring.",fb_bad:"Unsafe oxytocin bolus / skip exam.",
+   next_ok:"stable",next_bad:"dead"},
+  {day:2,state:"stable",stem:"Firm uterus, Hb 8.4, breastfeeding.",
+   vitals:"Firm uterus · Hb 8.4",
+   orders:[
+    {t:"Iron/folate; counsel danger signs; continue obs as needed",ok:1},
+    {t:"Routine ERPC for all PPH",ok:0},
+    {t:"14 days antibiotics no indication",ok:0},
+    {t:"No follow-up",ok:0}],
+   fb_ok:"Anaemia care + education.",fb_bad:"Avoid unnecessary procedures.",
+   next_ok:"recovered",next_bad:"stable"}]
+},
+{id:"neonate",name:"Baby Phiri",age:"Term 2h",sex:"M",weight:3.1,dx:"Neonatal sepsis risk",
+ hx:"ROM 22h. Maternal fever unclear. Born at clinic, transferred.",
+ exam:"Temp 35.4°C, RR 72, mild grunting, capillary refill 3s, tone reduced, fontanelle soft.",
+ days:[
+  {day:1,state:"ill",stem:"Poor feeding. Glucose 2.6 after attempt to feed.",
+   vitals:"3.1 kg · T 35.4 · RR 72 · Glu 2.6",
+   orders:[
+    {t:"Warm; ABC; 10% dextrose 2 mL/kg IV if needed (≈6.2 mL); senior review; empiric IV Abx weight-band (e.g. amp+gent)",ok:1,calc:1},
+    {t:"Home exclusive breastfeeding only",ok:0},
+    {t:"Oral amoxicillin and discharge",ok:0},
+    {t:"IM adrenaline 0.3 mg",ok:0}],
+   calc:{q:"2 mL/kg × 3.1 kg 10% dextrose ≈ ?",opts:["6.2 mL","31 mL","2 mL","0.62 mL"],a:"6.2 mL"},
+   fb_ok:"Warm, glucose, IV Abx pathway.",fb_bad:"Not a home-only neonate.",
+   next_ok:"improving",next_bad:"dead"},
+  {day:2,state:"improving",stem:"RR 55, temp 36.8, some NG feeds.",
+   vitals:"Improving · Normothermic",
+   orders:[
+    {t:"Continue IV Abx per protocol; support feeds; observations",ok:1},
+    {t:"Stop Abx after one dose",ok:0},
+    {t:"Adult ceftriaxone 1 g IV",ok:0},
+    {t:"Discharge without plan",ok:0}],
+   fb_ok:"Complete neonatal sepsis pathway.",fb_bad:"Early stop / adult dosing unsafe.",
+   next_ok:"stable",next_bad:"worse"},
+  {day:3,state:"stable",stem:"Feeding better. Plan?",
+   vitals:"Stable feeds",
+   orders:[
+    {t:"Complete course/culture-guided therapy; caregiver danger signs; follow-up",ok:1},
+    {t:"Exchange transfusion routine",ok:0},
+    {t:"High-dose vitamin A today",ok:0},
+    {t:"No follow-up",ok:0}],
+   fb_ok:"Finish treatment + education.",fb_bad:"Unrelated interventions.",
+   next_ok:"recovered",next_bad:"stable"}]
+},
+{id:"asthma",name:"Gift Tembo",age:"9y",sex:"M",weight:28,dx:"Acute asthma",
+ hx:"Known asthma, spacer at home inconsistently used. 1 day viral prodrome. No NICU history.",
+ exam:"RR 40, speaks phrases, bilateral wheeze, no silent chest, SpO2 90% air, using accessory muscles mildly.",
+ days:[
+  {day:1,state:"ill",stem:"Acute exacerbation in OPD/ward.",
+   vitals:"28 kg · RR 40 · SpO2 90% · phrases",
+   orders:[
+    {t:"O2 to target; salbutamol neb/spacer repeated; prednisolone ~1–2 mg/kg (≈28 mg start plan)",ok:1,calc:1},
+    {t:"Oral salbutamol syrup only — home",ok:0},
+    {t:"IV aminophylline bolus unsupervised",ok:0},
+    {t:"IM adrenaline first for routine asthma",ok:0}],
+   calc:{q:"~1 mg/kg prednisolone for 28 kg ≈ ?",opts:["28 mg (round per local form)","5 mg","100 mg","1 mg"],a:"28 mg (round per local form)"},
+   fb_ok:"O2, repeated beta-agonist, early steroid.",fb_bad:"Not syrup-and-home with SpO2 90%.",
+   next_ok:"improving",next_bad:"critical"},
+  {day:2,state:"improving",stem:"SpO2 95% air, RR 28. Discharge plan.",
+   vitals:"SpO2 95% · RR 28",
+   orders:[
+    {t:"Finish steroid course; regular then PRN salbutamol; spacer technique; action plan",ok:1},
+    {t:"Stop all inhalers to rest lungs",ok:0},
+    {t:"Lifelong oral salbutamol TDS",ok:0},
+    {t:"Mandatory CXR before every discharge",ok:0}],
+   fb_ok:"Education + steroid completion.",fb_bad:"Do not stop inhalers as policy.",
+   next_ok:"recovered",next_bad:"relapse"}]
+},
+{id:"dka",name:"Mwansa Kabinga",age:"16y",sex:"F",weight:48,dx:"DKA",
+ hx:"Polyuria/polydipsia 2 weeks. Known T1DM irregular insulin. Vomiting 1 day.",
+ exam:"Dry mucosa, deep breathing, drowsy, abdomen soft, no peritonism, capillary glucose high, ketones positive.",
+ days:[
+  {day:1,state:"ill",stem:"pH low / clinical DKA. K+ pending.",
+   vitals:"48 kg · HR 120 · RR 28 deep · Glu high · Ketones+",
+   orders:[
+    {t:"ABC; fixed-rate IV insulin per DKA protocol with fluids; monitor K+; no SC insulin-only approach",ok:1},
+    {t:"SC sliding scale only, no fluids",ok:0},
+    {t:"Bolus large insulin IV push without protocol",ok:0},
+    {t:"Oral rehydration only at home",ok:0}],
+   fb_ok:"Protocol fluids + fixed-rate insulin + electrolyte vigilance.",fb_bad:"DKA is not home ORS or SC-only.",
+   next_ok:"improving",next_bad:"dead"},
+  {day:2,state:"improving",stem:"Ketones falling, eating small amounts. Transition?",
+   vitals:"Improving · Tolerating oral",
+   orders:[
+    {t:"Transition to SC insulin when protocol criteria met; education; follow-up",ok:1},
+    {t:"Stop all insulin because eating",ok:0},
+    {t:"Discharge without education",ok:0},
+    {t:"Start metformin only",ok:0}],
+   fb_ok:"Safe transition + education.",fb_bad:"Never stop insulin abruptly in T1.",
+   next_ok:"recovered",next_bad:"worse"}]
+},
+{id:"pneumonia",name:"Bupe Siame",age:"2y",sex:"F",weight:11,dx:"Severe pneumonia",
+ hx:"Cough 4d, fever, difficulty breathing. Incomplete immunisations. HIV status unknown.",
+ exam:"RR 56, chest indrawing, SpO2 89% air, crackles right, not blue, able to drink.",
+ days:[
+  {day:1,state:"ill",stem:"IMCI severe pneumonia features.",
+   vitals:"11 kg · RR 56 · SpO2 89% · indrawing",
+   orders:[
+    {t:"Oxygen; IV/IM antibiotics per paediatric severe pneumonia protocol; maintain hydration; consider HIV test",ok:1},
+    {t:"Home oral Abx only",ok:0},
+    {t:"IV fluids 20 mL/kg bolus without assessment",ok:0},
+    {t:"Antitussive syrup sole therapy",ok:0}],
+   fb_ok:"O2 + appropriate Abx + supportive care.",fb_bad:"Not home therapy with indrawing/low sats.",
+   next_ok:"improving",next_bad:"critical"},
+  {day:2,state:"improving",stem:"SpO2 94% on O2, feeding better.",
+   vitals:"Improving on O2",
+   orders:[
+    {t:"Continue Abx; wean O2 as able; nutrition; parental education",ok:1},
+    {t:"Stop O2 and discharge same hour",ok:0},
+    {t:"Add adult ciprofloxacin",ok:0},
+    {t:"No follow-up",ok:0}],
+   fb_ok:"Complete therapy and safe wean.",fb_bad:"Premature discharge.",
+   next_ok:"recovered",next_bad:"worse"}]
+},
+{id:"meningitis",name:"Kondwani Phiri",age:"19y",sex:"M",weight:60,dx:"Suspected bacterial meningitis",
+ hx:"Headache, fever, photophobia 2d. Student hostel. No recent head trauma.",
+ exam:"T 38.9, neck stiffness, preference for dark, GCS 14, no rash yet, BP 110/70.",
+ days:[
+  {day:1,state:"ill",stem:"Urgent management before/with LP as protocol allows.",
+   vitals:"GCS 14 · Neck stiffness · T 38.9",
+   orders:[
+    {t:"Blood culture if available; urgent empiric IV Abx (e.g. ceftriaxone per guideline); LP when safe; dexamethasone if indicated by protocol",ok:1},
+    {t:"Oral Abx and review in clinic next week",ok:0},
+    {t:"CT first always even if delayed Abx by many hours without cause",ok:0},
+    {t:"Discharge with analgesia",ok:0}],
+   fb_ok:"Do not delay antimicrobials for imaging when meningitis likely.",fb_bad:"Clinic review is unsafe.",
+   next_ok:"improving",next_bad:"dead"},
+  {day:2,state:"improving",stem:"On IV Abx, more comfortable.",
+   vitals:"Improving headache",
+   orders:[
+    {t:"Complete IV/oral step-down per organism/protocol; monitor neuro obs",ok:1},
+    {t:"Stop Abx at 24h if afebrile",ok:0},
+    {t:"Add acyclovir always without indication",ok:0},
+    {t:"No further review",ok:0}],
+   fb_ok:"Adequate duration and monitoring.",fb_bad:"Too-short therapy risks failure.",
+   next_ok:"recovered",next_bad:"worse"}]
+},
+{id:"eclampsia",name:"Natasha Zulu",age:"22y P1",sex:"F",weight:70,dx:"Eclampsia",
+ hx:"ANC sparse. Headache and visual symptoms yesterday. Fit at home. 36 weeks.",
+ exam:"Post-ictal, BP 170/110, proteinuria 2+, uterus 36/40, FHR present, no PV bleeding.",
+ days:[
+  {day:1,state:"acute",stem:"Protect airway; stop fits; control BP; plan delivery.",
+   vitals:"BP 170/110 · Post-ictal · Proteinuria",
+   orders:[
+    {t:"MgSO4 loading + maintenance per obstetric protocol; antihypertensives as indicated; left lateral; plan urgent delivery; avoid diazepam as sole long-term agent",ok:1},
+    {t:"Discharge on oral labetalol only",ok:0},
+    {t:"High-dose diazepam infusion only, no MgSO4",ok:0},
+    {t:"Wait 48h for spontaneous labour without stabilisation",ok:0}],
+   fb_ok:"MgSO4, BP control, delivery plan.",fb_bad:"Eclampsia is not outpatient.",
+   next_ok:"stabilising",next_bad:"dead"},
+  {day:2,state:"stabilising",stem:"No further fits on MgSO4. Delivery done. Watch for complications.",
+   vitals:"BP improving · On MgSO4",
+   orders:[
+    {t:"Continue MgSO4 for protocol duration; monitor urine output/reflexes/resp; fluid balance; postnatal BP plan",ok:1},
+    {t:"Stop MgSO4 immediately after delivery always",ok:0},
+    {t:"Unrestricted free fluids 5 L",ok:0},
+    {t:"No BP follow-up",ok:0}],
+   fb_ok:"Protocol MgSO4 duration + vigilance for toxicity.",fb_bad:"Abrupt inappropriate stop / fluid overload risk.",
+   next_ok:"recovered",next_bad:"worse"}]
+},
+{id:"uti_pyelo",name:"Ruth Banda",age:"26y",sex:"F",weight:58,dx:"Pyelonephritis",
+ hx:"Dysuria 3d, flank pain, fever, pregnant 18/40.",
+ exam:"T 38.6, right renal angle tenderness, no peritonism, uterus soft, FHR present.",
+ days:[
+  {day:1,state:"ill",stem:"Pregnancy + pyelo — careful therapy.",
+   vitals:"T 38.6 · Flank tenderness · 18/40",
+   orders:[
+    {t:"Admit; IV then oral Abx safe in pregnancy per STG; fluids; urine culture if available; obstetric review",ok:1},
+    {t:"Ciprofloxacin first-line in pregnancy without specialist advice",ok:0},
+    {t:"No antibiotics — cranberry juice",ok:0},
+    {t:"ERPC",ok:0}],
+   fb_ok:"Pregnancy-safe Abx + support.",fb_bad:"Quinolones generally avoided in pregnancy.",
+   next_ok:"improving",next_bad:"worse"},
+  {day:2,state:"improving",stem:"Afebrile, tolerating oral.",
+   vitals:"Afebrile · Eating",
+   orders:[
+    {t:"Complete Abx course; antenatal follow-up; return if fever/pain",ok:1},
+    {t:"Stop Abx at 24h",ok:0},
+    {t:"No ANC follow-up",ok:0},
+    {t:"CT abdomen routine",ok:0}],
+   fb_ok:"Complete course + ANC link.",fb_bad:"Early stop risks relapse.",
+   next_ok:"recovered",next_bad:"stable"}]
+},
+{id:"ge_child",name:"Tafadzwa Ncube",age:"10 months",sex:"M",weight:8,dx:"Acute diarrhoea with some dehydration",
+ hx:"Watery stools 2d, some vomiting, still drinking. No blood.",
+ exam:"IRRITABLE, sunken eyes mild, skin pinch slow, not lethargic, no fever focus.",
+ days:[
+  {day:1,state:"ill",stem:"IMCI some dehydration.",
+   vitals:"8 kg · Some dehydration",
+   orders:[
+    {t:"ORS Plan B in clinic; zinc 20 mg daily 10–14d; continue breastfeeding; counsel",ok:1,calc:1},
+    {t:"IV bolus 20 mL/kg immediately without assessment",ok:0},
+    {t:"Antibiotics for all watery diarrhoea",ok:0},
+    {t:"Loperamide",ok:0}],
+   calc:{q:"Zinc dose ≥6 months for diarrhoea?",opts:["20 mg daily 10–14 days","1 mg once","100 mg IV","No zinc ever"],a:"20 mg daily 10–14 days"},
+   fb_ok:"ORS + zinc + feeding — cornerstone.",fb_bad:"No antimotility in infants; not all need IV/Abx.",
+   next_ok:"improving",next_bad:"critical"},
+  {day:2,state:"improving",stem:"Mother reports fewer stools, drinking well.",
+   vitals:"Improved hydration",
+   orders:[
+    {t:"Continue zinc course; Plan A at home; danger signs (blood, lethargy, poor drinking)",ok:1},
+    {t:"Stop zinc after 1 dose",ok:0},
+    {t:"Routine IV antibiotics",ok:0},
+    {t:"No advice needed",ok:0}],
+   fb_ok:"Complete zinc + Plan A counselling.",fb_bad:"Incomplete zinc common error.",
+   next_ok:"recovered",next_bad:"worse"}]
+},
+{id:"htn_emerg",name:"James Mulenga",age:"54y",sex:"M",weight:80,dx:"Hypertensive urgency/emergency pathway",
+ hx:"Known HTN, ran out of amlodipine 1 week. Headache. No chest pain now.",
+ exam:"BP 210/120, equal pulses, no focal neuro deficit, chest clear, no papilloedema tool available — treat as high risk.",
+ days:[
+  {day:1,state:"ill",stem:"Very high BP + headache.",
+   vitals:"BP 210/120 · HR 90 · No focal deficit",
+   orders:[
+    {t:"Controlled reduction with oral agents per protocol (e.g. restart amlodipine ± another agent); observe; avoid abrupt huge drops with unmonitored IV cocktail",ok:1},
+    {t:"Nifedipine chew repeatedly to crash BP to 90 systolic",ok:0},
+    {t:"No treatment — numbers only",ok:0},
+    {t:"Discharge without meds",ok:0}],
+   fb_ok:"Controlled reduction + observation.",fb_bad:"Crashing BP is harmful.",
+   next_ok:"improving",next_bad:"critical"},
+  {day:2,state:"improving",stem:"BP 160/100 on meds. Plan.",
+   vitals:"BP 160/100",
+   orders:[
+    {t:"Continue antihypertensives; adherence plan; review electrolytes/creatinine when available; lifestyle advice",ok:1},
+    {t:"Stop all meds when headache goes",ok:0},
+    {t:"No follow-up",ok:0},
+    {t:"IV frusemide daily lifelong without indication",ok:0}],
+   fb_ok:"Long-term control + follow-up.",fb_bad:"Stopping meds when symptoms fade fails.",
+   next_ok:"recovered",next_bad:"worse"}]
+},
+{id:"tb_suspect",name:"Peter Sakala",age:"41y",sex:"M",weight:54,dx:"Pulmonary TB suspect / HIV",
+ hx:"Cough >2 weeks, night sweats, weight loss. HIV positive on ART. No known MDR contact.",
+ exam:"Cachectic, RR 22, SpO2 94%, bronchial breath sounds right upper, no distress at rest.",
+ days:[
+  {day:1,state:"ill",stem:"GeneXpert pending/positive pathway teaching case.",
+   vitals:"54 kg · SpO2 94% · Chronic cough",
+   orders:[
+    {t:"TB work-up (Xpert); start RHZE weight-band if indicated by national algorithm; continue ART with interaction awareness (rifampicin)",ok:1},
+    {t:"Ciprofloxacin alone for 3 days",ok:0},
+    {t:"Stop ART immediately forever",ok:0},
+    {t:"No infection control advice",ok:0}],
+   fb_ok:"Algorithm-based TB therapy + ART continuum.",fb_bad:"Quinolone dabbling is not TB care.",
+   next_ok:"improving",next_bad:"worse"},
+  {day:2,state:"improving",stem:"On RHZE, counselled. Early issues?",
+   vitals:"Tolerating meds",
+   orders:[
+    {t:"Adherence support; warn orange urine/hepatitis symptoms; schedule review; household screen",ok:1},
+    {t:"Stop RHZE if urine orange",ok:0},
+    {t:"Add routine high-dose vitamin A campaign dose confusion",ok:0},
+    {t:"No household advice",ok:0}],
+   fb_ok:"Adherence + toxicity watch + public health.",fb_bad:"Orange urine is expected with rifampicin.",
+   next_ok:"recovered",next_bad:"stable"}]
+},
+{id:"anaphylaxis",name:"Loveness Daka",age:"17y",sex:"F",weight:55,dx:"Anaphylaxis",
+ hx:"IM antibiotic 10 min ago for tonsillitis. Sudden itch, wheeze, dizzy.",
+ exam:"Urticaria, swollen lips, BP 80/50, HR 125, wheeze, talking in words.",
+ days:[
+  {day:1,state:"acute",stem:"Life-threatening features.",
+   vitals:"BP 80/50 · HR 125 · Wheeze · Urticaria",
+   orders:[
+    {t:"IM adrenaline 0.5 mg 1:1000 mid-anterolateral thigh; lie flat legs elevated if tolerated; O2; IV access; repeat adrenaline as needed; antihistamine/steroid adjunct not first",ok:1},
+    {t:"Oral antihistamine only",ok:0},
+    {t:"IV adrenaline 1:1000 undiluted bolus as first casual step",ok:0},
+    {t:"Neb salbutamol only",ok:0}],
+   fb_ok:"IM adrenaline first — no delay for antihistamines.",fb_bad:"Antihistamine-only is a classic fatal error.",
+   next_ok:"stabilising",next_bad:"dead"},
+  {day:2,state:"stabilising",stem:"Stable after adrenaline. Observation.",
+   vitals:"BP improved · Observation",
+   orders:[
+    {t:"Observe for biphasic reaction; document allergen; education; adrenaline auto-injector if available pathway; discharge plan when stable",ok:1},
+    {t:"Immediate discharge after one dose",ok:0},
+    {t:"No documentation of culprit drug",ok:0},
+    {t:"Start beta-blocker",ok:0}],
+   fb_ok:"Observation + allergy documentation.",fb_bad:"Early unplanned discharge risky.",
+   next_ok:"recovered",next_bad:"worse"}]
+},
+{id:"stroke",name:"Esther Mutale",age:"66y",sex:"F",weight:70,dx:"Acute stroke syndrome",
+ hx:"Sudden left weakness 4 hours ago. Hypertensive. Not on anticoagulants.",
+ exam:"GCS 14, left hemiparesis, facial droop, speech slurred, glucose normal, BP 180/100.",
+ days:[
+  {day:1,state:"ill",stem:"Time-critical assessment.",
+   vitals:"GCS 14 · Dense left weakness · Glu normal",
+   orders:[
+    {t:"ABC; glucose checked; urgent transfer/imaging pathway if available; aspirin if haemorrhagic stroke excluded per protocol; swallow screen; avoid hypotensive crash",ok:1},
+    {t:"Aspirin immediately before any bleed exclusion always",ok:0},
+    {t:"Home with vitamins",ok:0},
+    {t:"IV glucose bolus despite normal glucose",ok:0}],
+   fb_ok:"Supportive care + pathway; aspirin only when appropriate.",fb_bad:"Blind aspirin before exclusion can harm.",
+   next_ok:"stable",next_bad:"worse"},
+  {day:2,state:"stable",stem:"Stable deficit. Secondary prevention thinking.",
+   vitals:"Stable neuro",
+   orders:[
+    {t:"Risk factor control; rehab/physio referral; education; follow-up",ok:1},
+    {t:"No BP meds ever again",ok:0},
+    {t:"Bed rest 2 weeks strict no physio",ok:0},
+    {t:"Discharge without explanation",ok:0}],
+   fb_ok:"Secondary prevention + rehab.",fb_bad:"Immobility without reason harms.",
+   next_ok:"recovered",next_bad:"stable"}]
+},
+{id:"burns",name:"Chilufya Mwape",age:"5y",sex:"M",weight:18,dx:"Hot water burns ~12% BSA",
+ hx:"Pulled kettle 1 hour ago. No facial/inhalation injury apparent.",
+ exam:"Partial thickness burns anterior trunk/thighs ~12%, pain++, not circumferential, airway clear.",
+ days:[
+  {day:1,state:"ill",stem:"Analgesia + fluids + wound care.",
+   vitals:"18 kg · Pain++ · Airway clear",
+   orders:[
+    {t:"Analgesia; tetanus status; fluid as per burns formula if indicated; clean dressings; consider referral if resources limited",ok:1,calc:1},
+    {t:"Ice directly on burns",ok:0},
+    {t:"No analgesia to assess toughness",ok:0},
+    {t:"Home without dressings",ok:0}],
+   calc:{q:"Parkland-style thinking uses what volume concept?",opts:["4 mL × kg × %BSA (first 24h crystalloid concept — local protocols vary)","1 mL total ever","1000 L bolus","No fluids for burns"],a:"4 mL × kg × %BSA (first 24h crystalloid concept — local protocols vary)"},
+   fb_ok:"Pain control, fluids when indicated, dressings, referral sense.",fb_bad:"Ice and neglect harm.",
+   next_ok:"improving",next_bad:"critical"},
+  {day:2,state:"improving",stem:"Pain controlled, dressings clean.",
+   vitals:"Improving comfort",
+   orders:[
+    {t:"Dressing changes; nutrition; watch infection; follow-up",ok:1},
+    {t:"Prophylactic broad IV Abx always for all burns",ok:0},
+    {t:"No further care",ok:0},
+    {t:"Discharge to traditional healer only advice",ok:0}],
+   fb_ok:"Wound care + follow-up.",fb_bad:"Routine Abx not for all burns.",
+   next_ok:"recovered",next_bad:"worse"}]
+},
+{id:"sickle_crisis",name:"Mutinta Chirwa",age:"13y",sex:"F",weight:35,dx:"Sickle cell vaso-occlusive crisis",
+ hx:"Known SCD. Pain in limbs 1 day. No fever at home. On folate; hydroxyurea uncertain.",
+ exam:"Painful limbs, afebrile now, SpO2 96%, chest clear, no focal neuro deficit, mild jaundice.",
+ days:[
+  {day:1,state:"ill",stem:"Pain crisis — exclude acute chest/infection.",
+   vitals:"35 kg · Pain severe · SpO2 96%",
+   orders:[
+    {t:"Prompt analgesia (stepwise/opioid as needed); hydration; O2 if hypoxic; look for infection/acute chest; avoid high-dose pethidine preference patterns if policy avoids",ok:1},
+    {t:"No analgesia until investigations complete hours later",ok:0},
+    {t:"IM diclofenac only and discharge in severe pain",ok:0},
+    {t:"Exchange transfusion first for simple pain crisis",ok:0}],
+   fb_ok:"Analgesia is urgent; assess complications.",fb_bad:"Delaying pain relief is poor care.",
+   next_ok:"improving",next_bad:"worse"},
+  {day:2,state:"improving",stem:"Pain settling. Discharge planning.",
+   vitals:"Pain improved",
+   orders:[
+    {t:"Oral analgesia taper; hydration advice; folic acid; vaccination/infection advice; follow-up SCD clinic",ok:1},
+    {t:"Stop all future clinic visits",ok:0},
+    {t:"High-dose iron daily empiric",ok:0},
+    {t:"No safety-net advice",ok:0}],
+   fb_ok:"Continuity with SCD services.",fb_bad:"Iron is not routine in SCD without indication.",
+   next_ok:"recovered",next_bad:"stable"}]
+}
+];
+
+function twinKey(){var u=(currentUser&&currentUser.username)||"guest";return "tmsxr_twin_"+u;}
+function loadTwinSave(){
+  try{return JSON.parse(localStorage.getItem(twinKey())||"{}");}catch(e){return {};}
+}
+function saveTwinSave(s){localStorage.setItem(twinKey(),JSON.stringify(s));}
+function ensureTwinSave(){
+  var s=loadTwinSave();
+  if(typeof s.maxSlots!=="number")s.maxSlots=TWIN_MAX_SLOTS;
+  if(!s.patients)s.patients={};
+  if(!Array.isArray(s.roster))s.roster=[]; // ids under care / admitted
+  if(!Array.isArray(s.dead))s.dead=[];
+  if(!Array.isArray(s.discharged))s.discharged=[];
+  if(!s.started)s.started=false;
+  return s;
+}
+function twinStateLabel(s){
+  return ({ill:"Ill",acute:"Acute",improving:"Improving",stabilising:"Stabilising",stable:"Stable",worse:"Deteriorating",critical:"Critical",shock:"Shock",relapse:"Relapse",relapse_bleed:"Re-bleed",recovered:"Recovered",dead:"Died"})[s]||s;
+}
+function refreshTwinCard(){
+  var s=ensureTwinSave();
+  var el=$("twinCardTitle"), sub=$("twinCardSub");
+  if(!el)return;
+  var active=s.roster.length;
+  el.textContent="Your Patient Twin · "+active+"/"+s.maxSlots+" slots";
+  sub.textContent=s.started?("Roster active · Deaths: "+s.dead.length+" · Discharged: "+s.discharged.length):"Choose up to 5 patients to admit — doses, routes & calculations matter";
+}
+function updateRosterMeta(){
+  var s=ensureTwinSave();
+  var m=$("twinRosterMeta");
+  if(m)m.textContent="Slots "+s.roster.length+"/"+s.maxSlots+" under care · Discharged "+s.discharged.length+" · Deaths "+s.dead.length+(s.maxSlots<=1&&s.dead.length?" · CRITICAL: protect your last slot":"");
+  var btn=$("twinResetSoft");
+  if(btn)btn.style.display=(s.maxSlots<=1&&s.dead.length)?"inline-block":"none";
+}
+function openTwin(){
+  refreshTwinCard();updateRosterMeta();
+  $("twinPick").classList.remove("hidden");
+  $("twinPlay").classList.add("hidden");
+  var s=ensureTwinSave();
+  var help=$("twinPickHelp");
+  if(!s.started){
+    $("twinPickTitle").textContent="Start: choose up to "+s.maxSlots+" patients";
+    help.textContent="Tap to admit. You may select up to "+s.maxSlots+". Manage them across days. Discharge frees a slot for a new patient.";
+  }else{
+    $("twinPickTitle").textContent="Ward roster";
+    help.textContent="Open a patient under your care, or admit a new one if a slot is free (after discharge).";
+  }
+  var html="";
+  // Under care first
+  s.roster.forEach(function(id){
+    var d=TWIN_DEFS.find(function(x){return x.id===id;});
+    if(!d)return;
+    var st=s.patients[id]||{};
+    html+='<div class="case-card" data-id="'+id+'" data-act="open"><span class="tag">UNDER CARE</span><strong>'+d.name+'</strong> · '+d.age+' · '+d.weight+' kg<br><span class="muted">'+d.dx+' · Day '+(st.dayIndex+1||1)+' · '+twinStateLabel(st.state||"ill")+"</span></div>";
+  });
+  // Available to admit if slots free
+  var free=s.maxSlots-s.roster.length;
+  if(free>0){
+    html+='<p class="muted" style="margin:12px 0 6px">Available to admit ('+free+' slot'+(free>1?"s":"")+")</p>";
+    TWIN_DEFS.forEach(function(d){
+      if(s.roster.indexOf(d.id)>=0)return;
+      if(s.dead.indexOf(d.id)>=0)return;
+      if(s.discharged.indexOf(d.id)>=0)return;
+      html+='<div class="case-card" data-id="'+d.id+'" data-act="admit"><span class="tag">ADMIT</span><strong>'+d.name+'</strong> · '+d.age+' · '+d.weight+' kg · '+d.sex+'<br><span class="muted">'+d.dx+"</span></div>";
+    });
+  }
+  if(s.discharged.length){
+    html+='<p class="muted" style="margin:12px 0 6px">Discharged (unlocked progress)</p>';
+    s.discharged.forEach(function(id){
+      var d=TWIN_DEFS.find(function(x){return x.id===id;});
+      if(d)html+='<div class="case-card" style="opacity:.75"><span class="tag">DONE</span><strong>'+d.name+'</strong> · discharged</div>';
+    });
+  }
+  if(s.dead.length){
+    html+='<p class="muted" style="margin:12px 0 6px">Died under your care</p>';
+    s.dead.forEach(function(id){
+      var d=TWIN_DEFS.find(function(x){return x.id===id;});
+      if(d)html+='<div class="case-card" style="opacity:.7;border-color:rgba(255,80,80,.4)"><span class="tag">DIED</span><strong>'+d.name+'</strong></div>';
+    });
+  }
+  $("twinList").innerHTML=html||"<p class='muted'>No patients.</p>";
+  $("twinList").querySelectorAll(".case-card[data-act]").forEach(function(card){
+    card.onclick=function(){
+      var id=card.getAttribute("data-id");
+      var act=card.getAttribute("data-act");
+      var s2=ensureTwinSave();
+      if(act==="admit"){
+        if(s2.roster.length>=s2.maxSlots){alert("No free slots. Discharge a patient first.");return;}
+        if(s2.roster.indexOf(id)>=0)return;
+        s2.roster.push(id);
+        s2.started=true;
+        if(!s2.patients[id])s2.patients[id]={dayIndex:0,state:TWIN_DEFS.find(function(d){return d.id===id;}).days[0].state,log:[],score:0,total:0};
+        saveTwinSave(s2);
+        startTwin(id);
+      }else startTwin(id);
+    };
+  });
+}
+function startTwin(id){
+  var s=ensureTwinSave();
+  if(s.roster.indexOf(id)<0){openTwin();return;}
+  if(!s.patients[id]){
+    var def0=TWIN_DEFS.find(function(d){return d.id===id;});
+    s.patients[id]={dayIndex:0,state:def0.days[0].state,log:[],score:0,total:0};
+    saveTwinSave(s);
+  }
+  s.activeId=id;saveTwinSave(s);
+  $("twinPick").classList.add("hidden");
+  $("twinPlay").classList.remove("hidden");
+  renderTwin();
+}
+var twinLocked=false,twinNeedCalc=false,twinCalcDone=false,twinLastOk=false;
+function currentTwinBundle(){
+  var s=ensureTwinSave();
+  var def=TWIN_DEFS.find(function(d){return d.id===s.activeId;});
+  var st=s.patients[s.activeId];
+  var day=def.days[Math.min(st.dayIndex,def.days.length-1)];
+  return {s:s,def:def,st:st,day:day};
+}
+function applyDeath(s,id){
+  // Patient dies: remove from roster, add to dead, lose a slot (min 1), and remove one other patient if any
+  s.roster=s.roster.filter(function(x){return x!==id;});
+  if(s.dead.indexOf(id)<0)s.dead.push(id);
+  if(s.patients[id]){s.patients[id].state="dead";s.patients[id].log=s.patients[id].log||[];s.patients[id].log.unshift("Patient died due to mismanagement");}
+  s.maxSlots=Math.max(1,s.maxSlots-1);
+  // take one more patient from them if available
+  if(s.roster.length){
+    var taken=s.roster.pop();
+    if(s.dead.indexOf(taken)<0)s.dead.push(taken);
+    if(s.patients[taken]){s.patients[taken].log=s.patients[taken].log||[];s.patients[taken].log.unshift("Removed from your care after another death on the ward");}
+  }
+  s.maxSlots=Math.max(1,Math.min(s.maxSlots,s.roster.length+ (TWIN_MAX_SLOTS))); // keep logical
+  // After any death, slots become at most remaining roster capacity rule: user asked start from one if deaths
+  if(s.dead.length>=1){s.maxSlots=Math.max(1,Math.min(s.maxSlots,5));}
+  // Strong rule: if a death occurred, collapse toward 1 if multiple deaths
+  if(s.dead.length>=2){s.maxSlots=1;s.roster=s.roster.slice(0,1);}
+  if(s.dead.length>=1&&s.roster.length===0){s.maxSlots=1;}
+  saveTwinSave(s);
+}
+function applyDischarge(s,id){
+  s.roster=s.roster.filter(function(x){return x!==id;});
+  if(s.discharged.indexOf(id)<0)s.discharged.push(id);
+  if(s.patients[id]){s.patients[id].state="recovered";s.patients[id].log=s.patients[id].log||[];s.patients[id].log.unshift("Discharged — slot freed");}
+  // successful discharge can restore a slot up to 5 if previously penalized? mild recovery
+  if(s.maxSlots<TWIN_MAX_SLOTS&&s.dead.length===0)s.maxSlots=Math.min(TWIN_MAX_SLOTS,s.maxSlots+1);
+  saveTwinSave(s);
+}
+function renderTwin(){
+  twinLocked=false;twinNeedCalc=false;twinCalcDone=false;twinLastOk=false;
+  var b=currentTwinBundle();
+  $("twinName").textContent=b.def.name;
+  $("twinMeta").textContent=b.def.age+" · "+b.def.sex+" · "+b.def.weight+" kg · "+b.def.dx;
+  $("twinDayTag").textContent="Day "+b.day.day;
+  $("twinStateTag").textContent=twinStateLabel(b.st.state);
+  $("twinBar").style.width=Math.round((b.st.dayIndex/Math.max(1,b.def.days.length-1))*100)+"%";
+  $("twinHx").innerHTML="<b>History</b><br>"+b.def.hx;
+  $("twinExam").innerHTML="<b>Physical exam</b><br>"+b.def.exam;
+  $("twinStem").textContent=b.day.stem;
+  $("twinVitals").textContent=b.day.vitals;
+  $("twinFb").classList.add("hidden");
+  $("twinCalc").classList.add("hidden");
+  var opts=shuffle(b.day.orders.slice());
+  $("twinOpts").innerHTML=opts.map(function(o){return '<button type="button" class="opt-btn" data-ok="'+(o.ok?1:0)+'" data-calc="'+(o.calc?1:0)+'">'+o.t+"</button>";}).join("");
+  $("twinOpts").querySelectorAll("button").forEach(function(btn){
+    btn.onclick=function(){
+      if(twinLocked)return;
+      var ok=btn.getAttribute("data-ok")==="1";
+      twinLastOk=ok;twinLocked=true;
+      b.st.total++; if(ok)b.st.score++;
+      $("twinOpts").querySelectorAll("button").forEach(function(x){if(x.getAttribute("data-ok")==="1")x.classList.add("correct");});
+      btn.classList.add(ok?"correct":"wrong");
+      var fb=$("twinFb");fb.classList.remove("hidden");
+      if(ok){fb.className="feedback-box";fb.innerHTML="<b>Correct order.</b> "+b.day.fb_ok+'<p class="muted">Score '+b.st.score+"/"+b.st.total+"</p>";}
+      else{
+        fb.className="feedback-box bad";
+        var best=b.day.orders.find(function(o){return o.ok;});
+        fb.innerHTML="<b>Not the best regimen.</b> "+b.day.fb_bad+"<p><b>Preferred:</b> "+(best?best.t:"")+'</p><p class="muted">Score '+b.st.score+"/"+b.st.total+"</p>";
+      }
+      b.st.log=b.st.log||[];
+      b.st.log.unshift("Day "+b.day.day+": "+(ok?"Correct":"Incorrect"));
+      if(ok&&btn.getAttribute("data-calc")==="1"&&b.day.calc){
+        twinNeedCalc=true;twinCalcDone=false;
+        $("twinCalc").classList.remove("hidden");
+        $("twinCalcQ").textContent=b.day.calc.q;
+        var cops=shuffle(b.day.calc.opts.slice());
+        $("twinCalcOpts").innerHTML=cops.map(function(c){return '<button type="button" class="opt-btn" data-v="'+c.replace(/"/g,"&quot;")+'">'+c+"</button>";}).join("");
+        $("twinCalcOpts").querySelectorAll("button").forEach(function(cbtn){
+          cbtn.onclick=function(){
+            if(twinCalcDone)return;twinCalcDone=true;
+            var cok=cbtn.getAttribute("data-v")===b.day.calc.a;
+            cbtn.classList.add(cok?"correct":"wrong");
+            $("twinCalcOpts").querySelectorAll("button").forEach(function(x){if(x.getAttribute("data-v")===b.day.calc.a)x.classList.add("correct");});
+            b.st.total++; if(cok)b.st.score++;
+            fb.innerHTML+=(cok?"<p><b>Calculation correct.</b></p>":"<p><b>Calculation incorrect.</b> "+b.day.calc.a+"</p>");
+            saveTwinSave(b.s);
+          };
+        });
+      }
+      b.st._pendingState=ok?b.day.next_ok:b.day.next_bad;
+      saveTwinSave(b.s);
+      $("twinLog").innerHTML=(b.st.log||[]).slice(0,8).map(function(l){return "<div>"+l+"</div>";}).join("");
+      refreshTwinCard();updateRosterMeta();
+      logAct("twin",b.def.id+" d"+b.day.day+(ok?" ok":" miss"));
+    };
+  });
+  $("twinLog").innerHTML=(b.st.log||[]).slice(0,8).map(function(l){return "<div>"+l+"</div>";}).join("");
+}
+$("twinNext").onclick=function(){
+  var b=currentTwinBundle();
+  if(!twinLocked){$("twinFb").classList.remove("hidden");$("twinFb").className="feedback-box bad";$("twinFb").textContent="Choose an order first.";return;}
+  if(twinNeedCalc&&!twinCalcDone){$("twinFb").classList.remove("hidden");$("twinFb").className="feedback-box bad";$("twinFb").textContent="Complete the calculation check.";return;}
+  if(b.st._pendingState){b.st.state=b.st._pendingState;delete b.st._pendingState;}
+  if(b.st.state==="dead"||b.st.state==="critical"&&b.day.next_bad==="dead"){
+    // death path
+    applyDeath(b.s,b.def.id);
+    $("twinFb").classList.remove("hidden");
+    $("twinFb").className="feedback-box bad";
+    $("twinFb").innerHTML="<b>Patient died.</b> You lost this patient and an extra roster cost was applied. Slots now: "+ensureTwinSave().maxSlots+". Return to roster.";
+    refreshTwinCard();updateRosterMeta();
+    setTimeout(function(){openTwin();},600);
+    return;
+  }
+  if(b.st.state==="recovered"||b.st.dayIndex>=b.def.days.length-1){
+    if(b.st.state==="recovered"||twinLastOk){
+      applyDischarge(b.s,b.def.id);
+      $("twinFb").classList.remove("hidden");
+      $("twinFb").className="feedback-box";
+      $("twinFb").innerHTML="<b>Discharged.</b> Slot freed — you may admit another patient. Score "+b.st.score+"/"+b.st.total+".";
+      var td=$("twinDebrief");if(td){td.classList.remove("hidden");td.innerHTML="<h3>Patient debrief</h3><p><b>"+b.def.name+"</b> discharged. Score "+b.st.score+"/"+b.st.total+".</p><p class='muted'>Write one sentence you would put in the discharge note (in your head): diagnosis, key treatment, danger signs. Then admit the next patient.</p>";}
+      refreshTwinCard();updateRosterMeta();
+      setTimeout(function(){openTwin();},800);
+      return;
+    }
+  }
+  if(b.st.dayIndex>=b.def.days.length-1){
+    saveTwinSave(b.s);openTwin();return;
+  }
+  b.st.dayIndex++;
+  var nextDay=b.def.days[b.st.dayIndex];
+  if(nextDay)b.st.state=nextDay.state;
+  saveTwinSave(b.s);
+  renderTwin();
+};
+$("twinSwitch").onclick=function(){openTwin();};
+$("twinExit").onclick=function(){refreshTwinCard();setMode("menu");};
+$("twinResetSoft").onclick=function(){
+  if(!confirm("Reset your Patient Twin roster? Deaths clear; you start again with 1 slot."))return;
+  var s=ensureTwinSave();
+  s.maxSlots=1;s.roster=[];s.dead=[];s.discharged=[];s.patients={};s.started=false;s.activeId=null;
+  saveTwinSave(s);openTwin();refreshTwinCard();
+};
+setTimeout(function(){var c=$("twinCard");if(c)c.onclick=function(){setMode("twin");};},0);
 
 // PROCEDURES — IV/blood are click-driven on 3D tools
 const PROCS={
@@ -484,13 +1277,90 @@ function resetProc3D(){
 function loadProc(k){
   pk=k;pi=0;ps=0;pWaiting=null;
   document.querySelectorAll("#procNav button").forEach(b=>b.classList.toggle("on",b.getAttribute("data-p")===k));
+  if(k==="ar"){
+    $("procSimBlock").classList.add("hidden");
+    $("arBlock").classList.remove("hidden");
+    document.body.classList.add("no-vr");
+    if($("procScene"))$("procScene").setAttribute("visible","false");
+    setARGuide(arKind);return;
+  }
+  $("procSimBlock").classList.remove("hidden");
+  $("arBlock").classList.add("hidden");
+  if($("procDebrief"))$("procDebrief").classList.add("hidden");
+  stopARCam();
+  if(mode==="proc"){document.body.classList.remove("no-vr");if($("procScene"))$("procScene").setAttribute("visible","true");}
   resetProc3D();rp();
 }
+
+// --- Phone AR procedure coach ---
+var arKind="iv", arStep=0, arStream=null;
+const AR_GUIDES={
+iv:{title:"IV cannulation angle",
+ steps:["1. Apply tourniquet proximal to site","2. Clean skin — allow dry","3. Align needle bevel up, aim ~15–30° to skin","4. Advance until flashback, then lower angle and advance cannula","5. Release tourniquet, secure, flush"],
+ label:"IV ~15–30°", line:[90,280,210,200], target:[150,220]},
+im:{title:"IM injection (deltoid guide)",
+ steps:["1. Identify acromion; injection site 2–3 fingerbreadths below","2. Clean skin","3. 90° needle insertion for IM","4. Aspirate per local policy if used; inject slowly","5. Withdraw, gauze, sharps safety"],
+ label:"IM ~90°", line:[150,120,150,260], target:[150,200]},
+neonate:{title:"Neonatal airway position",
+ steps:["1. Warm the baby — avoid hypothermia","2. Slight sniffing / neutral head position (avoid over-extension)","3. Open mouth, suction if needed","4. PPV if HR low / not breathing — watch chest rise","5. Reassess HR and breathing every 30s"],
+ label:"Neutral airway", line:[100,200,200,200], target:[150,180]}
+};
+function setARGuide(kind){
+  arKind=kind;arStep=0;
+  document.querySelectorAll("#arNav button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-ar")===kind);});
+  var g=AR_GUIDES[kind];
+  $("arLabel").textContent=g.label;
+  var L=g.line, T=g.target;
+  $("arAngleLine").setAttribute("x1",L[0]);$("arAngleLine").setAttribute("y1",L[1]);
+  $("arAngleLine").setAttribute("x2",L[2]);$("arAngleLine").setAttribute("y2",L[3]);
+  $("arTarget").setAttribute("cx",T[0]);$("arTarget").setAttribute("cy",T[1]);
+  $("arStepBox").textContent=g.title+" — "+g.steps[0];
+  $("arStatus").textContent="Guide: "+g.title;
+  if($("arCheckList")){
+    $("arCheckList").innerHTML=g.steps.map(function(s,i){return "<label style='display:block;margin:4px 0'><input type='checkbox' data-arstep='"+i+"'> "+s+"</label>";}).join("");
+    $("arScoreMax").textContent=g.steps.length;$("arScore").textContent="0";
+    $("arCheckList").querySelectorAll("input").forEach(function(inp){inp.onchange=function(){
+      var n=$("arCheckList").querySelectorAll("input:checked").length;$("arScore").textContent=n;
+      if(n===g.steps.length){
+        var db=$("arDebrief");if(db){db.classList.remove("hidden");db.innerHTML="<h3>AR debrief</h3><p>All steps checked for <b>"+g.title+"</b>. Repeat without looking at the list, then try on a skills model.</p>";}
+      }
+    };});
+  }
+  if($("arDebrief"))$("arDebrief").classList.add("hidden");
+}
+async function startARCam(){
+  try{
+    if(arStream){stopARCam();}
+    arStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"},audio:false});
+    var v=$("arVideo");v.srcObject=arStream;await v.play();
+    $("arStatus").textContent="Camera on — align target with practice site";
+  }catch(e){
+    $("arStatus").textContent="Camera blocked or unavailable. Use HTTPS and allow permission. You can still step through the guide.";
+  }
+}
+function stopARCam(){
+  if(arStream){arStream.getTracks().forEach(function(tr){tr.stop();});arStream=null;}
+  var v=$("arVideo");if(v)v.srcObject=null;
+  if($("arStatus"))$("arStatus").textContent="Camera off";
+}
+document.querySelectorAll("#arNav button").forEach(function(b){b.onclick=function(){setARGuide(b.getAttribute("data-ar"));};});
+if($("arStartCam"))$("arStartCam").onclick=function(){startARCam();};
+if($("arStopCam"))$("arStopCam").onclick=function(){stopARCam();};
+if($("arNextStep"))$("arNextStep").onclick=function(){
+  var g=AR_GUIDES[arKind];arStep=Math.min(arStep+1,g.steps.length-1);
+  $("arStepBox").textContent=g.title+" — "+g.steps[arStep];
+  if(arStep===g.steps.length-1)$("arStatus").textContent="Sequence complete — practice again or switch guide";
+};
+// stop camera on leaving procedures
+var _procExit=function(){stopARCam();setMode("menu");};
+
 function rp(){
   const P=PROCS[pk];$("procTitle").textContent=P.t;$("procScore").textContent=ps;
   if(P.mode==="click"){
     $("procBar").style.width=(pi/P.steps.length*100)+"%";
-    if(pi>=P.steps.length){$("procText").textContent="Complete — score "+ps+"/100.";$("procChoices").innerHTML="";pWaiting=null;return;}
+    if(pi>=P.steps.length){$("procText").textContent="Complete — score "+ps+"/100.";$("procChoices").innerHTML="";pWaiting=null;
+      var pd=$("procDebrief");if(pd){pd.classList.remove("hidden");pd.innerHTML="<h3>Procedure debrief</h3><p>Score <b>"+ps+"/100</b> on "+P.t+".</p><p class='muted'>Repeat until the sequence is automatic. Say each step aloud before clicking. On the ward: consent, asepsis, and documentation still apply.</p>";}
+      return;}
     const s=P.steps[pi];pWaiting=s.need;
     if(s.reveal){const r=$(s.reveal);if(r)r.setAttribute("visible","true");}
     $("procText").textContent=s.hint;
@@ -517,7 +1387,7 @@ function onProcClick(id){
 }
 ["pTourn","pSwab","pVein","pCann","pTube","pFlush"].forEach(id=>{const el=$(id);if(el)el.addEventListener("click",function(){onProcClick(id);});});
 document.querySelectorAll("#procNav button").forEach(b=>b.onclick=()=>loadProc(b.getAttribute("data-p")));
-$("procReset").onclick=()=>loadProc(pk);$("procExit").onclick=()=>setMode("menu");
+$("procReset").onclick=()=>loadProc(pk);$("procExit").onclick=function(){stopARCam();setMode("menu");};
 
 // ANATOMY
 function showAnat(tab){
@@ -988,6 +1858,223 @@ add("Microbiology","MRSA is resistant to?",
 "Many beta-lactams including meticillin/flucloxacillin class",["All antibiotics in existence","Only topical agents","Vancomycin always by definition"],
 "Resistance pattern defines MRSA.","Vanc is a treatment option depending on site — not the definition of resistance to itself.");
 
+
+// === Expanded Telas bank (additional high-yield cases) ===
+// Surgery extras
+add("Surgery","A 45-year-old has progressive dysphagia to solids then liquids with weight loss. Most important next investigation pathway?",
+"Urgent upper GI endoscopy (2-week / urgent cancer pathway as local)",["Reassure and antacid only for 6 months","Routine dental referral only","Discharge without investigation"],
+"Progressive dysphagia + weight loss needs urgent endoscopy to exclude malignancy.","Antacids do not visualise the oesophagus.");
+
+add("Surgery","Patient 5 days post-laparotomy develops fever, tachycardia, and wound erythema with discharge. Priority?",
+"Assess for wound infection/dehiscence/collection; open/drain if indicated; cultures and antibiotics as appropriate",["Ignore — normal healing always","High-dose steroids","Immediate discharge"],
+"Post-op fever with local signs needs wound review, not dismissal.","Collections need drainage.");
+
+add("Surgery","Suspected acute limb ischaemia: pale, pulseless, painful leg. Time-critical step?",
+"Urgent vascular review; heparinisation as directed; do not delay for prolonged non-urgent tests",["Book routine clinic in 3 months","Elevation and analgesia only indefinitely","Amputation without assessment"],
+"Time is muscle — urgent revascularisation pathway.","Clinic bookings do not restore flow.");
+
+add("Surgery","Patient with peritonitis and free air under diaphragm on X-ray. Management principle?",
+"Resuscitate and urgent surgical source control (laparotomy/laparoscopy as indicated)",["Oral antibiotics at home","Outpatient review next week","CT in 72 hours without senior review"],
+"Perforation with peritonitis is an operative emergency after resuscitation.","Home Abx will not close a perforation.");
+
+add("Surgery","Scrotal pain of sudden onset in a 16-year-old. First concern?",
+"Testicular torsion until proven otherwise — urgent surgical exploration pathway",["Assume epididymitis and send home without exam","Wait 48h for ultrasound always even if delays exceed viability window","Antibiotics only without examination"],
+"Torsion is a clinical/surgical emergency; do not let imaging delay salvage when suspicion is high.","Dead testes do not benefit from late scans.");
+
+// Paediatrics extras
+add("Paediatrics","Child with measles-like illness: when is vitamin A indicated in management protocols?",
+"As per IMCI/WHO measles guidance (age-banded high-dose vitamin A)",["Never in measles","Only IV vitamin C","Only after 1 year of untreated disease"],
+"Vitamin A reduces measles mortality in protocol settings.","Not optional folklore.");
+
+add("Paediatrics","Severe acute malnutrition with appetite test failed and complications. Level of care?",
+"Inpatient stabilisation phase care (not home RUTF alone)",["Discharge with advice only","Adult high-protein gym diet","Immediate surgery"],
+"Complicated SAM needs stabilisation before rehabilitation phase.","Appetite test guides pathway.");
+
+add("Paediatrics","Child with suspected intussusception: intermittent colic, currant-jelly stool, lethargy. Action?",
+"Urgent surgical/paediatric surgical review; imaging/reduction pathway as available",["Oral rehydration only at home for 5 days","Antibiotics alone","Ignore bloody stool"],
+"Intussusception needs time-critical diagnosis and reduction/surgery.","ORS does not reduce an intussusceptum.");
+
+add("Paediatrics","Febrile neonate <1 month. Approach?",
+"Urgent full septic evaluation and empiric IV antibiotics — not oral therapy at home",["Paracetamol and review in a week","Herbal steam","Discharge if smiling once"],
+"Neonates can look briefly well and still have sepsis.","Age changes the rules.");
+
+add("Paediatrics","Epiglottitis suspected (toxic, drooling, stridor). What not to do?",
+"Do not agitate or force tongue depressor exam in uncontrolled setting — prioritise airway expertise",["Force multiple throat swabs while child cries","Send home","Nebulise and discharge without observation"],
+"Airway first; examination can precipitate obstruction.","Bravery is not a management plan.");
+
+// Internal medicine extras
+add("Internal Medicine","Acute pulmonary oedema: first-line priorities?",
+"Sit up, oxygen, nitrates if BP allows, diuretic as indicated, treat cause",["IV fluids bolus 2 L","Flat bed and unrestricted fluids","Home without treatment"],
+"Reduce preload/afterload and oxygenate.","Fluids worsen cardiogenic oedema.");
+
+add("Internal Medicine","Upper GI bleed with haematemesis and melena, HR 120, BP 90/60. Priority?",
+"ABC, large-bore IV access, fluids/blood as needed, urgent endoscopy pathway, reverse coagulopathy",["Oral iron only","Outpatient review in a month","NG ice water as sole therapy"],
+"Resuscitate and control bleeding source.","Iron does not stop active haemorrhage.");
+
+add("Internal Medicine","Suspected meningitis: next management principle?",
+"Blood cultures if possible and urgent empiric antibiotics; LP when safe — do not delay Abx for CT if no indication",["Wait 24h for spontaneous resolution","Oral amoxicillin at home","CT always before any Abx even if delays hours without red flags addressed"],
+"Antibiotics save brain — minimise delays.","CT is not a ritual before every dose.");
+
+add("Internal Medicine","Thyroid storm features in a known hyperthyroid patient. Approach?",
+"Supportive care + anti-thyroid drugs + beta-blockade + corticosteroids as protocol; treat trigger",["Stop all treatment","Radioiodine in the emergency bay as first step","Discharge with multivitamins"],
+"Storm is life-threatening — protocol multi-drug therapy.","Vitamins are not antithyroid drugs.");
+
+add("Internal Medicine","AKI with hyperkalaemia 7.2 and ECG changes. Immediate step?",
+"Protect the heart (e.g. IV calcium) and shift/remove potassium per protocol",["Oral potassium supplements","Spironolactone","Ignore ECG"],
+"Membrane stabilisation first when ECG changes present.","Do not add more potassium.");
+
+// OBGYN extras
+add("Obstetrics & Gynaecology","Shoulder dystocia: first recognised action after calling for help?",
+"McRoberts manoeuvre (hyperflex hips) and suprapubic pressure as trained",["Fundal pressure as first line","Pull harder on the head","Immediate hysterectomy without manoeuvres"],
+"McRoberts + suprapubic pressure are first-line manoeuvres.","Fundal pressure worsens impaction.");
+
+add("Obstetrics & Gynaecology","Cord prolapse recognised. Immediate action?",
+"Call for help; elevate presenting part; urgent delivery (usually category 1 CS if not imminent vaginal)",["Push cord back roughly and send to ward","Ignore and continue routine labour","Oxytocin augmentation without addressing prolapse"],
+"Relieve pressure on the cord and deliver urgently.","Rough cord handling is harmful.");
+
+add("Obstetrics & Gynaecology","Suspected ectopic pregnancy, stable. Next?",
+"Urgent β-hCG and transvaginal ultrasound pathway; do not discharge without a plan",["Reassure and discharge always","High-dose oxytocin","ERPC without diagnosis"],
+"Pregnancy of unknown location protocols prevent missed ectopics.","Reassurance is not a diagnosis.");
+
+add("Obstetrics & Gynaecology","Heavy PV bleeding at 10 weeks with open os and products at os. Likely?",
+"Incomplete miscarriage — stabilise and evacuate as indicated",["Normal pregnancy always","Placenta praevia at 10 weeks as first label without assessment","Ectopic always"],
+"Open os + products suggests incomplete miscarriage.","Manage bleeding and evacuate when needed.");
+
+add("Obstetrics & Gynaecology","Pre-eclampsia with severe features (BP high, symptoms, laboratory concerns). Principle?",
+"Stabilise (BP, MgSO4 if indicated), monitor, plan timely delivery with senior obstetric input",["Outpatient observation only without treatment","High-salt diet","Ignore headache and visual change"],
+"Severe features need inpatient stabilisation and delivery planning.","Symptoms are warnings.");
+
+// Anatomy extras
+add("Anatomy","Structure passing through the carpal tunnel?",
+"Median nerve (with flexor tendons)",["Ulnar nerve only","Radial artery only","Sciatic nerve"],
+"Median nerve compression → carpal tunnel syndrome.","Sciatic nerve is in the lower limb.");
+
+add("Anatomy","Right middle lobe sits adjacent to which fissure landmark concept?",
+"Horizontal (minor) fissure separates RUL from RML",["No fissures exist in the right lung","Only oblique fissure on the left explains RML","Diaphragm is a lung fissure"],
+"Right lung has oblique + horizontal fissures.","Fissure anatomy explains X-ray silhouettes.");
+
+add("Anatomy","Femoral hernia relation to the inguinal ligament?",
+"Passes below the inguinal ligament through the femoral canal",["Always above the inguinal ligament","Through the obturator foramen only","Via the greater sciatic notch"],
+"Femoral hernias go under the inguinal ligament medially in the femoral canal.","Site predicts risk of strangulation.");
+
+add("Anatomy","Cranial nerve responsible for most tongue muscles?",
+"Hypoglossal nerve (CN XII)",["Optic nerve","Olfactory nerve","Vestibulocochlear nerve"],
+"CN XII = tongue motor.","Optic is vision.");
+
+// Physiology extras
+add("Physiology","Starling forces: oedema occurs when?",
+"Capillary hydrostatic pressure rises or oncotic pressure falls (or permeability rises)",["Oncotic pressure always rises in liver failure as the cause","Arteries have no pressure","Lymphatics increase oedema by design"],
+"Imbalance of filtration vs reabsorption/lymph drainage causes oedema.","Low albumin reduces oncotic pull.");
+
+add("Physiology","Primary ventilatory drive in healthy people is mainly?",
+"PaCO2 via central chemoreceptors (with important O2 contribution when hypoxic)",["Only nitrogen concentration","Only haemoglobin colour","Only blood glucose"],
+"CO2 is the dominant drive at rest in health.","Hypoxia becomes critical in some patients (e.g. some COPD contexts — carefully taught).");
+
+add("Physiology","ADH (vasopressin) main renal effect?",
+"Increases water reabsorption in collecting ducts via aquaporins",["Increases free water excretion always","Blocks all sodium reabsorption in PCT only","Stimulates cough"],
+"ADH concentrates urine.","Diabetes insipidus lacks effective ADH action.");
+
+// Pathology extras
+add("Pathology","Caseous necrosis is classically associated with?",
+"Tuberculosis granulomas",["Acute abscess only from staph always","Amyloid deposits only","Fat necrosis of pancreas only"],
+"Caseation ↔ TB (and some other granulomatous disease).","Pattern recognition in pathology.");
+
+add("Pathology","Metaplasia example in distal oesophagus?",
+"Barrett’s oesophagus (squamous → columnar) from chronic reflux",["Myocardial infarction necrosis","Thrombus formation only","Atrophy of muscle only"],
+"Metaplasia is reversible cell-type change under stress.","Barrett’s increases adenocarcinoma risk.");
+
+add("Pathology","Virchow’s triad includes?",
+"Stasis, endothelial injury, hypercoagulability",["Only high blood sugar","Only fever","Only low sodium"],
+"Three factors predispose to thrombosis.","Know it for VTE teaching.");
+
+// Pharmacology extras
+add("Pharmacology","Drug of choice first-line for anaphylaxis?",
+"Intramuscular adrenaline",["Oral loratadine only","IV potassium","Subcutaneous insulin"],
+"Adrenaline IM is first-line.","Antihistamines are adjuncts.");
+
+add("Pharmacology","Major toxicity concern of aminoglycosides?",
+"Nephrotoxicity and ototoxicity",["Only hair growth","Only orange urine","Only cough"],
+"Monitor levels/renal function when used.","Not a cosmetic side effect.");
+
+add("Pharmacology","Why is rifampicin important for drug interactions?",
+"Potent enzyme inducer — reduces levels of many drugs (including some ART and contraceptives)",["It inhibits all enzymes always","No interactions exist","It only interacts with food colouring"],
+"Warn about interactions and orange body fluids.","Contraceptive failure risk matters.");
+
+add("Pharmacology","N-acetylcysteine is the antidote related to overdose of?",
+"Paracetamol (acetaminophen)",["Iron only","Opioids only","Benzodiazepines only"],
+"NAC replenishes glutathione pathway.","Time-critical in significant overdose.");
+
+// Dermatology extras
+add("Dermatology","Target lesions on hands after infection — classic for?",
+"Erythema multiforme",["Psoriasis plaques only","Scabies burrows only","Melanoma always"],
+"EM has target (iris) lesions.","Often post-herpes or drug-related.");
+
+add("Dermatology","Nikolsky sign positive suggests?",
+"Epidermal detachment syndromes (e.g. SJS/TEN, SSSS contexts)",["Simple eczema always","Urticaria only","Viral warts"],
+"Nikolsky = sheet-like skin detachment risk — emergency dermatology.","Not mild dryness.");
+
+add("Dermatology","Scabies classic symptom timing?",
+"Intense itch especially at night; burrows in web spaces/wrists",["Painless always","Only scalp in adults always","Never contagious"],
+"Treat patient and close contacts; wash linens.","Night itch is a clue.");
+
+// Radiology extras
+add("Radiology","Deep sulcus sign on supine chest radiograph suggests?",
+"Pneumothorax (in supine patients)",["Normal gastric bubble only","Always pneumonia","Cardiac tamponade exclusively"],
+"Supine PTX signs differ from erect films.","Trauma patients are often supine.");
+
+add("Radiology","Ground-glass opacities on CT chest are?",
+"Non-specific — infection, oedema, haemorrhage, fibrosis among causes",["Pathognomonic for one virus only always","Always artefact","Always need amputation"],
+"Integrate clinical context.","GGO is a pattern, not a single disease.");
+
+add("Radiology","FAST scan in trauma is primarily for?",
+"Free intraperitoneal/pericardial fluid (blood) detection",["Detailed solid organ grading always","Bone density","Thyroid nodules"],
+"FAST guides operative vs further imaging decisions.","Not a complete trauma CT.");
+
+// Ophthalmology extras
+add("Ophthalmology","Acute angle-closure glaucoma presentation?",
+"Painful red eye, haloes, hard eye, mid-dilated pupil — emergency",["Painless gradual field loss only (that is more chronic glaucoma pattern)","Itchy lids only","Normal vision always"],
+"Acute angle closure is an emergency — lower pressure urgently.","Do not dilate indiscriminately.");
+
+add("Ophthalmology","Sudden painless monocular vision loss in vascular patient — consider?",
+"Central retinal artery or vein occlusion among causes — urgent ophthalmology",["Normal migraine always without exam","Conjunctivitis","Refractive error only"],
+"Vascular retinal events need urgent assessment.","Time-sensitive.");
+
+// Anaesthesia extras
+add("Anaesthesia","Cannot intubate, cannot oxygenate emergency — priority concept?",
+"Emergency front-of-neck access per difficult airway algorithm when indicated",["Repeated failed attempts indefinitely without oxygenation plan","Wake the patient after irreversible hypoxia","Ignore saturation"],
+"Oxygenation over perfection.","Know your local DAS-style algorithm.");
+
+add("Anaesthesia","Malignant hyperthermia trigger association?",
+"Volatile anaesthetics / suxamethonium in susceptible individuals",["Propofol only always","Local anaesthetic skin infiltration only","Paracetamol"],
+"Stop triggers, dantrolene, supportive care.","Rare but deadly.");
+
+add("Anaesthesia","Cricoid pressure is intended to reduce?",
+"Risk of aspiration during rapid sequence induction (classic teaching — practice varies)",["MAC of volatile agents","Blood glucose","Urine output"],
+"RSI package includes positioning, pre-oxygenation, drugs, and airway plan.","Not a substitute for suction and skill.");
+
+// Forensics extras
+add("Medical Forensics","Best practice for forensic examination documentation?",
+"Contemporaneous, legible, timed notes; body maps; chain of custody for samples",["Memory only next week","Social media photos with patient tags","Destroy notes after shift"],
+"Poor notes destroy legal usefulness.","Document carefully.");
+
+add("Medical Forensics","Consent for intimate examination in a competent adult?",
+"Requires informed consent; chaperone as policy",["Never needed","Forced if police request without legal process","Implied by entering hospital alone always for all acts"],
+"Respect autonomy and local chaperone policy.","Consent is not optional.");
+
+// Microbiology extras
+add("Microbiology","Malaria diagnosis in symptomatic patient from endemic area?",
+"Urgent blood film / RDT as available — do not wait days",["Stool culture only","Only CXR","Throat swab only"],
+"Think malaria, test malaria.","Delay risks severe disease.");
+
+add("Microbiology","Indication concept for infection control with suspected TB?",
+"Airborne precautions / isolation as per facility protocol until cleared",["No precautions ever","Contact only with stool","Droplet only always without assessment"],
+"Protect staff and other patients.","Cough etiquette and isolation matter.");
+
+add("Microbiology","Empiric neonatal early-onset sepsis cover often includes?",
+"Ampicillin (or benzylpenicillin) + gentamicin per local protocol",["Oral amoxicillin only","Aciclovir only always without indication","No antibiotics until day 7 of illness"],
+"Know your unit’s regimen.","Oral therapy is not neonatal sepsis care.");
+
+// More NBS items appended by replacing NBS array
 // NBS-style short items
 const NBS=[
 {stem:"ECG: anterior STEMI. Next best step?",correct:"Activate primary PCI pathway",wrongs:["Home with GTN","Outpatient clinic","CT abdomen first"],why:"Reperfusion saves muscle.",roast:"The cath lab is not optional entertainment."},
@@ -995,87 +2082,371 @@ const NBS=[
 {stem:"Anaphylaxis. Drug?",correct:"IM adrenaline",wrongs:["Oral antihistamine only","Steroid only first","Saline neb only"],why:"Adrenaline first-line.",roast:"Antihistamines do not restart perfusion."},
 {stem:"GCS 8 after head injury. Priority?",correct:"Airway protection / senior airway help",wrongs:["Wait morning CT slot without review","Oral fluids","Discharge"],why:"Airway before everything.",roast:"Brains dislike waiting lists."},
 {stem:"Suspected ectopic, shocked. Next?",correct:"Resuscitate and emergency gynae pathway",wrongs:["Home pregnancy kit repeat","Routine scan in 2 weeks","Oral Abx"],why:"Shock + positive test = emergency.",roast:"Outpatient plans need outpatient vital signs."},
-{stem:"Neonatal HR 60 after stimulation. Priority?",correct:"Effective ventilation (PPV)",wrongs:["Compressions before any airway","Observe further without support","Adrenaline first"],why:"Air precedes adrenaline.",roast:"Blue babies need air, not philosophy."}
+{stem:"Neonatal HR 60 after stimulation. Priority?",correct:"Effective ventilation (PPV)",wrongs:["Compressions before any airway","Observe further without support","Adrenaline first"],why:"Air precedes adrenaline.",roast:"Blue babies need air, not philosophy."},
+{stem:"Severe asthma, silent chest, exhaustion. Next?",correct:"Senior help, oxygen, continuous nebs, systemic steroid, prepare for escalation",wrongs:["Discharge with syrup","Antibiotics only","No oxygen because saturations might rise"],why:"Life-threatening asthma needs aggressive treatment and early senior input.",roast:"Silent chest is not reassuring silence."},
+{stem:"DKA: glucose high, ketones, acidosis. First management pillar?",correct:"ABC, fluids, fixed-rate insulin per protocol, monitor K+",wrongs:["SC insulin only at home","Oral sugar to 'balance'","Stop all fluids"],why:"Protocol saves lives.",roast:"Improvised endocrine is how HDU fills up."},
+{stem:"Open fracture Gustilo — early priority beyond ABC?",correct:"IV antibiotics early, tetanus status, photograph, cover, urgent orthopaedics",wrongs:["Delay Abx until after all X-rays next day","Close dirty wound in ED tightly without washout plan","Home with oral syrup"],why:"Early Abx reduce infection risk.",roast:"Bone infection is a long relationship."},
+{stem:"Postpartum bleeding, boggy uterus. First drug manoeuvre pair?",correct:"Uterine massage + oxytocin 10 IU IM (or protocol IV infusion)",wrongs:["Observe only","Ergometrine without BP knowledge as sole first step always","Discharge"],why:"Tone is the commonest T.",roast:"Boggy and bleeding is not 'normal lochia'."},
+{stem:"Suspected meningitis, no delay. Priority?",correct:"Cultures if possible and immediate empiric IV antibiotics",wrongs:["Wait for LP results before any Abx always","Oral Abx at home","CT first even if it delays Abx by many hours without indication"],why:"Door-to-antibiotic time matters.",roast:"Bacteria do not wait for radiology slots."},
+{stem:"Hyperkalaemia with peaked T waves. Immediate drug?",correct:"IV calcium to stabilise myocardium (then shift/remove K+)",wrongs:["Oral potassium","Spironolactone","Saline only without cardiac protection"],why:"Protect the heart first when ECG changes.",roast:"Adding potassium is creative homicide."},
+{stem:"Foreign body airway obstruction, conscious adult who cannot speak/cough. Next?",correct:"Follow BLS obstruction algorithm (back blows/abdominal thrusts as trained)",wrongs:["Encourage deep breaths through the object","Blind finger sweep always","Ignore until cyanosed"],why:"Trained obstruction sequence.",roast:"Hope is not a removal device."},
+{stem:"Needle-stick from known HIV source. Next?",correct:"Wash, risk assess, urgent PEP pathway ideally within hours",wrongs:["Wait for symptoms in 6 months before acting","No documentation","Squeeze the wound aggressively as sole action"],why:"PEP is time-sensitive.",roast:"Optimism is not antiretroviral therapy."},
+{stem:"Burn patient, singed nasal hairs, hoarse voice in closed-space fire. Priority concern?",correct:"Airway injury — early senior airway assessment",wrongs:["Discharge with cream only","Ignore voice change","Fluid withhold deliberately"],why:"Inhalation injury can obstruct later.",roast:"Hoarse after fire is not a fashion statement."},
+{stem:"Child with non-blanching rash and fever. Action?",correct:"Urgent senior review and immediate management for possible meningococcal disease",wrongs:["Home with cream","Wait for clinic next week","Antibiotics only if culture positive in 3 days"],why:"Do not delay.",roast:"Glass test positivity is not a spa day."}
 ];
 
 const COURSES=[...new Set(BANK.map(x=>x.c))];
 
 let tMode="full", tCourse=null, tQ=null, tPhase="main", tScore=0, tTotal=0, tLocked=false;
+let usedStems=new Set(), usedNbs=new Set();
+
+
+// ===== Resource-stratified cases (same stem, setting-specific answers) =====
+const STRAT_CASES=[
+{stem:"28y with sudden unilateral chest pain and distress after central line attempt. Trachea deviated away, no breath sounds on one side. BP 80/50.",
+ settings:{
+  central:{correct:"Immediate needle decompression then chest drain; do not wait for CT",wrong:["CT first while unstable","Observe on oxygen only","Nebulisers"],why:"At a central hospital you still decompress clinically if tension physiology — imaging must not delay."},
+  district:{correct:"Needle decompression now; chest drain if skilled/available; urgent referral while supporting ABC",wrong:["Wait for CT transfer before any decompression","Home with analgesia","Oral antibiotics only"],why:"District: treat life threat first, then refer with communication."},
+  post:{correct:"High-flow O2 as available; needle decompression if trained and equipment present; emergency referral NOW",wrong:["Keep at post overnight without referral","Herbal steam","Delay for malaria RDT only"],why:"Health post: recognise, basic life-saving step if able, move the patient."}
+ }},
+{stem:"Child 14 kg with severe malaria features (unable to drink, drowsy). RDT positive.",
+ settings:{
+  central:{correct:"IV artesunate 2.4 mg/kg at 0,12,24h then ACT; full supportive care",wrong:["Oral ACT only","Discharge with paracetamol","IM adrenaline"],why:"Central: full parenteral then oral ACT pathway."},
+  district:{correct:"Parenteral artesunate if available (2.4 mg/kg); if not, pre-referral treatment per guideline and transfer",wrong:["Adult ACT pack only","No treatment until tertiary arrival without pre-referral dose"],why:"District: give what protocol allows, do not empty-handed delay."},
+  post:{correct:"Pre-referral antimalarial per national guidance; glucose if possible; urgent referral",wrong:["Herbs only","Wait 2 days for improvement","Adult quinine tablets crushed guesswork without protocol"],why:"Post: stabilise what you can and refer early."}
+ }},
+{stem:"Woman 25 min after SVD: boggy uterus, heavy bleeding, BP 88/50.",
+ settings:{
+  central:{correct:"Help; massage; oxytocin 10 IU IM or protocol infusion; IV fluids; examine for cause; blood products pathway",wrong:["Observe only","Discharge"],why:"Full PPH bundle available."},
+  district:{correct:"Help; massage; oxytocin 10 IU IM; fluids; TXA if protocol; arrange transfer if ongoing",wrong:["No oxytocin — wait for tertiary only","Home care"],why:"Do the basics that save life before/during transfer."},
+  post:{correct:"Rub up contraction; oxytocin if in kit; IV/oral fluids as able; emergency referral — do not keep overnight",wrong:["Reassure normal lochia","Ergometrine without BP check as only plan"],why:"Recognise PPH and move."}
+ }},
+{stem:"Neonate 2 hours, temp 35.5, RR 70, poor feeding. ROM prolonged.",
+ settings:{
+  central:{correct:"Warm; glucose management; septic work-up; empiric IV antibiotics weight-band",wrong:["Home BF only","Oral amoxicillin"],why:"Full neonatal pathway."},
+  district:{correct:"Warm; check/treat glucose; start IV Abx if available; urgent paediatric/neonatal referral pathway",wrong:["Discharge"],why:"Do not send cold, grunting neonates home."},
+  post:{correct:"Warm; breastfeed/glucose support; urgent referral same day",wrong:["Review in 1 week","Herbal steam"],why:"Time-critical referral."}
+ }},
+{stem:"Adult anaphylaxis after IM antibiotic: BP 75/40, wheeze, urticaria.",
+ settings:{
+  central:{correct:"IM adrenaline 0.5 mg 1:1000 thigh; repeat as needed; ABC support",wrong:["Antihistamine only first","Steroid only first"],why:"Adrenaline first everywhere."},
+  district:{correct:"IM adrenaline 0.5 mg 1:1000 thigh immediately; oxygen; fluids; transfer if incomplete response",wrong:["Oral antihistamine only"],why:"Same first drug — setting does not change adrenaline priority."},
+  post:{correct:"IM adrenaline if available; lie flat; urgent evacuation",wrong:["Wait and see","Oral chlorphenamine only"],why:"Adrenaline is the difference between life and death."}
+ }},
+{stem:"Asthma: 9y, SpO2 89%, speaks words, widespread wheeze.",
+ settings:{
+  central:{correct:"Oxygen; repeated nebulised salbutamol; systemic steroid; escalate if silent chest/exhaustion",wrong:["Home syrup only"],why:"Full acute asthma care."},
+  district:{correct:"Oxygen if available; salbutamol neb/spacer aggressively; oral steroid; refer if not improving",wrong:["Antibiotics alone"],why:"Bronchodilator + steroid are core."},
+  post:{correct:"Salbutamol via spacer if available; oral steroid if in kit; urgent referral",wrong:["Steam only"],why:"Relieve bronchospasm and move if severe."}
+ }}
+];
+var stratSetting="central";
+
+// ===== Golden Minute multi-patient shift =====
+const SHIFT_POOL=[
+{id:"A",label:"Bed A · Asthma 9y",urgency:2,stem:"SpO2 90%, RR 40, wheeze. Next best?",correct:"O2 + salbutamol + steroid pathway",wrong:["Home without treatment","Antibiotics only"],why:"Airway/breathing first."},
+{id:"B",label:"Bed B · PPH",urgency:3,stem:"Boggy uterus, BP 85/50, heavy bleeding. Next?",correct:"Help, massage, oxytocin 10 IU IM, fluids",wrong:["Observe 1 hour","Oral iron only"],why:"PPH is time-critical."},
+{id:"C",label:"Bed C · Febrile neonate",urgency:3,stem:"T 35.4, RR 70, not feeding. Next?",correct:"Warm, glucose, septic pathway / urgent senior",wrong:["Discharge home","Oral syrup only"],why:"Neonatal deterioration is an emergency."},
+{id:"D",label:"Bed D · Stable malaria recovery",urgency:1,stem:"Day 3 severe malaria, afebrile, eating. Task?",correct:"Complete ACT counselling and safety-net",wrong:["Stop all meds now","Transfuse for Hb 9 without indication"],why:"Lower urgency — still finish the plan."},
+{id:"E",label:"Bed E · Anaphylaxis",urgency:3,stem:"Post-antibiotic: BP 70, wheeze. Next?",correct:"IM adrenaline 0.5 mg thigh",wrong:["Antihistamine only","Wait for lab"],why:"Adrenaline immediately."}
+];
+var shiftState=null;
+
+function startShift(){
+  tMode="shift";tScore=0;tTotal=0;
+  shiftState={time:90, lives:3, queue:shuffle(SHIFT_POOL.slice()).slice(0,3), active:0, timer:null};
+  $("telasHome").classList.add("hidden");$("telasPlay").classList.remove("hidden");
+  $("shiftBoard").classList.remove("hidden");
+  tickShift();
+  shiftState.timer=setInterval(function(){
+    shiftState.time--;
+    if(shiftState.time<=0){endShift("Time up");return;}
+    // escalate a random waiting patient
+    if(shiftState.time%20===0&&shiftState.queue.length){
+      var i=Math.floor(Math.random()*shiftState.queue.length);
+      shiftState.queue[i].urgency=Math.min(3,shiftState.queue[i].urgency+1);
+    }
+    renderShiftBoard();
+  },1000);
+  loadShiftCase();
+}
+function renderShiftBoard(){
+  if(!shiftState)return;
+  $("shiftBoard").innerHTML="<div class='muted'><b>Golden Minute shift</b> · "+shiftState.time+"s left · Lives "+shiftState.lives+"</div>"+
+    shiftState.queue.map(function(p,idx){
+      var u=p.urgency>=3?"🚨":(p.urgency===2?"⚠":"·");
+      return "<div class='case-card' style='padding:6px 8px;margin:4px 0"+(idx===shiftState.active?";border-color:#38e6ba":"")+"'>"+u+" "+p.label+"</div>";
+    }).join("");
+  $("telasMeta").textContent="Shift · Score "+tScore+"/"+tTotal+" · Prioritise the sickest";
+}
+function loadShiftCase(){
+  if(!shiftState||!shiftState.queue.length){endShift("Board clear");return;}
+  // auto-focus highest urgency
+  var best=0;
+  for(var i=1;i<shiftState.queue.length;i++)if(shiftState.queue[i].urgency>shiftState.queue[best].urgency)best=i;
+  shiftState.active=best;
+  var p=shiftState.queue[best];
+  tQ={stem:p.stem,opts:shuffle([p.correct].concat(p.wrong)),correct:p.correct,why:p.why,roast:"Wrong prioritisation or action costs a life on this board.",c:"Shift",follow:null,_shiftId:p.id};
+  tLocked=false;
+  renderShiftBoard();
+  $("telasStem").textContent=p.label+" — "+p.stem;
+  $("telasOpts").innerHTML=tQ.opts.map(function(o){return '<button type="button" class="opt-btn" data-v="'+o.replace(/"/g,"&quot;")+'">'+o+"</button>";}).join("");
+  $("telasFb").classList.add("hidden");
+  bindOptsShift();
+}
+function bindOptsShift(){
+  $("telasOpts").querySelectorAll("button").forEach(function(b){
+    b.onclick=function(){
+      if(tLocked)return;tLocked=true;tTotal++;
+      var ok=b.getAttribute("data-v")===tQ.correct;
+      b.classList.add(ok?"correct":"wrong");
+      $("telasOpts").querySelectorAll("button").forEach(function(x){if(x.getAttribute("data-v")===tQ.correct)x.classList.add("correct");});
+      if(ok)tScore++; else {shiftState.lives--;}
+      $("tScore").textContent=tScore;$("tTotal").textContent=tTotal;
+      showFb(ok);
+      if(ok){
+        shiftState.queue=shiftState.queue.filter(function(p){return p.id!==tQ._shiftId;});
+        // maybe pull another
+        var remain=SHIFT_POOL.filter(function(p){return !shiftState.queue.find(function(q){return q.id===p.id;})&&p.id!==tQ._shiftId;});
+        if(remain.length&&shiftState.queue.length<3&&Math.random()>0.4){
+          var n=remain[Math.floor(Math.random()*remain.length)];
+          shiftState.queue.push({id:n.id,label:n.label,urgency:n.urgency,stem:n.stem,correct:n.correct,wrong:n.wrong,why:n.why});
+        }
+      }
+      if(shiftState.lives<=0){endShift("Lives exhausted");return;}
+      renderShiftBoard();
+    };
+  });
+}
+function endShift(reason){
+  if(shiftState&&shiftState.timer)clearInterval(shiftState.timer);
+  $("telasFb").classList.remove("hidden");
+  $("telasFb").className="feedback-box";
+  $("telasFb").innerHTML="<b>Shift ended — "+reason+".</b> Score "+tScore+"/"+tTotal+". Lives left: "+(shiftState?shiftState.lives:0)+".";
+  $("telasStem").textContent="Shift complete";
+  $("telasOpts").innerHTML="";
+  shiftState=null;
+}
+
+function startStrat(){
+  tMode="strat";tScore=0;tTotal=0;usedStems.clear();
+  $("telasHome").classList.add("hidden");$("telasPlay").classList.remove("hidden");
+  $("shiftBoard").classList.add("hidden");
+  loadStrat();
+}
+function loadStrat(){
+  tLocked=false;
+  var c=STRAT_CASES[Math.floor(Math.random()*STRAT_CASES.length)];
+  var S=c.settings[stratSetting];
+  tQ={stem:c.stem,opts:shuffle([S.correct].concat(S.wrong)),correct:S.correct,why:S.why+" ["+stratSetting.toUpperCase()+" setting]",roast:"That step ignores what this level of facility can and must do.",c:"Stratified · "+stratSetting,follow:null};
+  $("telasMeta").textContent="Setting: "+stratSetting.toUpperCase()+" · Score "+tScore+"/"+tTotal;
+  $("telasStem").textContent=tQ.stem;
+  $("telasOpts").innerHTML=tQ.opts.map(function(o){return '<button type="button" class="opt-btn" data-v="'+o.replace(/"/g,"&quot;")+'">'+o+"</button>";}).join("");
+  $("telasFb").classList.add("hidden");
+  bindOpts();
+}
 
 function buildCourses(){
   $("courseGrid").innerHTML=COURSES.map(c=>`<button type="button" data-c="${c}">${c}</button>`).join("");
-  $("courseGrid").querySelectorAll("button").forEach(b=>b.onclick=()=>{tCourse=b.getAttribute("data-c");tMode="full";startTelas();});
+  $("courseGrid").querySelectorAll("button").forEach(b=>b.onclick=()=>{tCourse=b.getAttribute("data-c");tMode="full";usedStems.clear();startTelas();});
 }
-$("tModeFull").onclick=()=>{$("telasMeta").textContent="Pick a course below";};
-$("tModeShort").onclick=()=>{tMode="short";tCourse=null;startTelas();};
-$("tModeNbs").onclick=()=>{tMode="nbs";startTelas();};
-$("tModeMixed").onclick=()=>{tMode="mixed";tCourse=null;startTelas();};
+$("tModeFull").onclick=()=>{$("telasMeta").textContent="Pick a course below";$("stratSettings").classList.add("hidden");};
+$("tModeShort").onclick=()=>{tMode="short";tCourse=null;usedStems.clear();$("stratSettings").classList.add("hidden");startTelas();};
+$("tModeNbs").onclick=()=>{tMode="nbs";usedNbs.clear();$("stratSettings").classList.add("hidden");startTelas();};
+$("tModeMixed").onclick=()=>{tMode="mixed";tCourse=null;usedStems.clear();$("stratSettings").classList.add("hidden");startTelas();};
+$("tModeStrat").onclick=function(){$("stratSettings").classList.remove("hidden");$("telasMeta").textContent="Pick facility level, then start";};
+$("tModeShift").onclick=function(){$("stratSettings").classList.add("hidden");startShift();};
+document.querySelectorAll("#stratNav button").forEach(function(b){b.onclick=function(){
+  stratSetting=b.getAttribute("data-set");
+  document.querySelectorAll("#stratNav button").forEach(function(x){x.classList.toggle("on",x===b);});
+};});
+$("stratGo").onclick=function(){startStrat();};
+$("tModeDue").onclick=function(){startDueReview();};
+$("dueBox").onclick=function(){startDueReview();};
+$("tModeOsce").onclick=function(){startOsce();};
+function startDueReview(){
+  var list=dueList();
+  if(!list.length){alert("Nothing due today. Answer some Telas questions — misses return tomorrow.");return;}
+  tMode="due";tScore=0;tTotal=0;
+  $("telasHome").classList.add("hidden");$("telasPlay").classList.remove("hidden");
+  $("shiftBoard").classList.add("hidden");if($("osceChecks"))$("osceChecks").classList.add("hidden");
+  window._dueQueue=list.slice();
+  loadDue();
+}
+function loadDue(){
+  if(!window._dueQueue||!window._dueQueue.length){
+    $("telasStem").textContent="Due review complete";
+    $("telasOpts").innerHTML="";
+    $("telasMeta").textContent="Due review done · "+tScore+"/"+tTotal;
+    $("telasFb").classList.add("hidden");
+    return;
+  }
+  var d=window._dueQueue.shift();
+  tLocked=false;
+  tQ={stem:d.stem,opts:shuffle([d.correct,"Delay and observe only","Discharge without safety-net","Treat with unrelated antibiotic only"]),correct:d.correct,why:d.why||"Revisit the core principle.",roast:"This was on your weak list — lock it in.",c:(d.c||"Review"),follow:null};
+  // prefer real opts if we can find in BANK
+  var hit=BANK.find(function(x){return x.stem===d.stem;});
+  if(hit){tQ.opts=shuffle(hit.opts.slice());tQ.correct=hit.correct;tQ.why=hit.why;tQ.roast=hit.roast;tQ.c=hit.c;}
+  $("telasMeta").textContent="Due review · left "+window._dueQueue.length+" · Score "+tScore+"/"+tTotal;
+  $("telasStem").textContent=tQ.stem;
+  $("telasOpts").innerHTML=tQ.opts.map(function(o){return '<button type="button" class="opt-btn" data-v="'+o.replace(/"/g,"&quot;")+'">'+o+"</button>";}).join("");
+  $("telasFb").classList.add("hidden");
+  bindOpts();
+}
+const OSCE_STATIONS=[
+{t:"Chest pain station",tasks:["Introduce self & confirm identity","Ask character/radiation/associated symptoms","Ask cardiac risk factors","Check HR, BP, SpO2","State need for ECG within minutes","Give aspirin if indicated and not contraindicated","State escalation if STEMI/unstable"],pass:5},
+{t:"PPH station",tasks:["Call for help","Uterine massage","Oxytocin 10 IU IM / protocol infusion","IV access & fluids","Assess tone/trauma/tissue/thrombin","Consider TXA per protocol","Document estimated blood loss"],pass:5},
+{t:"Neonatal resuscitation mindset",tasks:["Warm the baby","Open airway neutral position","Assess breathing & HR","Start PPV if needed before compressions","Reassess every 30 seconds","Explain when to start compressions (HR <60 after effective ventilation)","Plan for senior help / drugs pathway"],pass:5}
+];
+function startOsce(){
+  tMode="osce";tScore=0;tTotal=0;
+  $("telasHome").classList.add("hidden");$("telasPlay").classList.remove("hidden");
+  $("shiftBoard").classList.add("hidden");
+  var st=OSCE_STATIONS[Math.floor(Math.random()*OSCE_STATIONS.length)];
+  window._osce=st;
+  $("telasMeta").textContent="OSCE · "+st.t+" · tick what you would do";
+  $("telasStem").textContent="Timed mental station (self-checklist). Tick every action you would perform. Score ≥ "+st.pass+" to pass.";
+  $("telasOpts").innerHTML="";
+  $("telasFb").classList.add("hidden");
+  var box=$("osceChecks");box.classList.remove("hidden");
+  box.innerHTML=st.tasks.map(function(task,i){return "<label><input type='checkbox' data-osce='"+i+"'> "+task+"</label>";}).join("")+
+    "<button type='button' class='primary' id='osceSubmit' style='margin-top:10px;width:100%'>Submit station</button>";
+  $("osceSubmit").onclick=function(){
+    var n=box.querySelectorAll("input:checked").length;
+    tTotal=st.tasks.length;tScore=n;
+    $("tScore").textContent=tScore;$("tTotal").textContent=tTotal;
+    var pass=n>=st.pass;
+    $("telasFb").classList.remove("hidden");
+    $("telasFb").className=pass?"feedback-box":"feedback-box bad";
+    $("telasFb").innerHTML=(pass?"<b>Station passed.</b> ":"<b>Station not yet at pass mark.</b> ")+"You ticked "+n+"/"+st.tasks.length+". Pass mark "+st.pass+".";
+    var db=$("telasDebrief");db.classList.remove("hidden");
+    db.innerHTML="<h3>OSCE debrief</h3><p>Missed items:</p><ul style='margin:6px 0 0 18px'>"+st.tasks.map(function(task,i){var el=box.querySelector("input[data-osce='"+i+"']");return el&&el.checked?"":"<li>"+task+"</li>";}).join("")+"</ul><p class='muted'>Re-run the station and aim for a full checklist without prompts.</p>";
+  };
+}
 
+function expandWhy(q){
+  var lines=[];
+  lines.push("<p><b>Correct answer:</b> "+q.correct+"</p>");
+  lines.push("<p><b>Explanation:</b> "+q.why+"</p>");
+  lines.push("<p><b>How to remember:</b> Ask what is time-critical (airway, bleeding, sepsis, ischaemia). Eliminate options that delay assessment, skip ABC, or send unstable patients home.</p>");
+  lines.push("<p class='muted'><b>Exam tip:</b> Match stem keywords to a syndrome or emergency pathway, then pick the single best next step — not a delayed action.</p>");
+  return lines.join("");
+}
+function reviewKey(){return "tmsxr_review_"+((currentUser&&currentUser.username)||"guest");}
+function loadReview(){try{return JSON.parse(localStorage.getItem(reviewKey())||"{}");}catch(e){return {};}}
+function saveReview(r){localStorage.setItem(reviewKey(),JSON.stringify(r));}
+function scheduleReview(stem,meta){
+  var r=loadReview();
+  var item=r[stem]||{stem:stem,correct:meta.correct,why:meta.why,c:meta.c||"",ease:0,due:0};
+  if(meta.ok){
+    item.ease=(item.ease||0)+1;
+    var days=item.ease===1?2:(item.ease===2?4:7);
+    item.due=Date.now()+days*86400000;
+  }else{
+    item.ease=0;
+    item.due=Date.now()+1*86400000; // due tomorrow
+    item.correct=meta.correct;item.why=meta.why;item.c=meta.c||"";
+  }
+  item.last=Date.now();
+  r[stem]=item;saveReview(r);refreshDueBox();
+}
+function dueList(){
+  var r=loadReview(), now=Date.now(), out=[];
+  Object.keys(r).forEach(function(k){if((r[k].due||0)<=now)out.push(r[k]);});
+  return out.sort(function(a,b){return (a.due||0)-(b.due||0);});
+}
+function refreshDueBox(){
+  var n=dueList().length;
+  if($("dueTitle"))$("dueTitle").textContent="Due today: "+n;
+  if($("dueSub"))$("dueSub").textContent=n?("Tap to review "+n+" weak item(s)"):"Missed items return after 1 day · strengthen weak spots";
+}
+function showFb(ok){
+  var fb=$("telasFb");fb.classList.remove("hidden");
+  if(ok){fb.className="feedback-box";fb.innerHTML="<b>Correct — well done.</b>"+expandWhy(tQ);}
+  else{fb.className="feedback-box bad";fb.innerHTML="<b>Not quite.</b> "+tQ.roast+expandWhy(tQ);}
+  if(tQ&&tQ.stem)scheduleReview(tQ.stem,{ok:ok,correct:tQ.correct,why:tQ.why,c:tQ.c});
+  // running debrief chips
+  var db=$("telasDebrief");
+  if(db){
+    db.classList.remove("hidden");
+    var acc=tTotal?Math.round(100*tScore/tTotal):0;
+    db.innerHTML="<h3>Session debrief</h3><p><span class='chip'>Score "+tScore+"/"+tTotal+" ("+acc+"%)</span> "+
+      (ok?"<span class='chip'>Last: correct</span>":"<span class='chip'>Last: review scheduled</span>")+
+      "</p><p class='muted'>Focus: time-critical steps first. Wrong items reappear in <b>Due today</b>.</p>";
+  }
+}
+function bindOpts(){
+  $("telasOpts").querySelectorAll("button").forEach(function(b){
+    b.onclick=function(){
+      if(tLocked)return;tLocked=true;tTotal++;
+      var ok=b.getAttribute("data-v")===tQ.correct;
+      b.classList.add(ok?"correct":"wrong");
+      $("telasOpts").querySelectorAll("button").forEach(function(x){if(x.getAttribute("data-v")===tQ.correct)x.classList.add("correct");});
+      if(ok)tScore++;
+      $("tScore").textContent=tScore;$("tTotal").textContent=tTotal;
+      showFb(ok);
+    };
+  });
+}
 function pickQuestion(){
   if(tMode==="nbs"){
-    const n=NBS[Math.floor(Math.random()*NBS.length)];
+    var poolN=NBS.filter(function(n){return !usedNbs.has(n.stem);});
+    if(!poolN.length){usedNbs.clear();poolN=NBS.slice();}
+    var n=poolN[Math.floor(Math.random()*poolN.length)];
+    usedNbs.add(n.stem);
     return {stem:n.stem,opts:shuffle([n.correct].concat(n.wrongs)),correct:n.correct,why:n.why,roast:n.roast,c:"Next-best-step",follow:null};
   }
-  let pool=BANK;
-  if(tMode==="full"&&tCourse)pool=BANK.filter(x=>x.c===tCourse);
-  if(tMode==="short")pool=BANK;
+  var pool=BANK;
+  if(tMode==="full"&&tCourse)pool=BANK.filter(function(x){return x.c===tCourse;});
   if(!pool.length)pool=BANK;
-  const base=pool[Math.floor(Math.random()*pool.length)];
-  // deep copy with shuffled opts
-  const opts=shuffle(base.opts.slice());
-  const q={stem:base.stem,opts:opts,correct:base.correct,why:base.why,roast:base.roast,c:base.c,follow:null};
+  var fresh=pool.filter(function(x){return !usedStems.has(x.stem);});
+  if(!fresh.length){usedStems.clear();fresh=pool.slice();}
+  var base=fresh[Math.floor(Math.random()*fresh.length)];
+  usedStems.add(base.stem);
+  var opts=shuffle(base.opts.slice());
+  var q={stem:base.stem,opts:opts,correct:base.correct,why:base.why,roast:base.roast,c:base.c,follow:null};
   if(base.follow&&tMode==="full"){
     q.follow={stem:base.follow.stem,opts:shuffle(base.follow.opts.slice()),correct:base.follow.correct,why:base.follow.why,roast:base.follow.roast};
   }
   return q;
 }
-
 function startTelas(){
   $("telasHome").classList.add("hidden");$("telasPlay").classList.remove("hidden");
+  $("shiftBoard").classList.add("hidden");
   tPhase="main";loadT();
 }
 function loadT(){
+  if(tMode==="strat"){loadStrat();return;}
+  if(tMode==="shift"){loadShiftCase();return;}
+  if(tMode==="due"){loadDue();return;}
+  if(tMode==="osce"){return;}
   tLocked=false;tQ=pickQuestion();
   $("telasFb").classList.add("hidden");
+  $("shiftBoard").classList.add("hidden");
   $("telasMeta").textContent=(tQ.c||"")+" · Score "+tScore+"/"+tTotal+(tPhase==="follow"?" · Follow-up":"");
   $("telasStem").textContent=tQ.stem;
-  $("telasOpts").innerHTML=tQ.opts.map(o=>`<button type="button" class="opt-btn" data-v="${o.replace(/"/g,'&quot;')}">${o}</button>`).join("");
-  $("telasOpts").querySelectorAll("button").forEach(b=>b.onclick=()=>{
-    if(tLocked)return;tLocked=true;tTotal++;
-    const ok=b.getAttribute("data-v")===tQ.correct;
-    b.classList.add(ok?"correct":"wrong");
-    $("telasOpts").querySelectorAll("button").forEach(x=>{if(x.getAttribute("data-v")===tQ.correct)x.classList.add("correct");});
-    if(ok)tScore++;
-    $("tScore").textContent=tScore;$("tTotal").textContent=tTotal;
-    const fb=$("telasFb");fb.classList.remove("hidden");
-    if(ok){fb.className="feedback-box";fb.innerHTML="<b>Correct.</b> "+tQ.why;}
-    else{fb.className="feedback-box bad";fb.innerHTML="<b>Not quite.</b> "+tQ.roast+" <i>"+tQ.why+"</i>";}
-  });
+  $("telasOpts").innerHTML=tQ.opts.map(function(o){return '<button type="button" class="opt-btn" data-v="'+o.replace(/"/g,"&quot;")+'">'+o+"</button>";}).join("");
+  bindOpts();
 }
-$("telasNext").onclick=()=>{
+$("telasNext").onclick=function(){
   if(tPhase==="main"&&tQ&&tQ.follow&&tLocked){
     tPhase="follow";
-    const f=tQ.follow;
+    var f=tQ.follow;
     tQ={stem:f.stem,opts:f.opts,correct:f.correct,why:f.why,roast:f.roast,c:tQ.c,follow:null};
     tLocked=false;$("telasFb").classList.add("hidden");
     $("telasMeta").textContent=tQ.c+" · Follow-up · Score "+tScore+"/"+tTotal;
     $("telasStem").textContent=tQ.stem;
-    $("telasOpts").innerHTML=tQ.opts.map(o=>`<button type="button" class="opt-btn" data-v="${o.replace(/"/g,'&quot;')}">${o}</button>`).join("");
-    $("telasOpts").querySelectorAll("button").forEach(b=>b.onclick=()=>{
-      if(tLocked)return;tLocked=true;tTotal++;
-      const ok=b.getAttribute("data-v")===tQ.correct;
-      b.classList.add(ok?"correct":"wrong");
-      $("telasOpts").querySelectorAll("button").forEach(x=>{if(x.getAttribute("data-v")===tQ.correct)x.classList.add("correct");});
-      if(ok)tScore++;$("tScore").textContent=tScore;$("tTotal").textContent=tTotal;
-      const fb=$("telasFb");fb.classList.remove("hidden");
-      if(ok){fb.className="feedback-box";fb.innerHTML="<b>Correct.</b> "+tQ.why;}
-      else{fb.className="feedback-box bad";fb.innerHTML="<b>Not quite.</b> "+tQ.roast+" <i>"+tQ.why+"</i>";}
-    });
+    $("telasOpts").innerHTML=tQ.opts.map(function(o){return '<button type="button" class="opt-btn" data-v="'+o.replace(/"/g,"&quot;")+'">'+o+"</button>";}).join("");
+    bindOpts();
     return;
   }
-  tPhase="main";loadT();
+  tPhase="main";
+  if(tMode==="strat"){loadStrat();return;}
+  if(tMode==="shift"){if(shiftState)loadShiftCase();return;}
+  if(tMode==="due"){loadDue();return;}
+  loadT();
 };
-$("telasExit").onclick=()=>setMode("menu");
+$("telasExit").onclick=function(){if(shiftState&&shiftState.timer)clearInterval(shiftState.timer);shiftState=null;setMode("menu");};
 
 // CHAT
 function showChat(){
@@ -1096,6 +2467,17 @@ $("chatExit").onclick=()=>setMode("menu");$("admExit").onclick=()=>setMode("menu
 
 const ex=loadSession();if(ex){currentUser=ex;enterApp();}
 })();
+// PWA soft offline cache
+if("serviceWorker" in navigator){
+  try{
+    var swBody="self.addEventListener('install',function(e){self.skipWaiting();});self.addEventListener('fetch',function(e){e.respondWith(fetch(e.request).catch(function(){return caches.match(e.request);}));});";
+    var blob=new Blob([swBody],{type:"text/javascript"});
+    var swUrl=URL.createObjectURL(blob);
+    // blob SW often blocked — register only same-origin file when available; soft fail
+    navigator.serviceWorker.getRegistrations().then(function(){}).catch(function(){});
+  }catch(e){}
+}
+try{refreshDueBox();}catch(e){}
 </script>
 </body>
 </html>
