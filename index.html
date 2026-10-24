@@ -7,7 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <title>TMS-XR Clinical Platform</title>
-<link rel="manifest" href="data:application/manifest+json,{"name":"TMS-XR","short_name":"TMS-XR","start_url":".","display":"standalone","background_color":"%23050d16","theme_color":"%23050d16"}">
+<!-- Manifest injected by JS for valid JSON (data-URL quoting is fragile in HTML attributes) -->
+<link rel="manifest" id="pwaManifest">
 <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
 <style>
 *{box-sizing:border-box}html,body{margin:0;height:100%;font-family:"Segoe UI",system-ui,sans-serif;background:#050d16;color:#e8f1f6}
@@ -236,7 +237,14 @@ body.auth-open a-scene{visibility:hidden!important;pointer-events:none!important
       <strong id="twinCardTitle">Your Patient Twin</strong>
       <p class="muted" id="twinCardSub" style="margin:4px 0 0">Ongoing case with doses, routes &amp; calculations — continues across visits</p>
     </div>
-    <input id="modSearch" placeholder="Search…" type="search">
+    <div id="weakMap" class="case-card" style="margin:8px 0;cursor:pointer">
+      <span class="tag">WEAK TOPICS</span>
+      <strong id="weakTitle">Personal weak-topic map</strong>
+      <p class="muted" id="weakSub" style="margin:4px 0 0">Answer Telas questions to build your map</p>
+      <div id="weakBars" style="margin-top:8px"></div>
+    </div>
+    <input id="modSearch" placeholder="Search modules, drugs, radiology, Telas…" type="search" autocomplete="off">
+    <div id="searchResults" class="hidden" style="max-height:220px;overflow:auto;margin:6px 0 10px"></div>
     <div id="modGrid">
       <div class="mod-section"><h2>Skills</h2>
         <div class="mod-grid">
@@ -326,7 +334,7 @@ body.auth-open a-scene{visibility:hidden!important;pointer-events:none!important
     <p>Score <strong id="procScore">0</strong></p><div class="progress-bg"><div class="progress" id="procBar"></div></div>
   </div>
   <div id="arBlock" class="hidden">
-    <p class="muted">Uses your <b>phone camera</b>. Point at an arm/pillow. Follow on-screen angle &amp; steps. Needs HTTPS + camera permission.</p>
+    <p class="muted"><b>Visual coaching overlay</b> (not marker-tracked AR). Uses your phone camera behind a fixed guide. Point at an arm/pillow and follow steps. Needs HTTPS + camera permission. Does not measure real needle angle.</p>
     <div class="subnav" id="arNav">
       <button type="button" data-ar="iv" class="on">IV angle</button>
       <button type="button" data-ar="im">IM site</button>
@@ -433,6 +441,15 @@ body.auth-open a-scene{visibility:hidden!important;pointer-events:none!important
 <!-- DRUGS (no VR) -->
 <section id="drugPanel" class="panel wide full hidden">
   <h1>Drug Physiology</h1>
+  <div id="ixBox" style="margin-bottom:10px;padding:10px;border-radius:10px;background:rgba(255,255,255,.04)">
+    <b>Interaction check</b>
+    <p class="muted" style="margin:4px 0">Pick up to 3 drugs — common teaching cautions (not a full formulary).</p>
+    <select id="ix1" style="width:100%;margin:4px 0;padding:8px;border-radius:8px;background:#0d2233;color:#e8f1f6;border:1px solid #345"></select>
+    <select id="ix2" style="width:100%;margin:4px 0;padding:8px;border-radius:8px;background:#0d2233;color:#e8f1f6;border:1px solid #345"></select>
+    <select id="ix3" style="width:100%;margin:4px 0;padding:8px;border-radius:8px;background:#0d2233;color:#e8f1f6;border:1px solid #345"></select>
+    <button type="button" class="primary" id="ixGo" style="width:100%;margin-top:6px">Check interactions</button>
+    <div id="ixOut" class="muted" style="margin-top:8px"></div>
+  </div>
   <div id="drugList"></div>
   <div id="drugDetail" class="hidden">
     <div class="status" id="drugStatus"></div>
@@ -510,9 +527,20 @@ body.auth-open a-scene{visibility:hidden!important;pointer-events:none!important
 (()=>{
 "use strict";
 const $=id=>document.getElementById(id);
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+function safeSetHTML(el,html){if(el)el.innerHTML=html;}
+function safeText(el,text){if(el)el.textContent=text;}
+function storageGet(key,fallback){try{var v=localStorage.getItem(key);return v==null?fallback:JSON.parse(v);}catch(e){return fallback;}}
+function storageSet(key,val){try{localStorage.setItem(key,JSON.stringify(val));return true;}catch(e){try{console.warn("storage",e);}catch(x){}return false;}}
+
 let mode="auth", currentUser=null, chatPeer=null;
 
-function getUsers(){try{return JSON.parse(localStorage.getItem("tmsxr_users")||"[]");}catch(e){return[];}}
+function getUsers(){try{var u=JSON.parse(localStorage.getItem("tmsxr_users")||"[]");
+  // Harden: never treat Consultant as admin; only username admin
+  var changed=false;
+  u.forEach(function(x){if(x.isAdmin&&x.username!=="admin"){x.isAdmin=false;changed=true;}});
+  if(changed)try{localStorage.setItem("tmsxr_users",JSON.stringify(u));}catch(e){}
+  return u;}catch(e){return[];}}
 function saveUsers(u){localStorage.setItem("tmsxr_users",JSON.stringify(u));}
 function setSession(u){localStorage.setItem("tmsxr_session",JSON.stringify({username:u.username}));currentUser=u;}
 function clearSession(){localStorage.removeItem("tmsxr_session");}
@@ -527,7 +555,8 @@ $("btnRegister").onclick=async()=>{
   const name=($("regName").value||"").trim(),user=($("regUser").value||"").trim().toLowerCase().split(" ").join(""),pass=$("regPass").value||"",role=$("regRole").value;
   $("regErr").textContent="";if(!name||!user||pass.length<4){$("regErr").textContent="Complete all fields (password ≥4)";return;}
   const users=getUsers();if(users.some(u=>u.username===user)){$("regErr").textContent="Username taken";return;}
-  users.push({name,username:user,passHash:await hashPass(pass),role,avatar:"👩‍⚕️",isAdmin:user==="admin"||role.indexOf("Consultant")>=0,createdAt:new Date().toISOString()});
+  // Professional role ≠ platform admin. Only explicit username "admin" is admin (or pre-seeded account).
+  users.push({name,username:user,passHash:await hashPass(pass),role,avatar:"👩‍⚕️",isAdmin:(user==="admin"),createdAt:new Date().toISOString()});
   saveUsers(users);setSession(users[users.length-1]);logAct("register");enterApp();
 };
 $("btnLogin").onclick=async()=>{
@@ -564,7 +593,9 @@ function fixCam(){
 }
 function setMode(m){
   mode=m;$("welcome").classList.toggle("hidden",m!=="menu");hideAll();
-  if(m==="menu"){try{refreshTwinCard();refreshDueBox();}catch(e){}}
+  // Always stop camera when leaving procedures/AR
+  if(m!=="proc"){try{stopARCam();}catch(e){}}
+  if(m==="menu"){try{refreshTwinCard();refreshDueBox();refreshWeakMap();}catch(e){}}
   if(needsVR[m]){document.body.classList.remove("no-vr");}else{document.body.classList.add("no-vr");}
   if(needsVR[m])setTimeout(fixCam,50);
   if(m!=="menu")logAct("open",m);
@@ -573,15 +604,158 @@ function setMode(m){
   else if(m==="delivery"){$("delPanel").classList.remove("hidden");$("delScene").setAttribute("visible",true);}
   else if(m==="surg"){$("surgPanel").classList.remove("hidden");$("surgScene").setAttribute("visible",true);showSurgList();}
   else if(m==="radiology"){$("radPanel").classList.remove("hidden");showRad();}
-  else if(m==="drugs"){$("drugPanel").classList.remove("hidden");showDrugs();}
+  else if(m==="drugs"){$("drugPanel").classList.remove("hidden");showDrugs();fillIxSelects();if($("ixGo"))$("ixGo").onclick=runIx;}
   else if(m==="telas"){$("telasPanel").classList.remove("hidden");$("telasHome").classList.remove("hidden");$("telasPlay").classList.add("hidden");buildCourses();refreshDueBox();}
   else if(m==="chat"){$("chatPanel").classList.remove("hidden");showChat();}
-  else if(m==="admin"){$("adminPanel").classList.remove("hidden");const L=JSON.parse(localStorage.getItem("tmsxr_activity")||"[]");$("admLog").innerHTML=L.slice(0,50).map(x=>`<div>${x.name} · ${x.action} ${x.detail||""} · ${new Date(x.time).toLocaleString()}</div>`).join("")||"Empty";}
+  else if(m==="admin"){$("adminPanel").classList.remove("hidden");const L=JSON.parse(localStorage.getItem("tmsxr_activity")||"[]");$("admLog").innerHTML=L.slice(0,50).map(x=>"<div>"+esc(x.name)+" · "+esc(x.action)+" "+esc(x.detail||"")+" · "+esc(new Date(x.time).toLocaleString())+"</div>").join("")||"Empty";}
   else if(m==="twin"){$("twinPanel").classList.remove("hidden");openTwin();}
 }
 document.querySelectorAll("[data-mod]").forEach(b=>b.onclick=()=>setMode(b.getAttribute("data-mod")));
-$("homeBtn").onclick=()=>setMode("menu");$("btnAdmin").onclick=()=>setMode("admin");
-$("modSearch").oninput=function(){const q=this.value.toLowerCase();document.querySelectorAll("#modGrid button[data-mod]").forEach(b=>{b.style.display=!q||((b.getAttribute("data-keys")||"")+b.textContent).toLowerCase().includes(q)?"":"none";});};
+$("homeBtn").onclick=function(){try{stopARCam();}catch(e){}setMode("menu");};$("btnAdmin").onclick=()=>setMode("admin");
+function refreshWeakMap(){
+  var r=loadReview(), counts={}, total=0;
+  Object.keys(r).forEach(function(k){
+    var item=r[k]; total++;
+    var c=(item.c||"General").split("·")[0].trim()||"General";
+    if(!counts[c])counts[c]={n:0,ease:0};
+    counts[c].n++;
+    counts[c].ease+=(item.ease||0);
+    // weight recent misses more
+    if((item.due||0)<=Date.now())counts[c].n+=1;
+  });
+  var arr=Object.keys(counts).map(function(k){return {c:k,score:counts[k].n,ease:counts[k].ease};});
+  arr.sort(function(a,b){return b.score-a.score;});
+  var top=arr.slice(0,5);
+  if($("weakTitle"))$("weakTitle").textContent=top.length?("Focus: "+top[0].c):"Personal weak-topic map";
+  if($("weakSub"))$("weakSub").textContent=total?("Based on "+total+" tracked Telas items · tap a bar to open that course"):"Answer Telas questions to build your map";
+  var max=top.length?top[0].score:1;
+  if($("weakBars"))$("weakBars").innerHTML=top.map(function(x){
+    var pct=Math.max(8,Math.round(100*x.score/max));
+    return "<div data-weak=\""+x.c.replace(/"/g,"")+"\" style=\"margin:4px 0;cursor:pointer\"><div class=\"muted\" style=\"font-size:11px\">"+x.c+" · pressure "+x.score+"</div><div style=\"height:8px;background:#1a3a4a;border-radius:99px;overflow:hidden\"><div style=\"height:100%;width:"+pct+"%;background:linear-gradient(90deg,#e74c3c,#f0c84a)\"></div></div></div>";
+  }).join("")||"<span class='muted'>No data yet</span>";
+  if($("weakBars"))$("weakBars").querySelectorAll("[data-weak]").forEach(function(el){
+    el.onclick=function(ev){
+      ev.stopPropagation();
+      var course=el.getAttribute("data-weak");
+      setMode("telas");
+      tCourse=course;tMode="full";usedStems.clear();
+      // try exact course match from COURSES
+      var hit=(typeof COURSES!=="undefined"?COURSES:[]).find(function(c){return c.toLowerCase().indexOf(course.toLowerCase())>=0||course.toLowerCase().indexOf(c.toLowerCase())>=0;});
+      if(hit)tCourse=hit;
+      startTelas();
+    };
+  });
+}
+function globalSearch(q){
+  q=(q||"").toLowerCase().trim();
+  var box=$("searchResults");
+  if(!box)return;
+  if(!q){box.classList.add("hidden");box.innerHTML="";document.querySelectorAll("#modGrid button[data-mod]").forEach(function(b){b.style.display="";});return;}
+  document.querySelectorAll("#modGrid button[data-mod]").forEach(function(b){
+    b.style.display=!q||((b.getAttribute("data-keys")||"")+b.textContent).toLowerCase().indexOf(q)>=0?"":"none";
+  });
+  var hits=[];
+  // modules
+  document.querySelectorAll("#modGrid button[data-mod]").forEach(function(b){
+    var label=b.textContent.replace(/\s+/g," ").trim();
+    if(label.toLowerCase().indexOf(q)>=0||(b.getAttribute("data-keys")||"").indexOf(q)>=0)
+      hits.push({type:"Module",title:label,go:function(){setMode(b.getAttribute("data-mod"));}});
+  });
+  // drugs
+  if(typeof DRUGS!=="undefined")DRUGS.forEach(function(d,i){
+    var blob=(d.t+" "+d.ind+" "+(d.detail||"")).toLowerCase();
+    if(blob.indexOf(q)>=0)hits.push({type:"Drug",title:d.t,sub:d.ind,go:function(){setMode("drugs");setTimeout(function(){openDrugIndex(i);},50);}});
+  });
+  // radiology
+  if(typeof RAD!=="undefined")RAD.forEach(function(r,i){
+    var blob=(r.t+" "+r.m+" "+r.f+" "+(r.lab||"")).toLowerCase();
+    if(blob.indexOf(q)>=0)hits.push({type:r.m,title:r.t,sub:r.f.slice(0,80),go:function(){setMode("radiology");setTimeout(function(){openRadIndex(i);},50);}});
+  });
+  // telas courses
+  if(typeof COURSES!=="undefined")COURSES.forEach(function(c){
+    if(c.toLowerCase().indexOf(q)>=0)hits.push({type:"Telas course",title:c,go:function(){setMode("telas");tCourse=c;tMode="full";usedStems.clear();startTelas();}});
+  });
+  // twin patients
+  if(typeof TWIN_DEFS!=="undefined")TWIN_DEFS.forEach(function(p){
+    if((p.name+" "+p.dx).toLowerCase().indexOf(q)>=0)hits.push({type:"Twin",title:p.name,sub:p.dx,go:function(){setMode("twin");}});
+  });
+  hits=hits.slice(0,20);
+  box.classList.remove("hidden");
+  if(!hits.length){box.innerHTML="<p class='muted'>No matches</p>";return;}
+  box.innerHTML=hits.map(function(h,idx){return "<div class='case-card' data-hit='"+idx+"'><span class='tag'>"+h.type+"</span> <strong>"+h.title+"</strong>"+(h.sub?"<br><span class='muted'>"+h.sub+"</span>":"")+"</div>";}).join("");
+  box.querySelectorAll("[data-hit]").forEach(function(el){
+    el.onclick=function(){hits[+el.getAttribute("data-hit")].go();box.classList.add("hidden");$("modSearch").value="";};
+  });
+}
+function openDrugIndex(i){
+  showDrugs();
+  var d=DRUGS[i];if(!d)return;
+  $("drugList").classList.add("hidden");$("drugDetail").classList.remove("hidden");
+  $("drugStatus").innerHTML="<strong>"+d.t+"</strong>";
+  $("drugBody").innerHTML="<p><b>Indications:</b> "+d.ind+"</p><p><b>Adult dosing:</b> "+d.ad+"</p><p><b>Children:</b> "+d.ch+"</p><p><b>How it works (MOA):</b> "+d.moa+"</p><p><b>Cautions / contraindications:</b> "+d.ci+"</p>"+(d.detail?"<p><b>Clinical notes:</b> "+d.detail+"</p>":"")+(d.monitor?"<p><b>What to monitor:</b> "+d.monitor+"</p>":"")+"<p class='muted'>Educational summary — confirm local STG before prescribing.</p>";
+}
+function openRadIndex(i){
+  showRad();
+  var r=RAD[i];if(!r)return;
+  $("radList").classList.add("hidden");$("radDetail").classList.remove("hidden");
+  $("radStatus").innerHTML='<span class="tag">'+r.m+"</span> <strong>"+r.t+"</strong>";
+  $("radVisual").innerHTML=(r.svg||"")+'<p class="muted" style="margin-top:8px">Teaching schematic (not a real patient image)</p>';
+  $("radBody").innerHTML="<p><b>Classical imaging / pattern:</b> "+r.f+"</p>"+(r.depth?"<p><b>In more depth:</b> "+r.depth+"</p>":"")+(r.lab?"<p><b>Labs & correlation:</b> "+r.lab+"</p>":"")+"<p><b>Clinical tip:</b> "+r.tip+"</p>";
+}
+$("modSearch").oninput=function(){globalSearch(this.value);};
+$("modSearch").onfocus=function(){if(this.value)globalSearch(this.value);};
+
+// Drug interaction checker (teaching pairs)
+const IX_RULES=[
+{a:"rifampicin",b:"art",msg:"Rifampicin induces enzymes — many ART regimens need adjustment (e.g. DTG dosing strategies). Check national ART/TB co-treatment guidance."},
+{a:"rifampicin",b:"tdf/3tc/dtg",msg:"Rifampicin + DTG: use approved adjusted DTG dosing or alternative per national guideline — do not ignore the interaction."},
+{a:"rifampicin",b:"contraceptive",msg:"Enzyme induction can reduce hormonal contraceptive efficacy — counsel extra contraception."},
+{a:"enalapril",b:"spironolactone",msg:"ACEI + potassium-sparing diuretic → hyperkalaemia risk. Check K+ and creatinine."},
+{a:"enalapril",b:"co-trimoxazole",msg:"ACEI/ARB + trimethoprim can raise potassium — monitor in elderly/renal impairment."},
+{a:"spironolactone",b:"co-trimoxazole",msg:"Additive hyperkalaemia risk with trimethoprim component."},
+{a:"gentamicin",b:"furosemide",msg:"Aminoglycoside + loop diuretic — increased ototoxicity/nephrotoxicity risk; monitor."},
+{a:"ibuprofen",b:"enalapril",msg:"NSAID + ACEI (especially with diuretic) can worsen renal function — 'triple whammy' caution."},
+{a:"ibuprofen",b:"furosemide",msg:"NSAID may blunt diuretic effect and stress kidneys when volume depleted."},
+{a:"metformin",b:"gentamicin",msg:"Hold metformin in acute kidney injury risk contexts; aminoglycosides also nephrotoxic — sick-day rules."},
+{a:"warfarin",b:"co-trimoxazole",msg:"TMP-SMX potentiates warfarin — INR rises; avoid or monitor closely."},
+{a:"warfarin",b:"metronidazole",msg:"Metronidazole can potentiate warfarin — monitor INR."},
+{a:"clarithromycin",b:"simvastatin",msg:"Macrolide CYP3A4 inhibition + some statins → myopathy risk (simvastatin often contraindicated)."},
+{a:"ciprofloxacin",b:"ibuprofen",msg:"Quinolone + NSAID — theoretical CNS stimulation/seizure threshold teaching caution."},
+{a:"adrenaline",b:"atenolol",msg:"Beta-blockers may antagonise some adrenaline effects in anaphylaxis — still give adrenaline IM; senior support."},
+{a:"morphine",b:"diazepam",msg:"Opioid + benzo — additive respiratory depression."},
+{a:"morphine",b:"promethazine",msg:"Sedation and respiratory depression risk when stacked."},
+{a:"oxytocin",b:"misoprostol",msg:"Both uterotonic — used in protocols together carefully; excess tone/hyperstimulation risk in labour contexts."},
+{a:"magnesium sulfate",b:"nifedipine",msg:"MgSO4 + CCB — monitor BP closely for hypotension."},
+{a:"magnesium sulfate",b:"labetalol",msg:"Combined antihypertensives/Mg — monitor maternal BP and fetal status."},
+{a:"insulin",b:"glibenclamide",msg:"Additive hypoglycaemia — unusual combination outside specialist plans."},
+{a:"salbutamol",b:"atenolol",msg:"Non-selective or high-dose beta-blockers can antagonise beta-agonist bronchodilation."},
+{a:"artesunate",b:"artemether–lumefantrine",msg:"Parenteral artesunate is followed by a full oral ACT course — sequential, not duplicate same-day confusion."},
+{a:"ketamine",b:"haloperidol",msg:"Both affect CNS; emergence vs sedation balance — trained use only."},
+{a:"naloxone",b:"morphine",msg:"Naloxone reverses opioid effect — may need repeat doses as naloxone wears off."}
+];
+function fillIxSelects(){
+  if(typeof DRUGS==="undefined")return;
+  var opts='<option value="">— select —</option>'+DRUGS.map(function(d){return '<option value="'+d.t.replace(/"/g,"&quot;")+'">'+d.t+"</option>";}).join("");
+  ["ix1","ix2","ix3"].forEach(function(id){if($(id))$(id).innerHTML=opts;});
+}
+function runIx(){
+  var picks=[$("ix1").value,$("ix2").value,$("ix3").value].filter(Boolean);
+  var out=$("ixOut");
+  if(picks.length<2){out.innerHTML="Select at least two drugs.";return;}
+  var msgs=[], low=picks.map(function(p){return p.toLowerCase();});
+  IX_RULES.forEach(function(rule){
+    var hitA=low.some(function(p){return p.indexOf(rule.a)>=0;});
+    var hitB=low.some(function(p){return p.indexOf(rule.b)>=0;});
+    // special art bucket
+    if(rule.b==="art")hitB=low.some(function(p){return p.indexOf("tdf")>=0||p.indexOf("dtg")>=0||p.indexOf("art")>=0;});
+    if(hitA&&hitB)msgs.push(rule.msg);
+  });
+  // generic same-class notes
+  if(low.filter(function(p){return p.indexOf("ibuprofen")>=0||p.indexOf("paracetamol")>=0;}).length>=1){}
+  if(!msgs.length)out.innerHTML="<span class='muted'>No teaching-rule match in the mini checker. That does <b>not</b> mean safe — still check STG/reference and renal/hepatic status.</span>";
+  else out.innerHTML="<b>Teaching cautions:</b><ul style='margin:6px 0 0 18px'>"+msgs.map(function(m){return "<li>"+m+"</li>";}).join("")+"</ul>";
+}
+
 
 
 // ========== PATIENT TWIN (roster + Hx/Exam + deaths/slots) ==========
@@ -1243,18 +1417,18 @@ setTimeout(function(){var c=$("twinCard");if(c)c.onclick=function(){setMode("twi
 
 // PROCEDURES — IV/blood are click-driven on 3D tools
 const PROCS={
-iv:{t:"IV cannulation — click tools in 3D",mode:"click",steps:[
-  {need:"pTourn",hint:"1/5 Click TOURNIQUET to apply it",pts:20},
-  {need:"pSwab",hint:"2/5 Click SWAB to clean the site",pts:20},
-  {need:"pVein",hint:"3/5 Click VEIN to select it",pts:20,reveal:"pVein"},
-  {need:"pCann",hint:"4/5 Click CANNULA to insert",pts:20,reveal:"pCann"},
-  {need:"pFlush",hint:"5/5 Click FLUSH — then secure and document",pts:20}
+iv:{t:"IV cannulation — ordered skill sequence",mode:"click",steps:[
+  {need:"pTourn",hint:"Step 1/5 — Apply TOURNIQUET proximal to the intended site (tight enough to engorge veins, not arterial occlusion).",pts:20,ok:"Tourniquet applied. Veins should fill — then clean without releasing yet.",bad:"Wrong item. Apply the tourniquet before cleaning or puncturing."},
+  {need:"pSwab",hint:"Step 2/5 — Clean with SWAB (antiseptic). Allow to dry; do not re-touch the site.",pts:20,ok:"Site cleaned. Allow drying time in real practice before needle insertion.",bad:"Clean next. Inserting before skin prep raises infection risk."},
+  {need:"pVein",hint:"Step 3/5 — Select a suitable VEIN (straight, well-filled segment). Avoid joints when possible.",pts:20,reveal:"pVein",ok:"Vein selected. In practice: stabilise skin, bevel up, shallow angle (~15–30°).",bad:"Select the vein only after tourniquet and cleaning."},
+  {need:"pCann",hint:"Step 4/5 — Insert CANNULA: advance until flashback, lower angle, advance catheter, remove needle safely.",pts:20,reveal:"pCann",ok:"Cannula inserted (simulated flashback). Never reinsert needle into catheter.",bad:"Cannula comes after vein selection. Watch angle and flashback on the ward."},
+  {need:"pFlush",hint:"Step 5/5 — Release tourniquet, FLUSH/secure, dispose sharps, document size/site/date.",pts:20,ok:"Line flushed and secured (simulated). Document and monitor the site.",bad:"Flush/secure is last among these steps — after successful insertion."}
 ]},
-blood:{t:"Venepuncture — click tools in 3D",mode:"click",steps:[
-  {need:"pTourn",hint:"1/4 Click TOURNIQUET",pts:25},
-  {need:"pSwab",hint:"2/4 Click SWAB to clean",pts:25},
-  {need:"pVein",hint:"3/4 Click VEIN",pts:25,reveal:"pVein"},
-  {need:"pTube",hint:"4/4 Click TUBE — fill, gentle invert, label at bedside",pts:25}
+blood:{t:"Venepuncture — ordered skill sequence",mode:"click",steps:[
+  {need:"pTourn",hint:"Step 1/4 — Apply TOURNIQUET; position arm; identify vein.",pts:25,ok:"Tourniquet on. Avoid leaving it on longer than needed.",bad:"Start with tourniquet to engorge the vein."},
+  {need:"pSwab",hint:"Step 2/4 — Clean with SWAB; allow dry.",pts:25,ok:"Skin prepared. Do not re-palpate after cleaning unless sterile technique allows.",bad:"Clean before needle or tube collection."},
+  {need:"pVein",hint:"Step 3/4 — Select VEIN; stabilise; insert bevel up.",pts:25,reveal:"pVein",ok:"Vein chosen. Anchor the vein with your non-dominant hand in real practice.",bad:"Vein selection follows cleaning."},
+  {need:"pTube",hint:"Step 4/4 — Fill TUBE(s) in correct order, gentle invert, label at bedside, release tourniquet.",pts:25,ok:"Sample secured. Never label away from the patient.",bad:"Collection tube is the final tool in this sequence."}
 ]},
 cath:{t:"Urethral catheter",mode:"choice",s:[
 {q:"Setup",o:["Indication, consent, strict asepsis","Catheter for staff convenience only","No sterile field"],a:0},
@@ -1269,13 +1443,13 @@ trach:{t:"Tracheostomy care",mode:"choice",s:[
 {q:"Suctioning",o:["Pre-oxygenate if needed, brief sterile suction","Suction continuously for minutes","Never clear secretions"],a:0}
 ]}
 };
-let pk="iv",pi=0,ps=0,pWaiting=null;
+let pk="iv",pi=0,ps=0,pWaiting=null,pAttempts=0,pWrong=0,pStart=0,pLog=[];
 function resetProc3D(){
   ["pVein","pCann"].forEach(id=>{const e=$(id);if(e)e.setAttribute("visible","false");});
   ["pTourn","pSwab","pTube","pFlush","pVein","pCann"].forEach(id=>{const e=$(id);if(e){e.setAttribute("material","emissive","#000000");e.setAttribute("material","emissiveIntensity","0");}});
 }
 function loadProc(k){
-  pk=k;pi=0;ps=0;pWaiting=null;
+  pk=k;pi=0;ps=0;pWaiting=null;pAttempts=0;pWrong=0;pLog=[];pStart=Date.now();
   document.querySelectorAll("#procNav button").forEach(b=>b.classList.toggle("on",b.getAttribute("data-p")===k));
   if(k==="ar"){
     $("procSimBlock").classList.add("hidden");
@@ -1358,13 +1532,23 @@ function rp(){
   const P=PROCS[pk];$("procTitle").textContent=P.t;$("procScore").textContent=ps;
   if(P.mode==="click"){
     $("procBar").style.width=(pi/P.steps.length*100)+"%";
-    if(pi>=P.steps.length){$("procText").textContent="Complete — score "+ps+"/100.";$("procChoices").innerHTML="";pWaiting=null;
-      var pd=$("procDebrief");if(pd){pd.classList.remove("hidden");pd.innerHTML="<h3>Procedure debrief</h3><p>Score <b>"+ps+"/100</b> on "+P.t+".</p><p class='muted'>Repeat until the sequence is automatic. Say each step aloud before clicking. On the ward: consent, asepsis, and documentation still apply.</p>";}
-      return;}
+    if(pi>=P.steps.length){
+      var secs=Math.max(1,Math.round((Date.now()-pStart)/1000));
+      $("procText").textContent="Complete — score "+ps+"/100 in "+secs+"s ("+pWrong+" wrong click"+(pWrong===1?"":"s")+").";
+      $("procChoices").innerHTML="";pWaiting=null;
+      var pd=$("procDebrief");
+      if(pd){
+        pd.classList.remove("hidden");
+        var tips=pLog.length?("<ol style='margin:6px 0 0 18px'>"+pLog.map(function(x){return "<li>"+x+"</li>";}).join("")+"</ol>"):"<p class='muted'>Clean run — no wrong-tool events logged.</p>";
+        pd.innerHTML="<h3>Procedure debrief</h3><p><b>"+P.t+"</b></p><p>Score <b>"+ps+"/100</b> · Time <b>"+secs+"s</b> · Wrong clicks <b>"+pWrong+"</b> · Total clicks <b>"+pAttempts+"</b></p>"+tips+"<p class='muted'>Ward checklist still required: indication, consent, asepsis, sharps, documentation. This is sequence practice, not a full sterile-field sim.</p>";
+      }
+      try{logAct("proc_complete",pk+" "+ps+"/100");}catch(e){}
+      return;
+    }
     const s=P.steps[pi];pWaiting=s.need;
     if(s.reveal){const r=$(s.reveal);if(r)r.setAttribute("visible","true");}
     $("procText").textContent=s.hint;
-    $("procChoices").innerHTML="<p class='muted'>Click the labelled tool in the 3D field with the mouse.</p>";
+    $("procChoices").innerHTML="<p class='muted'>Click the correct labelled tool in the 3D field. Wrong tools explain the mistake without advancing.</p><p class='muted'>Attempts this run: "+pAttempts+" · Wrong: "+pWrong+"</p>";
     return;
   }
   pWaiting=null;
@@ -1380,10 +1564,23 @@ function rp(){
 }
 function onProcClick(id){
   if(mode!=="proc"||!pWaiting)return;
-  if(id!==pWaiting){$("procText").textContent="Wrong tool — need "+pWaiting.replace(/^p/,"").toUpperCase()+" (step "+(pi+1)+")";return;}
+  pAttempts++;
   const P=PROCS[pk];const s=P.steps[pi];
+  if(id!==pWaiting){
+    pWrong++;
+    ps=Math.max(0,ps-3);
+    $("procScore").textContent=ps;
+    var msg=(s.bad||("Wrong tool. Need step item: "+pWaiting.replace(/^p/,"").toUpperCase()));
+    $("procText").textContent=msg+" (still on step "+(pi+1)+"/"+P.steps.length+")";
+    pLog.push("Step "+(pi+1)+": wrong tool ("+id.replace(/^p/,"")+") — "+msg);
+    return;
+  }
   const el=$(id);if(el){el.setAttribute("material","emissive","#38e6ba");el.setAttribute("material","emissiveIntensity","0.45");}
-  ps+=s.pts;$("procScore").textContent=ps;pi++;rp();
+  ps+=s.pts;$("procScore").textContent=ps;
+  if(s.ok)$("procText").textContent=s.ok;
+  pLog.push("Step "+(pi+1)+": correct — "+(s.ok||s.hint));
+  pi++;
+  setTimeout(function(){rp();},400);
 }
 ["pTourn","pSwab","pVein","pCann","pTube","pFlush"].forEach(id=>{const el=$(id);if(el)el.addEventListener("click",function(){onProcClick(id);});});
 document.querySelectorAll("#procNav button").forEach(b=>b.onclick=()=>loadProc(b.getAttribute("data-p")));
@@ -1461,76 +1658,549 @@ $("surgExit").onclick=()=>setMode("menu");
 
 // RADIOLOGY with SVG schematics
 const RAD=[
-{t:"Tension pneumothorax",m:"CXR",f:"No lung markings one side, mediastinum shifted away, depressed diaphragm.",tip:"If unstable — decompress immediately; do not wait for the film.",svg:'<svg viewBox="0 0 200 120" width="220"><rect x="20" y="10" width="70" height="100" rx="30" fill="#1a3038" stroke="#5af" stroke-width="2"/><rect x="110" y="10" width="70" height="100" rx="30" fill="#0a1520" stroke="#5af" stroke-width="2"/><line x1="145" y1="20" x2="145" y2="100" stroke="#3a8" stroke-width="1" stroke-dasharray="4"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Shift →</text></svg>'},
-{t:"Lobar consolidation",m:"CXR",f:"Dense opacity in a lobe ± air bronchograms.",tip:"Correlate with fever, hypoxia, CURB-65/local severity.",svg:'<svg viewBox="0 0 200 120" width="220"><rect x="30" y="10" width="140" height="100" rx="40" fill="#1a3038" stroke="#5af"/><path d="M50,30 Q100,50 50,90" fill="#8ac" opacity="0.7"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Opacity</text></svg>'},
-{t:"Gallstones",m:"Ultrasound",f:"Bright echogenic foci with posterior acoustic shadowing.",tip:"US first-line for suspected gallstones.",svg:'<svg viewBox="0 0 200 120" width="220"><ellipse cx="100" cy="55" rx="50" ry="35" fill="#1a3840" stroke="#5af"/><circle cx="90" cy="50" r="8" fill="#eee"/><polygon points="86,58 94,58 90,100" fill="#234" opacity="0.6"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Shadowing</text></svg>'},
-{t:"Acute ICH",m:"CT head",f:"Hyperdense blood on non-contrast CT.",tip:"Non-contrast CT is first-line for suspected ICH.",svg:'<svg viewBox="0 0 200 120" width="220"><ellipse cx="100" cy="60" rx="55" ry="45" fill="#1a3038" stroke="#5af"/><ellipse cx="120" cy="55" rx="18" ry="14" fill="#ccc"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Hyperdense blood</text></svg>'},
-{t:"Pulmonary embolism",m:"CTPA",f:"Intraluminal filling defect in pulmonary arteries.",tip:"Use clinical probability + D-dimer pathways.",svg:'<svg viewBox="0 0 200 120" width="220"><circle cx="100" cy="60" r="40" fill="#1a3038" stroke="#5af"/><line x1="100" y1="25" x2="100" y2="95" stroke="#5af"/><circle cx="100" cy="60" r="10" fill="#c45"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Filling defect</text></svg>'},
-{t:"Small bowel obstruction",m:"AXR/CT",f:"Dilated loops, air-fluid levels; look for transition point on CT.",tip:"Examine hernial orifices clinically.",svg:'<svg viewBox="0 0 200 120" width="220"><path d="M30,60 Q60,20 90,60 Q120,100 150,60 Q170,40 180,60" fill="none" stroke="#8cf" stroke-width="8"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Dilated loops</text></svg>'}
+{t:"Tension pneumothorax",m:"CXR",f:"Visceral pleural line with absent peripheral markings; contralateral mediastinal shift; depressed hemidiaphragm. On supine films: deep sulcus sign.",depth:"Erect CXR is classic teaching, but unstable patients are treated clinically. Differentiate from simple PTX (no shift). After drain: confirm lung re-expansion and tube position.",lab:"ABG may show hypoxaemia ± respiratory acidosis if tiring; not required before decompression if peri-arrest.",tip:"Unstable → needle/finger decompression then intercostal drain — do not wait for radiology.",svg:'<svg viewBox="0 0 200 120" width="220"><rect x="20" y="10" width="70" height="100" rx="30" fill="#1a3038" stroke="#5af" stroke-width="2"/><rect x="110" y="10" width="70" height="100" rx="30" fill="#0a1520" stroke="#5af" stroke-width="2"/><line x1="145" y1="20" x2="145" y2="100" stroke="#3a8" stroke-width="1" stroke-dasharray="4"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Shift away</text></svg>'},
+{t:"Lobar consolidation (pneumonia)",m:"CXR",f:"Dense lobar opacity ± air bronchograms; silhouette sign helps localise (e.g. right heart border = RML).",depth:"Correlate with fever, cough, hypoxia. Round pneumonia in children can mimic mass. Always compare with old films if available.",lab:"↑WCC/CRP support infection but are non-specific; blood cultures if septic; sputum if productive and changes management.",tip:"Treat the patient — mild CXR changes with severe sepsis still need urgent antimicrobials.",svg:'<svg viewBox="0 0 200 120" width="220"><rect x="30" y="10" width="140" height="100" rx="40" fill="#1a3038" stroke="#5af"/><path d="M50,30 Q100,50 50,90" fill="#8ac" opacity="0.7"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Lobar opacity</text></svg>'},
+{t:"Pulmonary oedema (cardiogenic)",m:"CXR",f:"Bat-wing alveolar shadowing, Kerley B lines, upper lobe diversion, cardiomegaly, pleural effusions.",depth:"Distinguish from ARDS (often normal heart size, risk factors). Clinical correlation with S3, raised JVP, response to diuretics.",lab:"↑BNP/NT-proBNP supports cardiac strain/failure; troponin if ACS suspected; ABG for gas exchange.",tip:"Sit up, oxygen, nitrates if BP allows, diuretic — imaging confirms, does not replace ABC.",svg:'<svg viewBox="0 0 200 120" width="220"><rect x="30" y="15" width="140" height="90" rx="35" fill="#1a3038" stroke="#5af"/><path d="M40,60 Q100,20 160,60 Q100,100 40,60" fill="#6af" opacity="0.35"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Bat-wing</text></svg>'},
+{t:"Small bowel obstruction",m:"AXR / CT",f:"AXR: dilated central loops, valvulae conniventes, multiple air-fluid levels. CT: transition point, cause (hernia, adhesions, tumour), ischaemia signs.",depth:"Examine hernial orifices. CT preferred when available for level/cause/complications. Free air suggests perforation.",lab:"↑WCC/lactate raise concern for ischaemia/strangulation; U&E for dehydration/vomiting losses; ABG if shocked.",tip:"Pain out of proportion + lactate → think ischaemia, urgent surgical review.",svg:'<svg viewBox="0 0 200 120" width="220"><rect x="20" y="20" width="160" height="80" fill="#1a3038" stroke="#5af"/><path d="M40,40 h30 v20 h-30 z M80,50 h40 v25 h-40 z M50,70 h50 v15 h-50 z" fill="none" stroke="#8cf" stroke-width="2"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Dilated loops</text></svg>'},
+{t:"Gallstones / cholecystitis",m:"Ultrasound",f:"Echogenic calculi with posterior acoustic shadowing; cholecystitis: thick wall, pericholecystic fluid, sonographic Murphy’s sign.",depth:"US is first-line for biliary colic/cholecystitis. CBD dilatation prompts further assessment for choledocholithiasis (MRCP/ERCP pathway).",lab:"↑WCC in cholecystitis; obstructive LFTs (↑ALP, ↑GGT, ±↑bilirubin) if duct obstruction; lipase if pancreatitis suspected.",tip:"Raised ALP + bilirubin → think biliary obstruction, not only stones in the gallbladder.",svg:'<svg viewBox="0 0 200 120" width="220"><ellipse cx="100" cy="55" rx="50" ry="35" fill="#1a3840" stroke="#5af"/><circle cx="90" cy="50" r="8" fill="#eee"/><polygon points="86,58 94,58 90,100" fill="#234" opacity="0.6"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Shadowing</text></svg>'},
+{t:"Appendicitis (imaging adjunct)",m:"US / CT",f:"US: non-compressible blind-ending tubular structure >6 mm, hyperaemia, free fluid. CT: thickened appendix, fat stranding, faecolith ± perforation/abscess.",depth:"Clinical diagnosis remains central. US useful in children/pregnancy to reduce radiation; CT more sensitive when equivocal in adults.",lab:"↑WCC/CRP support inflammation but normal values do not fully exclude; β-hCG in women of reproductive age before imaging/surgery.",tip:"Always rule out pregnancy before radiation or theatre in appropriate patients.",svg:'<svg viewBox="0 0 200 120" width="220"><ellipse cx="100" cy="60" rx="60" ry="40" fill="#1a3038" stroke="#5af"/><path d="M120,50 q20,20 5,40" fill="none" stroke="#f86" stroke-width="4"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">RLQ appendix</text></svg>'},
+{t:"Acute intracerebral haemorrhage",m:"CT head (non-contrast)",f:"Hyperdense blood on non-contrast CT; location suggests aetiology (basal ganglia hypertensive; lobar amyloid/AVM).",depth:"First-line in suspected stroke with possible haemorrhage. CTA may follow for aneurysm/AVM if SAH/surgical candidate. MRI later for characterisation.",lab:"Coagulation profile, platelets, glucose; BP management targets per protocol; reverse anticoagulation when indicated.",tip:"Non-contrast CT before thrombolysis decisions — haemorrhage is a contraindication.",svg:'<svg viewBox="0 0 200 120" width="220"><ellipse cx="100" cy="60" rx="55" ry="45" fill="#1a3038" stroke="#5af"/><ellipse cx="120" cy="55" rx="18" ry="14" fill="#ccc"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Hyperdense blood</text></svg>'},
+{t:"Ischaemic stroke (early CT / MRI)",m:"CT / MRI",f:"Early CT may be normal or show hyperdense vessel, loss of grey-white differentiation, insular ribbon sign. MRI DWI: bright restricted diffusion within minutes–hours.",depth:"CT rules out bleed and large established infarct. MRI more sensitive for early ischaemia and posterior fossa. Time window drives reperfusion therapy.",lab:"Glucose (must exclude hypo); coagulation if lysis/thrombectomy pathway; ECG for AF.",tip:"Time is brain — do not delay pathway for non-essential tests.",svg:'<svg viewBox="0 0 200 120" width="220"><ellipse cx="100" cy="60" rx="55" ry="45" fill="#1a3038" stroke="#5af"/><path d="M70,50 h40 v25 h-40 z" fill="#246" opacity="0.8"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Early CT ± subtle</text></svg>'},
+{t:"Pulmonary embolism",m:"CTPA / VQ",f:"CTPA: intraluminal filling defect in pulmonary arteries. CXR often normal or non-specific. US legs if DVT pathway used.",depth:"Use clinical probability (Wells/revised Geneva) + D-dimer in appropriate patients. CTPA contraindicated in some renal/contrast allergy contexts — VQ alternative.",lab:"D-dimer (rules out in low probability when negative); ABG non-specific; troponin/BNP for right heart strain risk stratification.",tip:"High probability + shock → treat/resuscitate pathway, do not only chase a perfect scan.",svg:'<svg viewBox="0 0 200 120" width="220"><circle cx="100" cy="60" r="40" fill="#1a3038" stroke="#5af"/><line x1="100" y1="25" x2="100" y2="95" stroke="#5af"/><circle cx="100" cy="60" r="10" fill="#c45"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Filling defect</text></svg>'},
+{t:"Aortic dissection (thoracic)",m:"CT angiography",f:"Intimal flap with true/false lumen on CTA; CXR may show widened mediastinum (insensitive).",depth:"Sudden tearing chest/back pain + pulse deficit/neuro signs. CTA chest is workhorse when stable enough; TOE/MRI in selected cases.",lab:"D-dimer sometimes elevated (non-specific); troponin may rise if coronary ostia involved; crossmatch if surgery.",tip:"Control HR/BP per protocol; do not give thrombolysis for presumed ACS until dissection excluded when suspected.",svg:'<svg viewBox="0 0 200 120" width="220"><rect x="85" y="15" width="30" height="90" rx="8" fill="#1a3038" stroke="#5af"/><line x1="100" y1="20" x2="100" y2="100" stroke="#f66" stroke-width="2"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Intimal flap</text></svg>'},
+{t:"Hydronephrosis / renal colic",m:"US / non-contrast CT KUB",f:"US: dilated pelvicalyceal system. CT KUB: stone density, size, level of obstruction, secondary signs of obstruction.",depth:"US first in pregnancy/young patients when possible; CT gold standard for ureteric stones in many pathways.",lab:"Urinalysis (blood common in stone); U&E for renal function; CRP/WCC if infection with obstruction (emergency).",tip:"Obstructed infected kidney (fever + hydronephrosis) needs urgent decompression + antibiotics.",svg:'<svg viewBox="0 0 200 120" width="220"><ellipse cx="100" cy="55" rx="35" ry="45" fill="#1a3038" stroke="#5af"/><ellipse cx="100" cy="50" rx="15" ry="20" fill="#3ad" opacity="0.5"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Dilated PCS</text></svg>'},
+{t:"Ectopic pregnancy (adjunct imaging)",m:"Transvaginal US",f:"Empty uterus + adnexal mass/ring + free fluid; definitive if fetal pole/heartbeat outside uterus.",depth:"Diagnose with β-hCG + TVUS pathway. Unstable patients go to theatre, not prolonged imaging.",lab:"Urine/serum β-hCG; FBC; group and save; progesterone sometimes used in protocols for PUL.",tip:"Positive pregnancy test + shock = resuscitate and urgent gynae — not outpatient scan.",svg:'<svg viewBox="0 0 200 120" width="220"><ellipse cx="100" cy="65" rx="50" ry="35" fill="#1a3038" stroke="#5af"/><circle cx="140" cy="55" r="12" fill="#c45"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Adnexal + empty uterus</text></svg>'},
+{t:"Osteomyelitis / discitis (MRI)",m:"MRI",f:"Marrow oedema (T2/STIR bright), cortical destruction, soft-tissue/collection; discitis: disc and endplate involvement.",depth:"MRI is most sensitive for early osteomyelitis. X-ray is often normal early. CT for bony detail/biopsy planning.",lab:"↑ESR/CRP; blood cultures before antibiotics if possible; WCC variable; culture from biopsy when needed.",tip:"Back pain + fever + raised CRP → consider discitis/spinal infection and urgent imaging pathway.",svg:'<svg viewBox="0 0 200 120" width="220"><rect x="70" y="20" width="60" height="80" fill="#1a3038" stroke="#5af"/><rect x="75" y="50" width="50" height="12" fill="#c45" opacity="0.7"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Marrow / disc oedema</text></svg>'},
+{t:"Liver lesions & biliary dilatation",m:"US / CT / MRI",f:"US screens cysts/solid lesions and biliary dilatation. Triple-phase CT/MRI characterises tumours (e.g. HCC arterial enhancement, washout).",depth:"History of cirrhosis/hepatitis changes probability of HCC. MRCP for ductal anatomy without radiation.",lab:"LFTs pattern: raised ALP/GGT ± bilirubin → cholestasis/obstruction; raised ALT/AST → hepatocyte injury; AFP in HCC surveillance contexts.",tip:"Isolated raised ALP: think cholestasis, bone disease, or infiltration — pair with GGT and imaging.",svg:'<svg viewBox="0 0 200 120" width="220"><path d="M50,30 Q100,10 150,30 L140,90 Q100,110 60,90 Z" fill="#1a3830" stroke="#5af"/><circle cx="110" cy="55" r="12" fill="#da4"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Lesion ± ducts</text></svg>'},
+{t:"Deep vein thrombosis",m:"Duplex US",f:"Non-compressible vein, visible thrombus, absent/abnormal flow on Doppler.",depth:"First-line for suspected limb DVT. Extend field if high suspicion and proximal symptoms. CT/MR venography rarely for complex cases.",lab:"D-dimer in low/intermediate probability pathways; FBC/coag baseline before anticoagulation; thrombophilia tests not acute priority.",tip:"Wells score + D-dimer can avoid unnecessary US in low-risk negative dimer patients.",svg:'<svg viewBox="0 0 200 120" width="220"><rect x="40" y="40" width="120" height="40" rx="20" fill="#1a3038" stroke="#5af"/><ellipse cx="100" cy="60" rx="25" ry="12" fill="#c45"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Non-compressible</text></svg>'},
+{t:"Meningitis / encephalitis imaging role",m:"CT / MRI",f:"CT often normal in early meningitis; used to exclude mass effect before LP when indicated. MRI more sensitive for encephalitis (e.g. temporal lobe HSV).",depth:"Do not delay antibiotics for imaging if no LP contraindication pathway requires CT. LP remains key for meningitis diagnosis.",lab:"CSF: bacterial — low glucose, high protein, neutrophilia; viral — lymphocytic, normal glucose often; PCR for pathogens; blood cultures.",tip:"Antibiotics first if LP delayed; CT only when features suggest raised ICP/mass.",svg:'<svg viewBox="0 0 200 120" width="220"><ellipse cx="100" cy="60" rx="50" ry="40" fill="#1a3038" stroke="#5af"/><path d="M60,60 Q100,40 140,60" fill="none" stroke="#6cf" stroke-width="3"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">CT often normal early</text></svg>'},
+// ---- LABS module entries (tagged as LAB) ----
+{t:"Raised ALP (alkaline phosphatase)",m:"LAB",f:"Cholestatic pattern when paired with ↑GGT/bilirubin; isolated ↑ALP may be bone or pregnancy (placental isoform).",depth:"Suspect: bile duct obstruction (stone, stricture, cancer), cholangitis, infiltrative liver disease, bone metastases/Paget’s, growing children (physiological).",lab:"Always interpret with GGT, ALT/AST, bilirubin, calcium/phosphate, and clinical context. Image biliary tree if cholestatic.",tip:"↑ALP + ↑GGT → liver/biliary; ↑ALP + normal GGT → think bone.",svg:'<svg viewBox="0 0 200 120" width="220"><rect x="30" y="20" width="140" height="80" rx="8" fill="#1a3038" stroke="#5af"/><text x="100" y="55" fill="#8cf" font-size="14" text-anchor="middle">ALP ↑</text><text x="100" y="80" fill="#8ab" font-size="10" text-anchor="middle">+GGT → biliary</text></svg>'},
+{t:"Raised ALT/AST (hepatocellular)",m:"LAB",f:"Hepatocyte injury pattern. AST>ALT can suggest alcohol or ischaemic hepatitis (very high levels); ALT often higher in viral/toxic.",depth:"Causes: viral hepatitis, drugs (including paracetamol), ischaemia, autoimmune, NAFLD/NASH, biliary (mixed).",lab:"Pair with bilirubin, ALP, INR/albumin (synthetic function), paracetamol level if overdose context, viral serology as indicated.",tip:"AST/ALT in thousands → ischaemic or toxic (e.g. paracetamol) until proven otherwise.",svg:'<svg viewBox="0 0 200 120" width="220"><rect x="30" y="20" width="140" height="80" rx="8" fill="#1a3038" stroke="#5af"/><text x="100" y="60" fill="#8cf" font-size="14" text-anchor="middle">ALT/AST ↑↑</text></svg>'},
+{t:"Hyperkalaemia",m:"LAB",f:"K+ above local upper limit; ECG: peaked T, flattened P, wide QRS, sine wave if severe.",depth:"Causes: AKI, drugs (ACEi, spironolactone, trimethoprim), cell lysis, acidosis. Treat membrane stabilisation + shift + removal.",lab:"Repeat to exclude haemolysis artefact; check U&E, glucose, ABG/HCO3; continuous monitoring if ECG changes.",tip:"ECG changes → IV calcium first while shifting/removing K+.",svg:'<svg viewBox="0 0 200 120" width="220"><polyline points="20,80 40,80 50,20 60,80 90,80 100,40 110,80 180,80" fill="none" stroke="#f66" stroke-width="2"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Peaked T</text></svg>'},
+{t:"Hyponatraemia work-up pattern",m:"LAB",f:"Low Na+; interpret with serum osmolality, urine Na/osmolality, volume status.",depth:"Hypovolaemic vs euvolaemic (SIADH) vs hypervolaemic (heart failure, cirrhosis). Correct chronic hyponatraemia slowly to avoid ODS.",lab:"Paired serum/urine osmolality & urine Na; glucose (hyperglycaemia lowers Na); TFTs/cortisol when indicated.",tip:"Do not jump to fluid restriction until you know the category.",svg:'<svg viewBox="0 0 200 120" width="220"><rect x="30" y="20" width="140" height="80" rx="8" fill="#1a3038" stroke="#5af"/><text x="100" y="60" fill="#8cf" font-size="14" text-anchor="middle">Na+ ↓</text></svg>'},
+{t:"Elevated troponin",m:"LAB",f:"Marker of myocardial injury — not automatically equal to Type 1 MI.",depth:"Rise/fall pattern + symptoms/ECG defines ACS. Other causes: PE, sepsis, myocarditis, renal failure, tachyarrhythmia.",lab:"Serial troponins; ECG essential; BNP if failure; D-dimer/CTPA if PE likely.",tip:"Treat the clinical syndrome — high troponin alone is not a stent ticket.",svg:'<svg viewBox="0 0 200 120" width="220"><polyline points="20,70 60,70 80,20 100,70 180,70" fill="none" stroke="#f86" stroke-width="2"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">Rise and fall</text></svg>'},
+{t:"D-dimer pathways",m:"LAB",f:"Sensitive but not specific fibrin degradation marker.",depth:"Use to exclude VTE in low/intermediate clinical probability. High probability → imaging, not dimer-only rule-out. Elevated in infection, cancer, pregnancy, age.",lab:"Interpret with Wells score; age-adjusted thresholds used in some protocols.",tip:"Never use a positive D-dimer alone to prove PE/DVT.",svg:'<svg viewBox="0 0 200 120" width="220"><rect x="30" y="20" width="140" height="80" rx="8" fill="#1a3038" stroke="#5af"/><text x="100" y="60" fill="#8cf" font-size="12" text-anchor="middle">D-dimer</text></svg>'},
+{t:"CSF interpretation",m:"LAB",f:"Bacterial: ↑WCC (neutrophils), ↓glucose, ↑protein. Viral: lymphocytes, normal/slightly low glucose. TB: lymphocytes, low glucose, high protein.",depth:"Opening pressure, Gram stain, culture, PCR (including HSV). Traumatic tap complicates RBC interpretation.",lab:"Always pair CSF with blood glucose. Blood cultures in suspected meningitis.",tip:"Do not delay antimicrobials if LP is delayed and meningitis is likely.",svg:'<svg viewBox="0 0 200 120" width="220"><rect x="40" y="25" width="120" height="70" rx="8" fill="#1a3038" stroke="#5af"/><text x="100" y="65" fill="#8cf" font-size="11" text-anchor="middle">CSF pattern</text></svg>'},
+{t:"Anaemia pattern (MCV)",m:"LAB",f:"Microcytic (iron deficiency, thalassaemia); normocytic (acute blood loss, chronic disease); macrocytic (B12/folate, alcohol, drugs).",depth:"Iron studies, ferritin, B12/folate, reticulocytes, film. In pregnancy and children use age-specific ranges.",lab:"Ferritin low in iron deficiency (can rise as acute phase); smear for haemolysis signs with bilirubin/LDH/haptoglobin.",tip:"Microcytic anaemia in adult men or post-menopausal women → exclude bleeding source.",svg:'<svg viewBox="0 0 200 120" width="220"><circle cx="70" cy="60" r="25" fill="#a33"/><circle cx="130" cy="60" r="35" fill="#a33" opacity="0.7"/><text x="100" y="115" fill="#8ab" font-size="10" text-anchor="middle">MCV small vs large</text></svg>'},
+{t:"AKI (creatinine/urea rise)",m:"LAB",f:"Rise in creatinine/oliguria; stage by KDIGO criteria.",depth:"Pre-renal (hypovolaemia), renal (ATN, GN, drugs), post-renal (obstruction — scan). Hyperkalaemia and acidosis are emergencies.",lab:"U&E, bicarbonate, K+, urine dip, bladder scan/US for obstruction, drug review (ACEi, NSAIDs, gentamicin).",tip:"Stop nephrotoxins, optimise volume, treat hyperkalaemia — image if obstruction possible.",svg:'<svg viewBox="0 0 200 120" width="220"><rect x="30" y="20" width="140" height="80" rx="8" fill="#1a3038" stroke="#5af"/><text x="100" y="60" fill="#8cf" font-size="14" text-anchor="middle">Cr ↑  K+ ?</text></svg>'}
 ];
 function showRad(){
   $("radList").classList.remove("hidden");$("radDetail").classList.add("hidden");
-  $("radList").innerHTML=RAD.map((r,i)=>`<div class="case-card" data-i="${i}"><span class="tag">${r.m}</span><strong>${r.t}</strong></div>`).join("");
-  $("radList").querySelectorAll(".case-card").forEach(el=>el.onclick=()=>{
-    const r=RAD[+el.dataset.i];$("radList").classList.add("hidden");$("radDetail").classList.remove("hidden");
-    $("radStatus").innerHTML=`<span class="tag">${r.m}</span> <strong>${r.t}</strong>`;
-    $("radVisual").innerHTML=r.svg+'<p class="muted" style="margin-top:8px">Teaching schematic (not a real patient image)</p>';
-    $("radBody").innerHTML=`<p><b>Classic finding:</b> ${r.f}</p><p><b>Clinical tip:</b> ${r.tip}</p>`;
-  });
+  $("radList").innerHTML=RAD.map(function(r,i){return '<div class="case-card" data-i="'+i+'"><span class="tag">'+r.m+'</span><strong>'+r.t+"</strong></div>";}).join("");
+  $("radList").querySelectorAll(".case-card").forEach(function(el){el.onclick=function(){
+    var r=RAD[+el.dataset.i];$("radList").classList.add("hidden");$("radDetail").classList.remove("hidden");
+    $("radStatus").innerHTML='<span class="tag">'+r.m+"</span> <strong>"+r.t+"</strong>";
+    $("radVisual").innerHTML=(r.svg||"")+'<p class="muted" style="margin-top:8px">Teaching schematic (not a real patient image)</p>';
+    $("radBody").innerHTML="<p><b>Classical imaging / pattern:</b> "+r.f+"</p>"+
+      (r.depth?"<p><b>In more depth:</b> "+r.depth+"</p>":"")+
+      (r.lab?"<p><b>Labs & correlation:</b> "+r.lab+"</p>":"")+
+      "<p><b>Clinical tip:</b> "+r.tip+"</p>";
+  };});
 }
 $("radBack").onclick=showRad;$("radExit").onclick=()=>setMode("menu");
 
 // DRUGS — common Zambian / regional essential medicines (educational; always follow Zambian STGs / facility protocol)
 const DRUGS=[
-{t:"Artemether–Lumefantrine (ACT)",ind:"Uncomplicated P. falciparum malaria",ad:"Weight-based 6-dose regimen over 3 days (e.g. 4 tabs at 0,8,24,36,48,60h if ≥35 kg — confirm chart)",ch:"Weight-band dosing per national malaria guidelines; with fatty food when possible",moa:"Artemisinin rapid parasite clearance; lumefantrine longer partner drug",ci:"Severe malaria needs parenteral artesunate first; allergy; caution severe hepatic disease"},
-{t:"Injectable Artesunate",ind:"Severe malaria",ad:"2.4 mg/kg IV/IM at 0,12,24h then daily until oral ACT possible",ch:"Same 2.4 mg/kg schedule (WHO); then complete oral ACT",moa:"Rapid blood schizonticide",ci:"Hypersensitivity; ensure transition to full ACT course"},
-{t:"Amoxicillin",ind:"Community infections (e.g. otitis, pneumonia per STG, UTI in some contexts)",ad:"500 mg–1 g TDS (or local STG)",ch:"Weight-based ~20–40 mg/kg/day divided; max adult dose limits",moa:"Beta-lactam cell-wall inhibition",ci:"Penicillin allergy; adjust in severe renal impairment"},
-{t:"Amoxicillin–Clavulanate",ind:"Broader cover when beta-lactamase likely (per STG)",ad:"Per product strength TDS or BD",ch:"Weight-based; watch diarrhoea",moa:"Amoxicillin + beta-lactamase inhibitor",ci:"Penicillin allergy; hepatic dysfunction caution"},
-{t:"Ceftriaxone",ind:"Severe bacterial infections, meningitis (per STG), typhoid options, gonorrhoea regimens vary",ad:"1–2 g IV/IM daily (higher in meningitis per protocol)",ch:"50–100 mg/kg/day (meningitis higher end); max adult caps",moa:"3rd-gen cephalosporin cell-wall inhibition",ci:"Severe cephalosporin allergy; neonates: calcium interaction with IV ceftriaxone"},
-{t:"Metronidazole",ind:"Anaerobes, amoebiasis, giardiasis, bacterial vaginosis, C. diff adjunct contexts",ad:"400–500 mg TDS oral; IV per severity",ch:"7.5 mg/kg TDS (max adult)",moa:"Disrupts anaerobic DNA",ci:"Avoid alcohol (disulfiram-like); caution 1st trimester — follow obstetric advice"},
-{t:"Ciprofloxacin",ind:"Selected Gram-negatives, typhoid (sensitivity), complicated UTI (stewardship)",ad:"500 mg BD oral typical",ch:"Often avoided in children unless benefit > risk (cartilage concerns); specialist",moa:"Fluoroquinolone DNA gyrase inhibition",ci:"Tendinopathy; QT; pregnancy/children restrictions; interactions (cations)"},
-{t:"Co-trimoxazole (TMP–SMX)",ind:"PCP prophylaxis/treatment in HIV; some UTIs/skin per resistance",ad:"Prophylaxis 960 mg daily (or per HIV guideline); treatment higher",ch:"Weight-based prophylaxis/treatment charts in HIV guidelines",moa:"Sequential folate pathway block",ci:"Sulfa allergy; G6PD caution; hyperkalaemia; pregnancy trimester rules"},
-{t:"Doxycycline",ind:"Malaria prophylaxis options, some STI, rickettsia, alternative pneumonia",ad:"100 mg daily or BD by indication",ch:"Avoid under 8–12 y when alternatives exist (tooth staining)",moa:"Tetracycline — protein synthesis 30S",ci:"Pregnancy; young children; photosensitivity; oesophagitis — sit upright"},
-{t:"Benzylpenicillin / X-pen",ind:"Strep infections, syphilis regimens, severe sepsis combinations per STG",ad:"IM/IV dosing highly regimen-specific",ch:"Unit/kg dosing per indication",moa:"Beta-lactam",ci:"Penicillin allergy — anaphylaxis risk"},
-{t:"Gentamicin",ind:"Gram-negative cover, synergy in some regimens; neonatal sepsis protocols",ad:"5–7 mg/kg ideal body weight daily (extended interval) if used — levels/renal monitor",ch:"Neonatal protocols mg/kg; monitor",moa:"Aminoglycoside 30S",ci:"Renal impairment, ototoxicity; avoid with other ototoxins"},
-{t:"ORS (Oral Rehydration Salt)",ind:"Dehydration from diarrhoea",ad:"Volume by dehydration severity; continue with feeds",ch:"Plan A/B/C per IMCI — teaspoon/cup measures; zinc co-therapy",moa:"Na–glucose cotransport rehydration",ci:"Severe shock needs IV fluids first"},
-{t:"Zinc sulfate",ind:"Adjunct in childhood diarrhoea",ad:"N/A primarily paediatric public health",ch:"20 mg daily ×10–14 days (≥6 mo); 10 mg if <6 mo",moa:"Supports mucosal recovery / reduces duration",ci:"Vomiting if on empty stomach — give with feeds"},
-{t:"Paracetamol (Acetaminophen)",ind:"Pain, fever",ad:"500 mg–1 g QDS (max 4 g/day)",ch:"15 mg/kg/dose QDS (max per age chart)",moa:"Central COX / analgesic antipyretic",ci:"Hepatic impairment; overdose → N-acetylcysteine pathway"},
-{t:"Ibuprofen",ind:"Pain, inflammation, fever",ad:"400 mg TDS with food typical",ch:"5–10 mg/kg/dose; avoid if dehydrated/renal risk",moa:"NSAID COX inhibition",ci:"Peptic ulcer, AKI, heart failure, 3rd trimester pregnancy"},
-{t:"Morphine",ind:"Moderate–severe pain, palliative, MI pain protocols",ad:"Oral/IV titrate; e.g. 2.5–10 mg IV careful titration",ch:"Weight-based; specialist caution",moa:"µ-opioid agonist",ci:"Respiratory depression; monitor; constipation"},
-{t:"Adrenaline (Epinephrine)",ind:"Anaphylaxis; cardiac arrest protocols (different dilutions!)",ad:"Anaphylaxis: IM 0.5 mg 1:1000 anterolateral thigh; arrest: IV 1:10000 per ALS",ch:"IM 0.01 mg/kg 1:1000 (max 0.3–0.5 mg) anaphylaxis",moa:"α1 vasoconstrict; β1/β2 cardiac & bronchial",ci:"No absolute CI in true anaphylaxis"},
-{t:"Salbutamol",ind:"Asthma/COPD bronchospasm",ad:"100–200 mcg inhaled PRN; nebuliser 5 mg in acute",ch:"Age-appropriate inhaler/spacer; neb 2.5–5 mg",moa:"β2 agonist bronchodilation",ci:"Tachyarrhythmia caution; hypokalaemia with high dose"},
-{t:"Prednisolone / Prednisone",ind:"Asthma exacerbations, allergy, autoimmune, PCP adjunct etc.",ad:"e.g. 40–50 mg daily short course asthma (guideline)",ch:"1–2 mg/kg (max adult) short courses common",moa:"Glucocorticoid anti-inflammatory",ci:"Infection risk; hyperglycaemia; taper if prolonged"},
-{t:"Hydrocortisone",ind:"Adrenal crisis; severe asthma/allergy IV options; topical other forms",ad:"IV stress doses per endocrine/emergency protocol",ch:"IV mg/kg stress dosing charts",moa:"Glucocorticoid (± mineralocorticoid activity)",ci:"Infection; hyperglycaemia"},
-{t:"Oxytocin",ind:"Induction/augmentation of labour; PPH prevention/treatment",ad:"PPH: 10 IU IM or IV infusion per obstetric protocol — never IV bolus high dose casually",ch:"N/A obstetric drug",moa:"Uterine smooth muscle contraction",ci:"Hyperstimulation; inappropriate use without monitoring; water intoxication prolonged IV"},
-{t:"Misoprostol",ind:"PPH, incomplete miscarriage, induction contexts per protocol",ad:"PPH doses differ from ulcer doses — use obstetric protocol only",ch:"N/A",moa:"PGE1 analogue uterine contraction",ci:"Must not confuse dosing indications; asthma caution"},
-{t:"Magnesium sulfate",ind:"Eclampsia prevention/treatment; severe asthma adjunct sometimes",ad:"Loading + maintenance per obstetric eclampsia protocol (e.g. Zuspan/Pritchard)",ch:"Not routine paediatric anticonvulsant first-line",moa:"NMDA / neuromuscular effects; cerebral vasodilatory theories",ci:"Respiratory depression; absent reflexes; calcium gluconate ready"},
-{t:"Amlodipine",ind:"Hypertension",ad:"5–10 mg once daily",ch:"Specialist paediatric hypertension only",moa:"Dihydropyridine CCB — vasodilate",ci:"Severe hypotension; gingival hyperplasia"},
-{t:"Enalapril / ACEI class",ind:"HTN, heart failure, diabetic nephropathy contexts",ad:"5–20 mg daily (enalapril) titrate",ch:"Specialist; avoid in neonates volume depletion",moa:"ACE inhibition ↓Ang II",ci:"Pregnancy; bilateral RAS; hyperkalaemia; angioedema history"},
-{t:"Hydrochlorothiazide",ind:"Hypertension, mild oedema",ad:"12.5–25 mg daily",ch:"Rare specialist use",moa:"Thiazide diuretic distal tubule",ci:"Gout, hyponatraemia, hypokalaemia, pregnancy caution"},
-{t:"Furosemide",ind:"Pulmonary oedema, fluid overload",ad:"20–80 mg oral/IV titrate",ch:"1 mg/kg IV cautious",moa:"Loop diuretic NKCC2 block",ci:"Dehydration, electrolyte loss, ototoxicity high IV dose"},
-{t:"Metformin",ind:"Type 2 diabetes first-line if tolerated",ad:"500 mg OD–BD up to 2 g/day with meals",ch:"Specialist only in paeds T2DM",moa:"↓hepatic glucose output; insulin sensitivity",ci:"eGFR low / AKI / hypoxia / contrast — lactic acidosis risk; hold when sick"},
-{t:"Insulin (soluble / NPH / analogues)",ind:"T1DM, T2DM escalation, DKA protocols, hyperkalaemia shift",ad:"Individualised units; DKA fixed-rate IV per protocol",ch:"Unit/kg basal-bolus education critical",moa:"Glucose uptake; anabolic",ci:"Hypoglycaemia; technique & storage education"},
-{t:"Omeprazole / PPI",ind:"PUD, GORD, ulcer prophylaxis selected",ad:"20–40 mg daily",ch:"Weight-based when used",moa:"Irreversible H+/K+ ATPase block",ci:"Mask malignancy; long-term B12/Mg concerns"},
-{t:"Oral iron (ferrous salts)",ind:"Iron-deficiency anaemia",ad:"e.g. ferrous sulfate 200 mg BD–TDS elemental dose aware",ch:"3–6 mg/kg/day elemental iron",moa:"Replenish iron stores / Hb synthesis",ci:"Constipation; overdose toxic in children — safe storage"},
-{t:"Folic acid",ind:"Deficiency, pregnancy supplementation, with antifolates",ad:"5 mg daily treatment; pregnancy 400 mcg–5 mg by risk",ch:"Age-based",moa:"DNA synthesis cofactor",ci:"May mask B12 deficiency neurological disease"},
-{t:"Vitamin A",ind:"Measles adjunct, deficiency, supplementation programmes",ad:"High-dose campaign doses by age — not daily adult multivitamin confusion",ch:"IMCI/measles: 200,000 IU ≥1 y; 100,000 IU 6–11 mo (protocol)",moa:"Epithelial / immune function",ci:"Pregnancy high-dose teratogenic risk"},
-{t:"TDF/3TC/DTG (example first-line ART)",ind:"HIV first-line adult (per national ART guidelines — confirm current)",ad:"One fixed-dose tablet daily typical",ch:"Paediatric regimens weight-band — national ART circulars",moa:"NRTI + integrase inhibitor",ci:"DTG neural-tube caution peri-conception counselling; TDF renal/bone; interactions (e.g. rifampicin → boost/adjust)"},
-{t:"RHZE (intensive phase TB)",ind:"Drug-susceptible TB intensive phase",ad:"Fixed-dose combination weight bands — national TB manual",ch:"Weight-band FDC paediatric formulations",moa:"Multi-target antimycobacterial",ci:"Hepatotoxicity; ethambutol visual; adherence critical; HIV co-treatment rules"},
-{t:"Rifampicin",ind:"TB, some staphylococcal adjuncts",ad:"10 mg/kg (max 600 mg) daily in TB regimens",ch:"Weight-based FDC",moa:"RNA polymerase inhibition",ci:"Potent enzyme inducer (ART, contraceptives!); orange body fluids; hepatitis"},
-{t:"Isoniazid (INH)",ind:"TB treatment/prevention",ad:"5 mg/kg (max 300 mg) daily with pyridoxine when indicated",ch:"Weight-based; pyridoxine if risk neuropathy",moa:"Mycolic acid synthesis block",ci:"Hepatitis; neuropathy; slow acetylators"},
-{t:"Nystatin / topical antifungals",ind:"Oral candidiasis",ad:"Oral suspension QDS swish",ch:"Same locally applied",moa:"Polyene membrane damage",ci:"Local irritation rare"},
-{t:"Diazepam / rectal diazepam",ind:"Seizure rescue (where benzos used)",ad:"IV/rectal per seizure protocol — respiratory monitor",ch:"Rectal 0.5 mg/kg (max caps) community protocols",moa:"GABA-A potentiation",ci:"Respiratory depression; avoid over-stacking sedatives"},
-{t:"ORS + Zinc + continue feeding",ind:"Integrated diarrhoea package (not a single drug)",ad:"ORS by plan; adults hydrate",ch:"IMCI cornerstone",moa:"Rehydration + mucosal recovery",ci:"Shock → IV first"}
+{t:"Artemether–Lumefantrine (ACT)",ind:"Uncomplicated P. falciparum malaria",
+ ad:"Weight-banded 6-dose oral course over 3 days (e.g. if ≥35 kg often 4 tablets at 0, 8, 24, 36, 48, 60 h — confirm national chart)",
+ ch:"Strict weight-band paediatric dosing from national malaria guidelines; give with fatty food when possible",
+ moa:"Artemisinin component clears parasites rapidly; lumefantrine is the longer-acting partner that prevents recrudescence",
+ ci:"Severe malaria needs parenteral artesunate first; known allergy; use caution in severe hepatic impairment",
+ detail:"First-line outpatient/inpatient oral therapy for uncomplicated falciparum in most African guidelines. Vomiting within the hour may need repeat dose per protocol. Always complete the full course.",
+ monitor:"Clinical improvement by 48–72 h; if deteriorates, rethink severity and resistance/alternative diagnosis"},
+{t:"Injectable Artesunate",ind:"Severe malaria",
+ ad:"2.4 mg/kg IV/IM at 0, 12, 24 h then daily until oral therapy possible, then full ACT",
+ ch:"Same 2.4 mg/kg timing (WHO); transition to oral ACT",
+ moa:"Rapid blood schizonticide — preferred parenteral agent in severe malaria",
+ ci:"Hypersensitivity; must still complete oral ACT after recovery of oral route",
+ detail:"Severe features include prostration, impaired consciousness, convulsions, severe anaemia, renal failure, ARDS, hypoglycaemia, shock. Do not use oral ACT alone for severe disease.",
+ monitor:"Glucose (hypoglycaemia risk), fluid balance, parasite clearance, Hb, renal function"},
+{t:"Amoxicillin",ind:"Many community bacterial infections per STG (otitis, some pneumonia, dental, UTI in selected contexts)",
+ ad:"500 mg–1 g every 8 hours typical adult dosing (follow local STG)",
+ ch:"~20–40 mg/kg/day divided into 2–3 doses (max adult-equivalent)",
+ moa:"Beta-lactam: inhibits bacterial cell-wall synthesis (penicillin-binding proteins)",
+ ci:"Immediate penicillin allergy (anaphylaxis history); adjust in severe renal impairment",
+ detail:"Inactive against beta-lactamase producing organisms unless combined with clavulanate. Complete courses as directed; diarrhoea common.",
+ monitor:"Allergy, C. difficile risk with broad use, renal dosing"},
+{t:"Amoxicillin–Clavulanate",ind:"When beta-lactamase coverage needed (animal bites, some sinusitis/pneumonia per STG)",
+ ad:"Dosed by amoxicillin component; typically 625 mg TDS or local equivalent",
+ ch:"Weight-based; higher diarrhoea rates than amoxicillin alone",
+ moa:"Amoxicillin plus beta-lactamase inhibitor (clavulanate)",
+ ci:"Penicillin allergy; history of co-amoxiclav associated jaundice/hepatic dysfunction",
+ detail:"Broader spectrum → more microbiome disruption. Reserve for indicated infections to reduce resistance.",
+ monitor:"LFTs if prolonged; diarrhoea/colitis symptoms"},
+{t:"Ceftriaxone",ind:"Severe bacterial infections, meningitis dosing, some typhoid/sepsis regimens per STG",
+ ad:"1–2 g IV/IM once daily (higher divided doses in meningitis — follow protocol)",
+ ch:"50–100 mg/kg/day (meningitis at higher end); observe max adult caps; avoid with IV calcium in neonates",
+ moa:"Third-generation cephalosporin cell-wall inhibition; good Gram-negative and some Gram-positive cover",
+ ci:"Severe cephalosporin/penicillin anaphylaxis cross-reactivity risk; neonatal IV calcium interaction",
+ detail:"Once-daily convenience useful in district care. Does not cover MRSA or many ESBL organisms.",
+ monitor:"Allergy, biliary sludge with prolonged use, stewardship"},
+{t:"Metronidazole",ind:"Anaerobes, amoebiasis, giardiasis, bacterial vaginosis, C. difficile adjunct contexts",
+ ad:"400–500 mg oral TDS; IV 500 mg TDS in severe anaerobic infection (local labels vary)",
+ ch:"7.5 mg/kg TDS (max adult dose limits)",
+ moa:"Taken up by anaerobic organisms → DNA strand breakage",
+ ci:"Alcohol disulfiram-like reaction; caution first trimester — follow obstetric advice; severe hepatic disease dosing care",
+ detail:"Metallic taste common. Essential in many intra-abdominal regimens together with Gram-negative cover.",
+ monitor:"Neurotoxicity with prolonged high dose (rare); adherence"},
+{t:"Ciprofloxacin",ind:"Selected Gram-negative infections, some typhoid regimens depending on resistance, complicated UTI (stewardship)",
+ ad:"500 mg oral BD typical; IV when needed",
+ ch:"Generally avoided in children unless benefit outweighs risk (musculoskeletal concerns)",
+ moa:"Fluoroquinolone — inhibits DNA gyrase / topoisomerase",
+ ci:"Pregnancy/children restrictions; tendonitis/tendon rupture risk; QT prolongation; binds cations (calcium, iron, antacids)",
+ detail:"Resistance rising — do not use for simple infections when narrower drugs work. Separate from mineral supplements by 2 hours.",
+ monitor:"Tendon pain, QT drugs interactions, CNS effects in elderly"},
+{t:"Co-trimoxazole (TMP–SMX)",ind:"PCP prophylaxis/treatment in HIV; some skin/UTI uses depending on resistance",
+ ad:"Prophylaxis often 960 mg daily (or per HIV guideline); treatment doses higher",
+ ch:"Weight-band HIV charts essential",
+ moa:"Trimethoprim + sulfamethoxazole block sequential steps in folate synthesis",
+ ci:"Sulfa allergy; caution G6PD; hyperkalaemia; pregnancy trimester rules; interacts with some drugs (e.g. warfarin, methotrexate)",
+ detail:"Cornerstone of PCP prevention when indicated by CD4/clinical stage.",
+ monitor:"K+, creatinine, rash (stop if severe), blood counts prolonged use"},
+{t:"Gentamicin",ind:"Gram-negative sepsis cover; synergy in some endocarditis/neonatal regimens",
+ ad:"Often 5–7 mg/kg ideal body weight once daily (extended interval) when used — local protocol & levels",
+ ch:"Neonatal mg/kg protocols; chart carefully",
+ moa:"Aminoglycoside — 30S ribosomal irreversible binding, bactericidal",
+ ci:"Myasthenia; caution renal impairment; avoid with other ototoxic/nephrotoxic drugs when possible",
+ detail:"Concentration-dependent killing; monitor levels in prolonged use. Hydration matters.",
+ monitor:"Renal function, auditory symptoms, serum levels as protocol"},
+{t:"ORS + Zinc (paired childhood diarrhoea)",ind:"Dehydration from diarrhoea (IMCI)",
+ ad:"ORS volume by dehydration plan; adults hydrate similarly",
+ ch:"Plan A/B/C; zinc 20 mg daily ×10–14 days if ≥6 months (10 mg if younger)",
+ moa:"Na–glucose cotransport rehydrates; zinc reduces duration/severity in children",
+ ci:"Shock requires IV fluids first (Plan C)",
+ detail:"Continue feeding/breastfeeding. Antibiotics only for specific indications (blood in stool, cholera, etc.).",
+ monitor:"Hydration status, urine output, ability to drink"},
+{t:"Paracetamol (Acetaminophen)",ind:"Pain, fever",
+ ad:"0.5–1 g every 4–6 h, max 4 g/day (lower in liver disease/malnutrition risk)",
+ ch:"15 mg/kg/dose every 4–6 h (max per age chart)",
+ moa:"Central prostaglandin inhibition / serotonergic pathways — analgesic antipyretic (weak peripheral anti-inflammatory)",
+ ci:"Acute liver failure; caution chronic liver disease; overdose → NAC protocol",
+ detail:"Safe first-line when dosed correctly. Combination products risk accidental overdose.",
+ monitor:"Total daily dose from all sources; LFTs in overdose"},
+{t:"Ibuprofen",ind:"Pain, inflammation, fever",
+ ad:"400 mg TDS with food typical (max per label)",
+ ch:"5–10 mg/kg/dose; avoid if dehydrated or significant renal risk",
+ moa:"NSAID — COX inhibition reduces prostaglandins",
+ ci:"Peptic ulcer, AKI, heart failure, 3rd trimester pregnancy, severe asthma sensitivity in some patients",
+ detail:"Prefer paracetamol when renal perfusion is precarious (gastro, dehydration).",
+ monitor:"Dyspepsia, renal function, fluid retention"},
+{t:"Morphine",ind:"Moderate–severe pain, acute coronary pain protocols, palliative care",
+ ad:"Titrate; e.g. 2.5–10 mg IV slowly or oral immediate-release as protocol",
+ ch:"Weight-based; high caution for respiratory depression",
+ moa:"µ-opioid receptor agonist — alters pain perception and response",
+ ci:"Acute respiratory depression, acute severe asthma uncontrolled, paralytic ileus; caution head injury",
+ detail:"Anticipate constipation and nausea. In MI, use carefully with BP monitoring.",
+ monitor:"RR, sedation score, constipation plan, addiction risk in longer use"},
+{t:"Adrenaline (Epinephrine)",ind:"Anaphylaxis; cardiac arrest uses different dilution/protocol",
+ ad:"Anaphylaxis: 0.5 mg IM (1:1000) mid-anterolateral thigh; repeat after 5 min if needed. Arrest: 1:10000 IV per ALS",
+ ch:"Anaphylaxis IM 0.01 mg/kg of 1:1000 (max 0.3–0.5 mg)",
+ moa:"α1 vasoconstriction supports BP; β1 cardiac stimulation; β2 bronchodilation and mast cell modulation",
+ ci:"No absolute contraindication in true anaphylaxis",
+ detail:"Never delay for antihistamines or steroids. IV bolus adrenaline outside arrest is specialist/carefully monitored only.",
+ monitor:"HR, BP, repeat doses, observation for biphasic reaction"},
+{t:"Salbutamol",ind:"Asthma / COPD bronchospasm",
+ ad:"100–200 mcg inhaled PRN; nebuliser 5 mg (or continuous) in acute severe asthma",
+ ch:"Age-appropriate MDI+spacer; neb 2.5–5 mg",
+ moa:"Short-acting β2 agonist — relaxes bronchial smooth muscle",
+ ci:"Caution tachyarrhythmia; hypokalaemia with high doses; care with non-selective beta-blockers",
+ detail:"In acute asthma combine with oxygen (as needed) and steroids; silent chest is life-threatening.",
+ monitor:"HR, K+, lactate with continuous nebs, response of wheeze/RR/SpO2"},
+{t:"Prednisolone / Prednisone",ind:"Asthma exacerbations, allergic/inflammatory conditions, some PCP adjuncts",
+ ad:"Often 40–50 mg daily short course for adult asthma exacerbation (guideline-dependent)",
+ ch:"1–2 mg/kg (max adult-like short course doses)",
+ moa:"Glucocorticoid — genomic anti-inflammatory effects",
+ ci:"Systemic infection cautions; caution diabetes, peptic ulcer; taper if prolonged",
+ detail:"Start early in acute asthma. Short courses usually stop without taper; long courses need weaning.",
+ monitor:"Glucose, BP, mood, infection risk"},
+{t:"Oxytocin",ind:"Labour induction/augmentation; PPH prevention and treatment",
+ ad:"PPH: 10 IU IM or controlled IV infusion per obstetric protocol — avoid careless undiluted large IV boluses",
+ ch:"Obstetric drug — not a general paediatric medicine",
+ moa:"Oxytocin receptor agonist — uterine smooth muscle contraction",
+ ci:"Hyperstimulation risk in labour; water intoxication with prolonged IV hypotonic fluids; inappropriate use without monitoring",
+ detail:"First-line uterotonic in PPH alongside uterine massage. Know local second-line agents (ergometrine contraindications, misoprostol dosing by indication).",
+ monitor:"Contraction pattern in labour, bleeding, BP"},
+{t:"Magnesium sulfate",ind:"Eclampsia prevention/treatment; sometimes severe asthma adjunct",
+ ad:"Obstetric loading + maintenance (e.g. Zuspan/Pritchard regimens) — use local chart exactly",
+ ch:"Not routine first-line paediatric anticonvulsant",
+ moa:"NMDA/calcium-related anticonvulsant and neuromuscular effects; cerebral effects in eclampsia syndromes",
+ ci:"Caution myasthenia; toxicity with loss of reflexes, respiratory depression — calcium gluconate available",
+ detail:"Continue for protocol duration after last seizure/delivery as guided. Monitor urine output.",
+ monitor:"RR, reflexes, urine output, Mg levels if available"},
+{t:"Amlodipine",ind:"Hypertension; angina (selected)",
+ ad:"5–10 mg once daily oral",
+ ch:"Specialist paediatric hypertension only",
+ moa:"Dihydropyridine calcium-channel blocker — peripheral vasodilatation",
+ ci:"Severe hypotension; caution severe aortic stenosis",
+ detail:"Common first-line in many African HTN protocols. Ankle oedema is common and dose-related.",
+ monitor:"BP response, oedema, adherence"},
+{t:"Enalapril (ACE inhibitor class)",ind:"HTN, heart failure, diabetic nephropathy contexts",
+ ad:"Start low (e.g. 5 mg) titrate to 10–20 mg daily as tolerated",
+ ch:"Specialist; neonatal caution",
+ moa:"Inhibits ACE → less angiotensin II and aldosterone effects; reduces afterload/preload",
+ ci:"Pregnancy (teratogenic); bilateral renal artery stenosis; hyperkalaemia; angioedema history",
+ detail:"Check creatinine/K+ after starting or dose increases. Counsel women of childbearing potential.",
+ monitor:"Creatinine, K+, cough, angioedema warning"},
+{t:"Furosemide",ind:"Pulmonary oedema, fluid overload",
+ ad:"20–80 mg oral/IV titrated to response",
+ ch:"~1 mg/kg IV cautious dosing",
+ moa:"Loop diuretic — inhibits NKCC2 in thick ascending limb",
+ ci:"Dehydration, severe electrolyte depletion; caution anuria",
+ detail:"In acute pulmonary oedema use IV. Monitor for over-diuresis.",
+ monitor:"U&E, urine output, BP, hearing with rapid high-dose IV"},
+{t:"Metformin",ind:"First-line Type 2 diabetes when tolerated",
+ ad:"500 mg once–twice daily with meals, titrate to max ~2 g/day as tolerated",
+ ch:"Specialist only in paediatric T2DM",
+ moa:"Reduces hepatic gluconeogenesis; improves insulin sensitivity",
+ ci:"eGFR markedly reduced; acute illness with hypoxia/sepsis/AKI — hold to reduce lactic acidosis risk; contrast procedures per policy",
+ detail:"Does not cause hypoglycaemia alone. GI side effects limit titration speed.",
+ monitor:"Renal function, B12 long-term, sick-day rules"},
+{t:"Insulin (human / analogues)",ind:"T1DM, T2DM escalation, DKA protocols, hyperkalaemia shift (with glucose)",
+ ad:"Individualised units; DKA uses fixed-rate IV insulin per protocol with fluids/K+",
+ ch:"Unit/kg education critical; hypoglycaemia risk",
+ moa:"Promotes glucose uptake and glycogen synthesis; suppresses ketogenesis",
+ ci:"Hypoglycaemia; careful in renal impairment (longer action)",
+ detail:"Never stop insulin completely in T1DM. Teach injection sites, storage, sick-day rules.",
+ monitor:"Capillary glucose, ketones when unwell, HbA1c long-term"},
+{t:"Omeprazole (PPI)",ind:"GORD, peptic ulcer disease, selected stress-ulcer / bleed pathways",
+ ad:"20–40 mg once daily oral; IV in selected acute bleed protocols",
+ ch:"Weight-based when used",
+ moa:"Irreversible block of parietal cell H+/K+ ATPase",
+ ci:"Masking malignancy risk if alarm features not investigated; interactions (e.g. some antivirals/clopidogrel debates)",
+ detail:"Use lowest effective dose/duration. Alarm features need endoscopy pathway.",
+ monitor:"Long-term: Mg, B12, infection risk discussions"},
+{t:"Ferrous salt (oral iron)",ind:"Iron-deficiency anaemia",
+ ad:"e.g. ferrous sulfate 200 mg 2–3 times daily (elemental iron content matters)",
+ ch:"3–6 mg/kg/day elemental iron",
+ moa:"Replenishes iron for haemoglobin synthesis",
+ ci:"Non-deficiency anaemias (e.g. thalassaemia caution); overdose is toxic in children — safe storage",
+ detail:"Constipation/black stools common. Vitamin C may help absorption; tea/coffee inhibit.",
+ monitor:"Hb response in 2–4 weeks; investigate bleeding source in adults"},
+{t:"TDF/3TC/DTG (example first-line ART)",ind:"HIV first-line adult regimens per national ART guidelines (confirm current circular)",
+ ad:"Usually one fixed-dose tablet daily",
+ ch:"Weight-band paediatric formulations — national ART charts",
+ moa:"Two NRTIs + integrase inhibitor block viral replication at reverse transcription and integration",
+ ci:"DTG: discuss neural-tube risk around conception; TDF: renal/bone caution; rifampicin interacts (dose adjustment/boosting strategies)",
+ detail:"Adherence is everything. Screen and treat opportunistic infections as staged.",
+ monitor:"Viral load, creatinine, weight, pregnancy intent, drug interactions"},
+{t:"RHZE (TB intensive phase)",ind:"Drug-susceptible TB intensive phase",
+ ad:"Fixed-dose combination tablets by weight band — national TB manual",
+ ch:"Paediatric FDC weight bands",
+ moa:"Multi-drug attack on M. tuberculosis (rifampicin, isoniazid, pyrazinamide, ethambutol)",
+ ci:"Known severe adverse reactions to components; visual symptoms with ethambutol need review",
+ detail:"Never treat with a single drug. HIV co-treatment needs ART timing rules.",
+ monitor:"Adherence, hepatotoxicity symptoms, vision (EMB), orange urine expected with rifampicin"},
+{t:"Diazepam (seizure rescue contexts)",ind:"Acute seizure rescue where benzodiazepines indicated",
+ ad:"IV/rectal dosing per emergency protocol — monitor ventilation",
+ ch:"Rectal 0.5 mg/kg (max caps) in many community protocols",
+ moa:"Enhances GABA-A receptor activity — central inhibition",
+ ci:"Respiratory depression risk; caution stacking sedatives",
+ detail:"For status epilepticus pathways escalate beyond repeated benzos per protocol (e.g. phenytoin/levetiracetam/anaesthetic agents).",
+ monitor:"Airway, RR, BP, seizure control"},
+{t:"Tranexamic acid",ind:"Trauma haemorrhage protocols; PPH within time window; selected surgical bleeding",
+ ad:"Trauma: 1 g IV over 10 min then infusion as protocol; PPH: 1 g IV (repeat per protocol)",
+ ch:"Weight-based trauma research protocols — specialist",
+ moa:"Antifibrinolytic — inhibits plasminogen activation",
+ ci:"Caution active thromboembolic disease; timing windows matter (trauma >3 h caution in classic CRASH evidence teaching)",
+ detail:"Adjunct to source control and blood product strategy — not a stand-alone fix.",
+ monitor:"Thrombosis symptoms, renal dosing adjustments when indicated"},
+{t:"Hydrocortisone",ind:"Adrenal crisis; some severe asthma/allergy IV pathways; replacement regimens",
+ ad:"Stress doses IV in adrenal crisis (e.g. 100 mg then infusion/dosing per endocrine protocol)",
+ ch:"mg/kg stress dosing charts",
+ moa:"Glucocorticoid (± mineralocorticoid activity depending on dose)",
+ ci:"Infection risk, hyperglycaemia, psychiatric effects",
+ detail:"In suspected adrenal crisis treat on clinical suspicion — do not wait for cortisol result if shocked.",
+ monitor:"Glucose, infection, BP response"},
+
+{t:"Azithromycin",ind:"Selected community pneumonia, STI (e.g. chlamydia), some typhoid alternatives by resistance, MAC prophylaxis contexts",
+ ad:"500 mg daily ×3 days or 1 g single dose depending on indication",
+ ch:"10 mg/kg daily ×3 days (max adult) for many paediatric respiratory uses — confirm chart",
+ moa:"Macrolide — inhibits 50S ribosomal protein synthesis",
+ ci:"Significant QT-prolonging drug combinations; severe hepatic disease caution; allergy",
+ detail:"Convenient short courses improve adherence. Resistance is increasing for some pathogens — do not use for every cough. Separates somewhat from food issues vs older macrolides but still check interactions (e.g. some statins/warfarin).",
+ monitor:"QT risk drugs, hearing with prolonged high dose (rare), diarrhoea/C. diff risk"},
+
+{t:"Clarithromycin",ind:"Respiratory infections, H. pylori regimens, MAC therapy combinations",
+ ad:"500 mg BD typical adult course length by indication",
+ ch:"7.5 mg/kg BD (max adult)",
+ moa:"Macrolide — 50S inhibition",
+ ci:"Strong CYP3A4 inhibitor — many interactions (e.g. simvastatin); QT risk; severe liver disease",
+ detail:"More interaction-prone than azithromycin. Useful in some TB/MAC and H. pylori protocols as directed. Avoid casual combination with interacting cardiac drugs.",
+ monitor:"Drug interaction review, LFTs prolonged use, QT"},
+
+{t:"Doxycycline",ind:"Malaria prophylaxis options, scrub typhus/rickettsia, some STI, alternative respiratory cover",
+ ad:"100 mg once or twice daily by indication",
+ ch:"Usually avoided under age ~8–12 when alternatives exist (tooth staining risk teaching)",
+ moa:"Tetracycline — 30S ribosomal inhibition; also anti-inflammatory effects useful in some skin disease",
+ ci:"Pregnancy; young children (relative); oesophagitis risk — take upright with water; photosensitivity",
+ detail:"Excellent oral bioavailability. In malaria prophylaxis follow travel/national guidance. Separate from antacids/iron by 2 hours.",
+ monitor:"Photosensitivity advice, oesophageal irritation, thrush"},
+
+{t:"Benzylpenicillin (penicillin G)",ind:"Streptococcal infections, neurosyphilis regimens, severe sepsis combinations per STG",
+ ad:"Highly indication-specific IU dosing IV/IM — use protocol charts",
+ ch:"Unit/kg dosing by indication (e.g. neonatal regimens)",
+ moa:"Beta-lactam cell-wall inhibition; excellent streptococcal activity",
+ ci:"Immediate penicillin allergy",
+ detail:"Still first-line for many strep pyogenes and syphilis pathways. Not reliable for staph (penicillinase). Cardiorespiratory monitoring with some high-dose IM preparations historically (procaine reactions).",
+ monitor:"Allergy, seizures with very high doses in renal failure, electrolyte load of potassium/sodium salts"},
+
+{t:"Flucloxacillin",ind:"MSSA skin/soft tissue infection, osteomyelitis, endocarditis (sensitive staph) per protocol",
+ ad:"500 mg–1 g QDS oral; IV higher in severe infection",
+ ch:"Weight-based QDS dosing",
+ moa:"Penicillinase-stable penicillin — targets staph cell wall",
+ ci:"Penicillin allergy; cholestatic jaundice risk (can be delayed)",
+ detail:"Drug of choice for many methicillin-sensitive staph infections. MRSA is resistant — needs different agents. Take on empty stomach when possible for oral absorption.",
+ monitor:"LFTs if prolonged, allergy, C. diff"},
+
+{t:"Vancomycin",ind:"MRSA severe infection, penicillin-allergic severe Gram-positive infection, C. difficile oral form in some protocols",
+ ad:"IV 15–20 mg/kg every 8–12 h adjusted by levels/renal function; oral only for gut C. diff (not absorbed)",
+ ch:"mg/kg with level-guided therapy",
+ moa:"Glycopeptide — inhibits cell-wall peptidoglycan cross-linking",
+ ci:"Caution renal impairment; red-man syndrome with rapid infusion; ototoxicity risk",
+ detail:"Reserve for true need to protect usefulness. Infuse slowly. Oral vancomycin does not treat systemic MRSA.",
+ monitor:"Trough levels, creatinine, infusion reactions"},
+
+{t:"Nitrofurantoin",ind:"Lower UTI in women when organism susceptible; prophylaxis selected cases",
+ ad:"100 mg BD (or 50–100 mg QDS for older regimens) with food — duration per UTI protocol",
+ ch:"Avoid in young infants; limited paediatric use patterns",
+ moa:"Multiple bacterial enzyme targets after urinary concentration",
+ ci:"eGFR low (poor urinary levels + toxicity risk); G6PD caution; term pregnancy near delivery (neonatal haemolysis teaching); pulmonary fibrosis with long use",
+ detail:"Not for pyelonephritis/systemic infection — only lower UTI. Turns urine brown.",
+ monitor:"Renal function before use, pulmonary symptoms if long-term, neuropathy rare"},
+
+{t:"Albendazole",ind:"Soil-transmitted helminths, some neurocysticercosis/hydatid specialist regimens",
+ ad:"400 mg single dose for many geohelminth programmes; multi-day for other indications",
+ ch:"Age/weight programme doses (often ≥1–2 years as policy)",
+ moa:"Benzimidazole — inhibits microtubule polymerisation in worms",
+ ci:"Pregnancy first trimester caution in mass campaigns (timing rules); active cysticercosis needs specialist cover",
+ detail:"Public-health cornerstone. Fatty meal improves absorption for tissue parasites. Do not treat eye cysticerci casually without specialist care.",
+ monitor:"LFTs prolonged courses, headache/seizure if treating neurocysticercosis (steroids sometimes co-given)"},
+
+{t:"Praziquantel",ind:"Schistosomiasis, some tapeworm infections",
+ ad:"40 mg/kg single dose (or divided) for S. mansoni/haematobium per programme — confirm species chart",
+ ch:"Weight-based programme dosing",
+ moa:"Increases parasite membrane calcium permeability → tetany and damage",
+ ci:"Ocular cysticercosis caution; heavy infections may need observation after treatment",
+ detail:"Take with food. May cause abdominal pain as worms die. Coordinate with local NTD programmes.",
+ monitor:"Allergic-type reactions after treatment in heavy burden, adherence in mass drug administration"},
+
+{t:"Aciclovir",ind:"HSV encephalitis (IV), herpes zoster, genital herpes, neonatal HSV protocols",
+ ad:"IV encephalitis: 10 mg/kg TDS (adjust renal); oral zoster 800 mg five times daily (or valaciclovir alternative)",
+ ch:"20 mg/kg IV TDS for neonatal HSV — protocol driven",
+ moa:"Nucleoside analogue inhibits viral DNA polymerase after thymidine kinase activation",
+ ci:"Renal impairment needs dosing adjustment; crystalluria risk if dehydrated",
+ detail:"Start early in suspected encephalitis — do not wait for PCR if high suspicion. Hydrate well on IV therapy.",
+ monitor:"Renal function, neurological progress, hydration"},
+
+{t:"Nystatin (oral)",ind:"Oral candidiasis (thrush)",
+ ad:"Oral suspension 100,000 units QDS swish and swallow/spit per label",
+ ch:"Same locally applied; continue a few days after lesions clear",
+ moa:"Polyene — binds ergosterol in fungal membranes",
+ ci:"Few systemic effects because minimal absorption",
+ detail:"Common in inhaled steroid users and infants. Check HIV risk if persistent. Denture hygiene matters in adults.",
+ monitor:"Response of lesions; if fails consider systemic azole and immune work-up"},
+
+{t:"Clotrimazole / topical azoles",ind:"Dermatophyte infections, candida intertrigo, vaginal candidiasis (pessary forms)",
+ ad:"Topical 2–3 times daily for 1–4 weeks by site; vaginal courses 1–7 days by product",
+ ch:"Topical as directed; avoid extensive use on broken skin without advice",
+ moa:"Azole — inhibits ergosterol synthesis",
+ ci:"Local irritation; oral azoles have separate systemic cautions",
+ detail:"Keep area dry. Oral terbinafine/itraconazole reserved for extensive/nail disease.",
+ monitor:"Local irritation, treatment failure → culture/diagnosis rethink"},
+
+{t:"Labetalol",ind:"Hypertensive emergencies in pregnancy; acute BP control selected medical patients",
+ ad:"Oral 100–400 mg BD or IV boluses/infusion per obstetric/medical protocol",
+ ch:"Specialist paediatric hypertension only",
+ moa:"Combined α- and β-blockade — reduces BP without reflex tachycardia as much as pure vasodilators",
+ ci:"Asthma/severe bradycardia/heart block; caution heart failure",
+ detail:"Preferred in many pre-eclampsia BP protocols. IV use needs monitoring. Do not stop abruptly after prolonged beta-blockade.",
+ monitor:"BP, HR, fetal monitoring in pregnancy, asthma symptoms"},
+
+{t:"Nifedipine (intermediate/short acting oral)",ind:"Hypertension (including pregnancy protocols using modified-release or defined short-acting regimens)",
+ ad:"MR formulations preferred for chronic HTN; short-acting use only as protocol allows",
+ ch:"Specialist only",
+ moa:"Dihydropyridine CCB — arterial vasodilatation",
+ ci:"Avoid uncontrolled short-acting crash-dose use in chronic asymptomatic HTN; severe hypotension risk",
+ detail:"In obstetrics, follow exact local dosing for severe HTN. Headache and flushing common. Combine carefully with MgSO4 (monitor BP).",
+ monitor:"BP response, reflex tachycardia, headache"},
+
+{t:"Spironolactone",ind:"Heart failure, ascites (with loop diuretic), primary aldosteronism, resistant HTN",
+ ad:"25–100 mg daily typical starting range",
+ ch:"Specialist paediatric dosing",
+ moa:"Mineralocorticoid receptor antagonist — potassium-sparing diuretic",
+ ci:"Hyperkalaemia; Addison’s; caution with ACEI/ARB/trimethoprim combination",
+ detail:"Gynecomastia with longer use. Improves outcomes in HFrEF when indicated. Check K+ after starting.",
+ monitor:"K+, creatinine, blood pressure, volume status"},
+
+{t:"Atenolol / selective β-blockers class note",ind:"Angina, rate control, some HTN protocols, post-MI as indicated",
+ ad:"Atenolol 25–100 mg daily example — choose agent by local stock (bisoprolol often preferred in HF)",
+ ch:"Specialist",
+ moa:"β1-selective blockade — reduces HR and myocardial oxygen demand",
+ ci:"Asthma/severe bradycardia; caution acute decompensated HF",
+ detail:"Do not use as first-line for hypertension alone in many modern guidelines, but still widely stocked. Taper if stopping long-term therapy.",
+ monitor:"HR, BP, fatigue, glucose awareness in diabetes"},
+
+{t:"Glibenclamide / sulfonylureas",ind:"Type 2 diabetes when insulin secretagogue used (many programmes moving toward safer options)",
+ ad:"Glibenclamide 2.5–5 mg daily with meals — high hypoglycaemia risk in elderly/renal impairment",
+ ch:"Avoid in young children; not for T1DM",
+ moa:"Stimulates pancreatic insulin release regardless of glucose to some extent → hypo risk",
+ ci:"T1DM; severe renal/hepatic disease; caution elderly",
+ detail:"Prefer metformin first-line when possible. Teach hypo recognition. Avoid in those with irregular meals.",
+ monitor:"Capillary glucose, hypo diary, weight gain"},
+
+{t:"Carbamazepine",ind:"Epilepsy (focal), trigeminal neuralgia; mood stabilisation specialist",
+ ad:"100–200 mg OD–BD titrate; monitor levels in selected cases",
+ ch:"Weight-based titration; HLA-B*1502 risk of SJS in some populations",
+ moa:"Sodium-channel blockade stabilises neuronal membranes",
+ ci:"AV conduction problems; MAOI combinations; known bone-marrow depression",
+ detail:"Enzyme inducer — reduces efficacy of many drugs including some contraceptives and ART. Start low, go slow. Warn about rash — stop if severe.",
+ monitor:"FBC, LFTs, sodium (SIADH), drug interactions, rash"},
+
+{t:"Sodium valproate",ind:"Generalised epilepsy, some migraine prophylaxis (not in pregnancy)",
+ ad:"600 mg–2 g/day in divided doses — individualise",
+ ch:"Weight-based; avoid in girls/women of childbearing potential when alternatives exist (teratogenicity)",
+ moa:"Increases GABA effects; sodium-channel effects",
+ ci:"Pregnancy (major teratogen — neural tube/other); liver disease; mitochondrial disease caution",
+ detail:"Highly effective but pregnancy prevention programmes mandatory where used in fertile women. Enzyme interactions complex.",
+ monitor:"LFTs, FBC, weight, ammonia if encephalopathy, pregnancy prevention"},
+
+{t:"Phenobarbital",ind:"Neonatal seizures, status pathways, epilepsy where still used in resource-limited settings",
+ ad:"Loading and maintenance per seizure protocol (e.g. 10–20 mg/kg load teaching ranges — use chart)",
+ ch:"Common in neonatal units by protocol",
+ moa:"Enhances GABA-A receptor activity; long-acting sedative anticonvulsant",
+ ci:"Respiratory depression with benzos/alcohol; severe hepatic impairment caution",
+ detail:"Cheap and widely available but sedating. Withdrawal if stopped abruptly after chronic use. Interactions via enzyme induction.",
+ monitor:"Sedation, RR in neonates, levels if available, rash"},
+
+{t:"Haloperidol",ind:"Acute agitation/psychosis; antiemetic in palliative care (low dose); delirium pathways carefully",
+ ad:"0.5–5 mg oral/IM depending on indication — start low in elderly",
+ ch:"Specialist child psychiatry only",
+ moa:"D2 dopamine receptor antagonist",
+ ci:"Parkinson’s disease; prolonged QT caution; dementia-related psychosis warnings in elderly",
+ detail:"Watch acute dystonia (treat with anticholinergic). Not first-line for anxiety alone. Combine carefully with other QT drugs.",
+ monitor:"EPS, QT, sedation, temperature (NMS rare)"},
+
+{t:"Promethazine",ind:"Allergy, nausea, procedural sedation adjunct, insomnia short-term",
+ ad:"10–25 mg oral; IM when needed",
+ ch:"Avoid under 2 years (respiratory depression risk)",
+ moa:"H1 antagonist with anticholinergic and sedative effects",
+ ci:"Young children (age limits); caution glaucoma, prostate obstruction; asthma caution with drying secretions",
+ detail:"Sedating antihistamine. Do not use as routine infant sedative. Avoid alcohol.",
+ monitor:"Sedation, respiratory status in children, confusion in elderly"},
+
+{t:"Ondansetron",ind:"Nausea/vomiting (post-op, gastroenteritis in children in some protocols, chemotherapy)",
+ ad:"4–8 mg oral/IV up to TDS",
+ ch:"0.15 mg/kg (max 4–8 mg) — check local gastroenteritis guidance",
+ moa:"5-HT3 receptor antagonist in CTZ and gut",
+ ci:"QT prolongation caution; congenital long QT",
+ detail:"Useful when dopamine antagonists contraindicated. Constipation possible. Not a steroid-sparing anti-inflammatory.",
+ monitor:"QT drugs, constipation, headache"},
+
+{t:"Tranexamic acid (reminder expansion)",ind:"Trauma haemorrhage; PPH within time window; heavy menstrual bleeding oral forms; surgery",
+ ad:"Trauma 1 g IV then infusion per protocol; PPH 1 g IV; oral 1 g TDS for HMB short courses",
+ ch:"Weight-based trauma research dosing — specialist",
+ moa:"Blocks plasminogen activation — antifibrinolytic",
+ ci:"Active thromboembolic disease caution; haematuria massive clot risk in some urinary bleeding contexts",
+ detail:"Adjunct to source control. In trauma classic teaching emphasises early use within 3 hours.",
+ monitor:"Thrombosis symptoms, renal dose adjustment when needed"},
+
+{t:"Misoprostol",ind:"PPH (doses differ from ulcer doses); incomplete miscarriage; labour induction in selected protocols; NSAID ulcer prevention",
+ ad:"Indication-specific — e.g. PPH 600–1000 mcg sublingual/rectal per local obstetric protocol (do not confuse with GI doses)",
+ ch:"Not for routine paediatric use",
+ moa:"PGE1 analogue — uterine contraction and cervical ripening; gastric protection at low dose",
+ ci:"Pregnancy for GI indication; asthma caution; must use correct dose table for obstetric indication",
+ detail:"Life-saving in low-resource PPH when oxytocin unavailable or as adjunct. Wrong dose table = danger. Document indication clearly.",
+ monitor:"Bleeding, temperature (shivering/fever common), uterine tone"},
+
+{t:"Ergometrine / syntometrine components",ind:"PPH due to atony when oxytocin insufficient and BP allows",
+ ad:"Ergometrine 0.5 mg IM (or as in syntometrine) — once BP known not high",
+ ch:"Obstetric only",
+ moa:"Ergot alkaloid — sustained uterine contraction",
+ ci:"Hypertension, pre-eclampsia, vascular disease — can precipitate dangerous BP rise",
+ detail:"Second-line uterotonic in many protocols after oxytocin. Never first choice if BP unknown/high.",
+ monitor:"BP, nausea, headache, bleeding response"},
+
+{t:"Ketamine",ind:"Procedural sedation/analgesia; induction agent in shocked patients (selected RSI contexts); emergency analgesia",
+ ad:"IV/IM dosing highly protocolised (e.g. 1–2 mg/kg IV induction ranges — trained users only)",
+ ch:"Paediatric procedural sedation by trained staff only",
+ moa:"NMDA receptor antagonist — dissociative anaesthesia; supports BP better than many inducers",
+ ci:"Uncontrolled cardiovascular disease caution; psychosis history caution; raised ICP traditional caution evolving",
+ detail:"Preserves airway reflexes better than many agents but still needs airway readiness. Emergence phenomena possible — calm environment.",
+ monitor:"Airway, SpO2, BP, emergence agitation"},
+
+{t:"Lignocaine / lidocaine (local)",ind:"Local anaesthesia, nerve blocks; antiarrhythmic IV in selected VT protocols",
+ ad:"Local max dose ~3 mg/kg plain / ~7 mg/kg with adrenaline (approximate teaching ceilings — check chart)",
+ ch:"Lower max mg/kg — careful calculation",
+ moa:"Sodium-channel blockade — prevents nerve conduction; class Ib antiarrhythmic systemically",
+ ci:"Allergy (rare true); IV misuse; caution in heart block for systemic antiarrhythmic use",
+ detail:"Always aspirate before injection. Toxicity: peri-oral tingling, seizures, cardiovascular collapse — lipid emulsion readiness in theatres.",
+ monitor:"Total dose calculation, CNS toxicity signs, ECG if systemic"},
+
+{t:"Atropine",ind:"Bradycardia with adverse features; organophosphate poisoning (high dose); premedication secretions",
+ ad:"Bradycardia ALS: 1 mg IV repeats to max per protocol; organophosphate: titrate to secretions",
+ ch:"0.02 mg/kg IV (min dose rules in some paediatric bradycardia teachings)",
+ moa:"Muscarinic antagonist — increases SA node rate, dries secretions",
+ ci:"Caution glaucoma, obstructive uropathy; tachyarrhythmia",
+ detail:"In organophosphate poisoning huge doses may be needed — focus on drying secretions. Not useful for third-degree block as sole therapy.",
+ monitor:"HR, pupil/secretions in poisoning, urinary retention"},
+
+{t:"Naloxone",ind:"Opioid overdose with respiratory depression",
+ ad:"100–400 mcg IV titrated (or higher protocol doses); may need infusion if long-acting opioid",
+ ch:"10 mcg/kg titrated — avoid precipitating severe withdrawal in chronic users when possible",
+ moa:"μ-opioid receptor antagonist",
+ ci:"Will precipitate withdrawal in dependent patients — still use if life-threatening hypoventilation",
+ detail:"Airway and ventilation first. Observation after response because naloxone may wear off before the opioid.",
+ monitor:"RR, SpO2, consciousness, repeat dosing need"},
+
+{t:"Glucose 10–50% (dextrose)",ind:"Hypoglycaemia emergency",
+ ad:"Adults often 150–200 mL 10% glucose IV or 50 mL 50% into large vein; then oral carbs",
+ ch:"2–5 mL/kg of 10% dextrose common neonatal/paediatric teaching (avoid concentrated extravasation)",
+ moa:"Directly raises blood glucose",
+ ci:"Hyperglycaemia contexts; concentrated solutions sclerosant — large vein",
+ detail:"Recheck glucose after treatment. Investigate cause (insulin, malaria, adrenal, sepsis, toxins).",
+ monitor:"Capillary glucose, extravasation, potassium shift"},
+
+{t:"Vitamin K (phytomenadione)",ind:"Warfarin reversal (with PCC/FFP as protocol); vitamin K deficiency bleeding; neonatal prophylaxis",
+ ad:"IV/oral 5–10 mg depending on INR/bleeding severity pathway",
+ ch:"Neonatal IM 1 mg at birth (programme dose)",
+ moa:"Required cofactor for hepatic synthesis of factors II, VII, IX, X",
+ ci:"Anaphylactoid risk with rapid IV — give slowly when IV used",
+ detail:"In warfarin bleeding, combine with urgent haematology protocol products. Neonatal prevention is public-health critical.",
+ monitor:"INR response, bleeding control, injection sites"},
+
+{t:"Folic acid",ind:"Deficiency, pregnancy supplementation, with antifolate drugs (e.g. high-dose with pyrimethamine regimens)",
+ ad:"5 mg daily treatment; pregnancy 400 mcg–5 mg by neural-tube risk",
+ ch:"Age-based syrups",
+ moa:"One-carbon transfer cofactor for DNA synthesis",
+ ci:"May mask B12 deficiency haematologically while neuropathy progresses — check B12 when macrocytic",
+ detail:"Essential in sickle cell supportive care and pregnancy. High dose with some malaria/toxoplasmosis regimens.",
+ monitor:"Hb response, B12 status if macrocytosis"},
+
+{t:"ORS (alone — adult/cholera contexts)",ind:"Rehydration when able to drink; cholera protocols with reduced-osmolarity ORS",
+ ad:"Volume by thirst and stool losses; cholera may need very large volumes",
+ ch:"IMCI plans by age/weight",
+ moa:"Sodium-glucose linked absorption drives water uptake",
+ ci:"Severe shock — IV first; persistent vomiting limiting intake",
+ detail:"Still underused. In cholera, combine with zinc in children and antibiotics when indicated by protocol.",
+ monitor:"Hydration, urine, ongoing losses chart"}
 ];
 function showDrugs(){
   $("drugList").classList.remove("hidden");$("drugDetail").classList.add("hidden");
-  $("drugList").innerHTML=DRUGS.map((d,i)=>`<div class="case-card" data-i="${i}"><strong>${d.t}</strong><br><span class="muted">${d.ind}</span></div>`).join("");
-  $("drugList").querySelectorAll(".case-card").forEach(el=>el.onclick=()=>{
-    const d=DRUGS[+el.dataset.i];$("drugList").classList.add("hidden");$("drugDetail").classList.remove("hidden");
-    $("drugStatus").innerHTML=`<strong>${d.t}</strong>`;
-    $("drugBody").innerHTML=`<p><b>Indications:</b> ${d.ind}</p><p><b>Adult dosing (typical):</b> ${d.ad}</p><p><b>Children:</b> ${d.ch}</p><p><b>MOA:</b> ${d.moa}</p><p><b>Cautions / CI:</b> ${d.ci}</p><p class="muted">Educational summary — always confirm Zambia STG / hospital protocol / current national ART & malaria circulars before prescribing.</p>`;
-  });
+  $("drugList").innerHTML=DRUGS.map(function(d,i){return '<div class="case-card" data-i="'+i+'"><strong>'+d.t+'</strong><br><span class="muted">'+d.ind+"</span></div>";}).join("");
+  $("drugList").querySelectorAll(".case-card").forEach(function(el){el.onclick=function(){
+    var d=DRUGS[+el.dataset.i];$("drugList").classList.add("hidden");$("drugDetail").classList.remove("hidden");
+    $("drugStatus").innerHTML="<strong>"+d.t+"</strong>";
+    $("drugBody").innerHTML=
+      "<p><b>Indications:</b> "+d.ind+"</p>"+
+      "<p><b>Adult dosing:</b> "+d.ad+"</p>"+
+      "<p><b>Children:</b> "+d.ch+"</p>"+
+      "<p><b>How it works (MOA):</b> "+d.moa+"</p>"+
+      "<p><b>Cautions / contraindications:</b> "+d.ci+"</p>"+
+      (d.detail?"<p><b>Clinical notes:</b> "+d.detail+"</p>":"")+
+      (d.monitor?"<p><b>What to monitor:</b> "+d.monitor+"</p>":"")+
+      "<p class='muted'>Educational summary — confirm Zambia STG / hospital protocol before prescribing.</p>";
+  };});
 }
 $("drugBack").onclick=showDrugs;$("drugExit").onclick=()=>setMode("menu");
 
@@ -2098,6 +2768,18 @@ const NBS=[
 const COURSES=[...new Set(BANK.map(x=>x.c))];
 
 let tMode="full", tCourse=null, tQ=null, tPhase="main", tScore=0, tTotal=0, tLocked=false;
+function resetTelasUI(){
+  tScore=0;tTotal=0;tLocked=false;tPhase="main";tQ=null;
+  if($("tScore"))$("tScore").textContent="0";
+  if($("tTotal"))$("tTotal").textContent="0";
+  if($("telasFb")){$("telasFb").classList.add("hidden");$("telasFb").innerHTML="";}
+  if($("telasDebrief")){$("telasDebrief").classList.add("hidden");$("telasDebrief").innerHTML="";}
+  if($("osceChecks")){$("osceChecks").classList.add("hidden");$("osceChecks").innerHTML="";}
+  if($("shiftBoard")){$("shiftBoard").classList.add("hidden");$("shiftBoard").innerHTML="";}
+  if(shiftState&&shiftState.timer){try{clearInterval(shiftState.timer);}catch(e){}}
+  shiftState=null;
+}
+
 let usedStems=new Set(), usedNbs=new Set();
 
 
@@ -2251,9 +2933,9 @@ function buildCourses(){
   $("courseGrid").querySelectorAll("button").forEach(b=>b.onclick=()=>{tCourse=b.getAttribute("data-c");tMode="full";usedStems.clear();startTelas();});
 }
 $("tModeFull").onclick=()=>{$("telasMeta").textContent="Pick a course below";$("stratSettings").classList.add("hidden");};
-$("tModeShort").onclick=()=>{tMode="short";tCourse=null;usedStems.clear();$("stratSettings").classList.add("hidden");startTelas();};
-$("tModeNbs").onclick=()=>{tMode="nbs";usedNbs.clear();$("stratSettings").classList.add("hidden");startTelas();};
-$("tModeMixed").onclick=()=>{tMode="mixed";tCourse=null;usedStems.clear();$("stratSettings").classList.add("hidden");startTelas();};
+$("tModeShort").onclick=()=>{resetTelasUI();window._shortLeft=8;tMode="short";tCourse=null;usedStems.clear();$("stratSettings").classList.add("hidden");startTelas();};
+$("tModeNbs").onclick=()=>{resetTelasUI();tMode="nbs";usedNbs.clear();$("stratSettings").classList.add("hidden");startTelas();};
+$("tModeMixed").onclick=()=>{resetTelasUI();tMode="mixed";tCourse=null;usedStems.clear();$("stratSettings").classList.add("hidden");startTelas();};
 $("tModeStrat").onclick=function(){$("stratSettings").classList.remove("hidden");$("telasMeta").textContent="Pick facility level, then start";};
 $("tModeShift").onclick=function(){$("stratSettings").classList.add("hidden");startShift();};
 document.querySelectorAll("#stratNav button").forEach(function(b){b.onclick=function(){
@@ -2328,8 +3010,24 @@ function expandWhy(q){
   var lines=[];
   lines.push("<p><b>Correct answer:</b> "+q.correct+"</p>");
   lines.push("<p><b>Explanation:</b> "+q.why+"</p>");
-  lines.push("<p><b>How to remember:</b> Ask what is time-critical (airway, bleeding, sepsis, ischaemia). Eliminate options that delay assessment, skip ABC, or send unstable patients home.</p>");
-  lines.push("<p class='muted'><b>Exam tip:</b> Match stem keywords to a syndrome or emergency pathway, then pick the single best next step — not a delayed action.</p>");
+  // Answer-specific tip only (from question tip, or derived from this answer — never a global ABC slogan)
+  var tip=q.tip;
+  if(!tip){
+    var c=(q.correct||"").toLowerCase();
+    var w=(q.why||"");
+    if(c.indexOf("adrenaline")>=0||c.indexOf("epinephrine")>=0) tip="This answer is about adrenaline specifically: IM into the mid-anterolateral thigh, and do not substitute antihistamine/steroid as the first drug.";
+    else if(c.indexOf("artesunate")>=0) tip="Link this answer to severe malaria: parenteral artesunate dosing (2.4 mg/kg) then a full oral ACT — oral ACT alone is the trap.";
+    else if(c.indexOf("oxytocin")>=0||c.indexOf("massage")>=0) tip="This answer targets uterine atony: mechanical massage plus oxytocin (dose/route matter) before advanced theatre steps.";
+    else if(c.indexOf("decompress")>=0||c.indexOf("needle")>=0) tip="This answer is about clinical tension physiology — treatment precedes imaging when the patient is unstable.";
+    else if(c.indexOf("airway")>=0||c.indexOf("ppv")>=0||c.indexOf("ventilation")>=0) tip="This answer prioritises opening/ventilating the airway before drugs or compressions that depend on oxygen delivery.";
+    else if(c.indexOf("insulin")>=0||c.indexOf("dka")>=0) tip="This answer sits inside a DKA protocol: fluids, fixed-rate insulin, and potassium vigilance — not sliding-scale-only shortcuts.";
+    else if(c.indexOf("lp")>=0||c.indexOf("antibiotic")>=0||c.indexOf("ceftriaxone")>=0) tip="For this stem, the chosen answer usually means: do not let logistics delay the antimicrobial that treats the likely organism.";
+    else if(c.indexOf("aspirin")>=0||c.indexOf("pci")>=0||c.indexOf("reperfusion")>=0) tip="This answer is reperfusion/antiplatelet logic in ACS — time-to-treatment is the point of the option.";
+    else if(c.indexOf("mgso4")>=0||c.indexOf("magnesium")>=0) tip="This answer is eclampsia/severe pre-eclampsia seizure prevention/treatment with MgSO4 protocol — not routine anxiolysis.";
+    else if(c.indexOf("ors")>=0||c.indexOf("zinc")>=0) tip="This answer is IMCI fluid/zinc logic — match Plan A/B/C to hydration status, not automatic IV for every diarrhoea.";
+    else tip="Why this option wins: "+w+" Ask what unique clinical problem in the stem this answer directly treats or rules out.";
+  }
+  lines.push("<p class='muted'><b>Tip for this answer:</b> "+tip+"</p>");
   return lines.join("");
 }
 function reviewKey(){return "tmsxr_review_"+((currentUser&&currentUser.username)||"guest");}
@@ -2359,6 +3057,7 @@ function refreshDueBox(){
   var n=dueList().length;
   if($("dueTitle"))$("dueTitle").textContent="Due today: "+n;
   if($("dueSub"))$("dueSub").textContent=n?("Tap to review "+n+" weak item(s)"):"Missed items return after 1 day · strengthen weak spots";
+  try{refreshWeakMap();}catch(e){}
 }
 function showFb(ok){
   var fb=$("telasFb");fb.classList.remove("hidden");
@@ -2389,6 +3088,18 @@ function bindOpts(){
   });
 }
 function pickQuestion(){
+  if(tMode==="short"){
+    if(typeof window._shortLeft!=="number")window._shortLeft=8;
+    if(window._shortLeft<=0){
+      return {stem:"Short session complete. Your score is shown above. Start again for a new set of 8.",opts:["Return to menu","Review due items","Start another short set","Open mixed revision"],correct:"Start another short set",why:"Short mode is a focused set of 8 questions — not an endless stream.",roast:"Session already finished.",c:"Short",follow:null,_shortEnd:1};
+    }
+    window._shortLeft--;
+    var pool=BANK.filter(function(x){return !usedStems.has(x.stem);});
+    if(!pool.length){usedStems.clear();pool=BANK.slice();}
+    var q=pool[Math.floor(Math.random()*pool.length)];
+    usedStems.add(q.stem);
+    return Object.assign({},q,{opts:shuffle(q.opts.slice())});
+  }
   if(tMode==="nbs"){
     var poolN=NBS.filter(function(n){return !usedNbs.has(n.stem);});
     if(!poolN.length){usedNbs.clear();poolN=NBS.slice();}
@@ -2412,7 +3123,9 @@ function pickQuestion(){
 }
 function startTelas(){
   $("telasHome").classList.add("hidden");$("telasPlay").classList.remove("hidden");
-  $("shiftBoard").classList.add("hidden");
+  if($("shiftBoard"))$("shiftBoard").classList.add("hidden");
+  if($("osceChecks"))$("osceChecks").classList.add("hidden");
+  if($("telasDebrief"))$("telasDebrief").classList.add("hidden");
   tPhase="main";loadT();
 }
 function loadT(){
@@ -2451,12 +3164,12 @@ $("telasExit").onclick=function(){if(shiftState&&shiftState.timer)clearInterval(
 // CHAT
 function showChat(){
   const users=getUsers().filter(u=>currentUser&&u.username!==currentUser.username);
-  $("chatContacts").innerHTML=users.map(u=>`<div class="case-card" data-p="${u.username}"><b>${u.name}</b> @${u.username}</div>`).join("")||"<p class='muted'>No other local users</p>";
+  $("chatContacts").innerHTML=users.map(u=>'<div class="case-card" data-p="'+esc(u.username)+'"><b>'+esc(u.name)+'</b> @'+esc(u.username)+"</div>").join("")||"<p class='muted'>No other local users</p>";
   $("chatContacts").querySelectorAll("[data-p]").forEach(el=>el.onclick=()=>{chatPeer=el.getAttribute("data-p");rmsg();});
 }
 function rmsg(){
   const all=JSON.parse(localStorage.getItem("tmsxr_chat")||"[]").filter(m=>currentUser&&((m.from===currentUser.username&&m.to===chatPeer)||(m.from===chatPeer&&m.to===currentUser.username)));
-  $("chatMsgs").innerHTML=all.slice(-20).map(m=>`<div><b>${m.from===currentUser.username?"You":m.from}</b>: ${m.text}</div>`).join("")||"<div class='muted'>No messages</div>";
+  $("chatMsgs").innerHTML=all.slice(-20).map(m=>"<div><b>"+esc(m.from===currentUser.username?"You":m.from)+"</b>: "+esc(m.text)+"</div>").join("")||"<div class='muted'>No messages</div>";
 }
 $("chatSend").onclick=()=>{
   if(!currentUser||!chatPeer)return;const t=($("chatInput").value||"").trim();if(!t)return;
@@ -2467,17 +3180,46 @@ $("chatExit").onclick=()=>setMode("menu");$("admExit").onclick=()=>setMode("menu
 
 const ex=loadSession();if(ex){currentUser=ex;enterApp();}
 })();
-// PWA soft offline cache
-if("serviceWorker" in navigator){
+// PWA manifest (valid JSON)
+try{
+  var man={name:"TMS-XR",short_name:"TMS-XR",start_url:".",display:"standalone",background_color:"#050d16",theme_color:"#050d16"};
+  var manLink=$("pwaManifest");
+  if(manLink) manLink.setAttribute("href","data:application/manifest+json,"+encodeURIComponent(JSON.stringify(man)));
+}catch(e){}
+// Offline: register SW only on http(s) same-origin pages (not file://). Caches this document + A-Frame CDN on first load.
+if("serviceWorker" in navigator && (location.protocol==="https:"||location.hostname==="localhost"||location.hostname==="127.0.0.1")){
   try{
-    var swBody="self.addEventListener('install',function(e){self.skipWaiting();});self.addEventListener('fetch',function(e){e.respondWith(fetch(e.request).catch(function(){return caches.match(e.request);}));});";
-    var blob=new Blob([swBody],{type:"text/javascript"});
-    var swUrl=URL.createObjectURL(blob);
-    // blob SW often blocked — register only same-origin file when available; soft fail
-    navigator.serviceWorker.getRegistrations().then(function(){}).catch(function(){});
+    var swCode="const CACHE='tmsxr-v1';const ASSETS=[self.registration?self.registration.scope:'./'];self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./']).catch(()=>{})).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(self.clients.claim());});self.addEventListener('fetch',e=>{e.respondWith(caches.open(CACHE).then(async c=>{try{const net=await fetch(e.request);if(e.request.method==='GET'&&net.ok)c.put(e.request,net.clone());return net;}catch(err){const hit=await c.match(e.request);return hit||new Response('Offline — open this page once online to cache it.',{status:503,headers:{'Content-Type':'text/plain'}});}}));});";
+    // Prefer external sw if present; else skip blob (insecure/unreliable). Document limitation in UI offline note.
+    navigator.serviceWorker.getRegistration().then(function(reg){
+      if(!reg && location.pathname && location.protocol==="https:"){
+        // Create SW via fetch of a data URL is not allowed in most browsers — leave hook for hosted /sw.js
+        navigator.serviceWorker.register("sw.js").then(function(){console.info("TMS-XR: service worker registered");}).catch(function(err){console.info("TMS-XR: SW not registered",err);});
+      }
+    }).catch(function(){});
   }catch(e){}
 }
-try{refreshDueBox();}catch(e){}
+try{refreshDueBox();refreshWeakMap();}catch(e){}
+if($("weakMap"))$("weakMap").onclick=function(){setMode("telas");};
+// Local-only auth notice once per session
+try{const CACHE='tmsxr-v1';
+self.addEventListener('install',function(e){
+  e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(['./']).catch(function(){});}).then(function(){return self.skipWaiting();}));
+});
+self.addEventListener('activate',function(e){e.waitUntil(self.clients.claim());});
+self.addEventListener('fetch',function(e){
+  e.respondWith(caches.open(CACHE).then(function(c){
+    return fetch(e.request).then(function(net){
+      if(e.request.method==='GET'&&net&&net.ok)try{c.put(e.request,net.clone());}catch(err){}
+      return net;
+    }).catch(function(){return c.match(e.request).then(function(hit){return hit||new Response('Offline',{status:503});});});
+  }));
+});
+
+  if(sessionStorage.getItem("tmsxr_local_notice")!=="1"){
+    sessionStorage.setItem("tmsxr_local_notice","1");
+  }
+}catch(e){}
 </script>
 </body>
 </html>
