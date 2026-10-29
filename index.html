@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#050d16">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>TMS-XR Clinical Platform</title>
+<title>TMS-XR Product v6 · Clinical Learning Platform</title>
 <!-- Manifest injected by JS for valid JSON (data-URL quoting is fragile in HTML attributes) -->
 <link rel="manifest" id="pwaManifest">
 <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
@@ -231,45 +231,86 @@ body.auth-open a-scene{visibility:hidden!important;pointer-events:none!important
 <div id="welcome" class="hidden">
   <div class="card">
     <div class="user-bar"><div class="avatar" id="userAvatar">👩‍⚕️</div><div><div id="userBarName">User</div><div class="muted" id="userBarRole"></div></div></div>
-    <div class="brand" style="margin:8px 0"><div class="brand-mark">TX</div><div><h1 style="margin:0">TMS-XR</h1><p class="muted" style="margin:0">Select a module</p></div></div>
-    <div id="twinCard" class="case-card" style="margin:10px 0;cursor:pointer;border:1px solid rgba(56,230,186,.35);background:rgba(56,230,186,.08)">
-      <span class="tag">LONGITUDINAL</span>
-      <strong id="twinCardTitle">Your Patient Twin</strong>
-      <p class="muted" id="twinCardSub" style="margin:4px 0 0">Ongoing case with doses, routes &amp; calculations — continues across visits</p>
+    <div class="brand" style="margin:8px 0"><div class="brand-mark">TX</div><div><h1 style="margin:0">TMS-XR</h1><p class="muted" style="margin:0">Clinical learning &amp; reference · v6 expanded</p></div></div>
+    <p class="muted" style="font-size:12px;margin:0 0 10px;padding:8px;border-radius:8px;background:rgba(240,200,74,.1);border:1px solid rgba(240,200,74,.25)"><b>Educational tool</b> — confirm doses and decisions with local STG, seniors, and facility protocols. Not a prescribing system.</p>
+    <div class="subnav" id="homeModeNav" style="margin-bottom:10px">
+      <button type="button" data-home="ref" class="on">Reference</button>
+      <button type="button" data-home="practice">Practice</button>
+      <button type="button" data-home="skills">Skills</button>
+      <button type="button" data-home="trends">AI &amp; AMS</button>
+      <button type="button" data-home="data">My data</button>
     </div>
-    <div id="weakMap" class="case-card" style="margin:8px 0;cursor:pointer">
-      <span class="tag">WEAK TOPICS</span>
-      <strong id="weakTitle">Personal weak-topic map</strong>
-      <p class="muted" id="weakSub" style="margin:4px 0 0">Answer Telas questions to build your map</p>
-      <div id="weakBars" style="margin-top:8px"></div>
-    </div>
-    <input id="modSearch" placeholder="Search modules, drugs, radiology, Telas…" type="search" autocomplete="off">
+    <input id="modSearch" placeholder="Search drugs, labs, procedures, topics…" type="search" autocomplete="off">
     <div id="searchResults" class="hidden" style="max-height:220px;overflow:auto;margin:6px 0 10px"></div>
-    <div id="modGrid">
-      <div class="mod-section"><h2>Skills</h2>
-        <div class="mod-grid">
-          <button type="button" data-mod="proc" data-keys="procedure iv catheter ngt"><span class="n">01</span><span class="t">Procedures</span></button>
-          <button type="button" data-mod="anat" data-keys="anatomy dissection suture"><span class="n">02</span><span class="t">Anatomy &amp; Dissection</span></button>
-          <button type="button" data-mod="delivery" data-keys="delivery labour resus"><span class="n">03</span><span class="t">Delivery &amp; Resus</span></button>
-          <button type="button" data-mod="surg" data-keys="surgery operation"><span class="n">04</span><span class="t">Virtual Surgeries</span></button>
-        </div>
-      </div>
-      <div class="mod-section"><h2>Knowledge</h2>
-        <div class="mod-grid">
-          <button type="button" data-mod="radiology" data-keys="xray ct mri ultrasound"><span class="n">05</span><span class="t">Radiology</span></button>
-          <button type="button" data-mod="drugs" data-keys="drug pharmacology"><span class="n">06</span><span class="t">Drug Physiology</span></button>
-        </div>
-      </div>
-      <div class="mod-section"><h2>Practice</h2>
-        <div class="mod-grid">
-          <button type="button" data-mod="telas" data-keys="telas quiz roast next step roulette revision"><span class="n">07</span><span class="t">Telas Doc · Revision</span></button>
-          <button type="button" data-mod="chat" data-keys="chat contacts"><span class="n">08</span><span class="t">Contacts &amp; Chat</span></button>
-        </div>
+
+    <div id="homeRef">
+      <p class="muted" style="margin:8px 0">Quick tools for clinic and ward rounds.</p>
+      <div class="mod-grid">
+        <button type="button" data-mod="drugs" data-keys="drug pharmacology dose interaction"><span class="n">Rx</span><span class="t">Drugs &amp; doses</span></button>
+        <button type="button" data-mod="radiology" data-keys="xray ct mri ultrasound lab alp"><span class="n">Dx</span><span class="t">Imaging &amp; labs</span></button>
       </div>
     </div>
-    <div class="button-grid" style="margin-top:12px">
-      <button type="button" id="btnAdmin" class="hidden">Admin</button>
-      <button type="button" id="btnLogoutHome" class="danger">Logout</button>
+
+    <div id="homePractice" class="hidden">
+      <div id="twinCard" class="case-card" style="margin:10px 0;cursor:pointer;border:1px solid rgba(56,230,186,.35);background:rgba(56,230,186,.08)">
+        <span class="tag">WARD PRACTICE</span>
+        <strong id="twinCardTitle">Your Patient Twin</strong>
+        <p class="muted" id="twinCardSub" style="margin:4px 0 0">Ongoing cases with doses, routes &amp; calculations</p>
+      </div>
+      <div id="weakMap" class="case-card" style="margin:8px 0;cursor:pointer">
+        <span class="tag">WEAK TOPICS</span>
+        <strong id="weakTitle">Personal weak-topic map</strong>
+        <p class="muted" id="weakSub" style="margin:4px 0 0">Answer Telas questions to build your map</p>
+        <div id="weakBars" style="margin-top:8px"></div>
+      </div>
+      <div class="mod-grid">
+        <button type="button" data-mod="telas" data-keys="telas quiz revision nbs osce"><span class="n">01</span><span class="t">TelasDoc revision</span></button>
+        <button type="button" data-mod="chat" data-keys="chat contacts"><span class="n">02</span><span class="t">Contacts (local)</span></button>
+      </div>
+    </div>
+
+    <div id="homeSkills" class="hidden">
+      <p class="muted" style="margin:8px 0">Skill trainers — practice sequences, not certification.</p>
+      <div class="mod-grid">
+        <button type="button" data-mod="proc" data-keys="procedure iv catheter ngt"><span class="n">01</span><span class="t">Procedures</span></button>
+        <button type="button" data-mod="anat" data-keys="anatomy dissection suture"><span class="n">02</span><span class="t">Anatomy &amp; suture</span></button>
+        <button type="button" data-mod="delivery" data-keys="delivery labour resus"><span class="n">03</span><span class="t">Delivery &amp; resus</span></button>
+        <button type="button" data-mod="surg" data-keys="surgery operation"><span class="n">04</span><span class="t">Virtual surgeries</span></button>
+      </div>
+    </div>
+
+    <div id="homeTrends" class="hidden">
+      <p class="muted" style="margin:8px 0">Aligned with 2025–2026 trends: AI in clinical learning, decision support literacy, and antimicrobial stewardship (WHO PHC focus). Educational only.</p>
+      <div class="mod-grid">
+        <button type="button" id="btnAiLit" data-keys="ai literacy llm hallucination"><span class="n">AI</span><span class="t">AI clinical literacy</span></button>
+        <button type="button" id="btnAms" data-keys="ams stewardship antibiotic amr"><span class="n">AMS</span><span class="t">Stewardship coach</span></button>
+        <button type="button" data-mod="telas" data-keys="ai ethics"><span class="n">Q</span><span class="t">AI &amp; AMS questions</span></button>
+      </div>
+      <div id="aiAmsPanel" class="hidden" style="margin-top:12px"></div>
+    </div>
+    <div id="homeData" class="hidden">
+      <p class="muted" style="margin:8px 0">Progress is stored in <b>this browser</b>. Export a backup before clearing data or switching devices. Import restores Twin roster and Telas review schedule for your username.</p>
+      <div class="button-grid">
+        <button type="button" class="primary" id="btnExportData">Export my progress</button>
+        <button type="button" id="btnImportData">Import progress</button>
+      </div>
+      <input type="file" id="importFile" accept="application/json,.json" class="hidden">
+      <p class="muted" id="dataStatus" style="margin-top:8px"></p>
+      <div class="button-grid" style="margin-top:12px">
+        <button type="button" id="btnAdmin" class="hidden">Admin</button>
+        <button type="button" id="btnLogoutHome" class="danger">Logout</button>
+      </div>
+    </div>
+
+    <div id="modGrid" class="hidden" aria-hidden="true">
+      <button type="button" data-mod="proc" data-keys="procedure iv catheter ngt">Procedures</button>
+      <button type="button" data-mod="anat" data-keys="anatomy dissection suture">Anatomy</button>
+      <button type="button" data-mod="delivery" data-keys="delivery labour resus">Delivery</button>
+      <button type="button" data-mod="surg" data-keys="surgery">Surgeries</button>
+      <button type="button" data-mod="radiology" data-keys="xray ct mri ultrasound lab">Radiology</button>
+      <button type="button" data-mod="drugs" data-keys="drug pharmacology">Drugs</button>
+      <button type="button" data-mod="telas" data-keys="telas quiz">Telas</button>
+      <button type="button" data-mod="chat" data-keys="chat">Chat</button>
     </div>
   </div>
 </div>
@@ -567,10 +608,12 @@ $("btnLogin").onclick=async()=>{
 };
 function enterApp(){
   $("authGate").classList.add("hidden");$("welcome").classList.remove("hidden");$("topRight").classList.remove("hidden");
-  try{refreshTwinCard();}catch(e){}
-  $("userBarName").textContent=currentUser.name;$("userBarRole").textContent=currentUser.role+" · @"+currentUser.username;
-  if(currentUser.isAdmin||currentUser.username==="admin")$("btnAdmin").classList.remove("hidden");
+  try{refreshTwinCard();refreshDueBox();refreshWeakMap();}catch(e){}
+  $("userBarName").textContent=currentUser.name||currentUser.username;
+  $("userBarRole").textContent=(currentUser.role||"")+" · @"+currentUser.username;
+  var adm=$("btnAdmin"); if(adm){if(currentUser.isAdmin||currentUser.username==="admin")adm.classList.remove("hidden");else adm.classList.add("hidden");}
   document.body.classList.add("no-vr");mode="menu";
+  try{setHomeMode("ref");}catch(e){}
 }
 function logout(){clearSession();location.reload();}$("logoutBtn").onclick=logout;$("btnLogoutHome").onclick=logout;
 
@@ -595,7 +638,7 @@ function setMode(m){
   mode=m;$("welcome").classList.toggle("hidden",m!=="menu");hideAll();
   // Always stop camera when leaving procedures/AR
   if(m!=="proc"){try{stopARCam();}catch(e){}}
-  if(m==="menu"){try{refreshTwinCard();refreshDueBox();refreshWeakMap();}catch(e){}}
+  if(m==="menu"){try{refreshTwinCard();refreshDueBox();refreshWeakMap();var on=document.querySelector("#homeModeNav button.on");setHomeMode(on?on.getAttribute("data-home"):"ref");}catch(e){}}
   if(needsVR[m]){document.body.classList.remove("no-vr");}else{document.body.classList.add("no-vr");}
   if(needsVR[m])setTimeout(fixCam,50);
   if(m!=="menu")logAct("open",m);
@@ -610,6 +653,48 @@ function setMode(m){
   else if(m==="admin"){$("adminPanel").classList.remove("hidden");const L=JSON.parse(localStorage.getItem("tmsxr_activity")||"[]");$("admLog").innerHTML=L.slice(0,50).map(x=>"<div>"+esc(x.name)+" · "+esc(x.action)+" "+esc(x.detail||"")+" · "+esc(new Date(x.time).toLocaleString())+"</div>").join("")||"Empty";}
   else if(m==="twin"){$("twinPanel").classList.remove("hidden");openTwin();}
 }
+
+function setHomeMode(mode){
+  var map={ref:"homeRef",practice:"homePractice",skills:"homeSkills",trends:"homeTrends",data:"homeData"};
+  Object.keys(map).forEach(function(k){var el=$(map[k]); if(el) el.classList.toggle("hidden",k!==mode);});
+  document.querySelectorAll("#homeModeNav button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-home")===mode);});
+  if(mode==="practice"){try{refreshTwinCard();refreshWeakMap();}catch(e){}}
+}
+document.querySelectorAll("#homeModeNav button").forEach(function(b){b.onclick=function(){setHomeMode(b.getAttribute("data-home"));};});
+function exportMyProgress(){
+  if(!currentUser){alert("Login first");return;}
+  var u=currentUser.username;
+  var payload={type:"tmsxr-progress-v1",exportedAt:new Date().toISOString(),user:{username:u,name:currentUser.name,role:currentUser.role},twin:null,review:null,activity:[]};
+  try{payload.twin=JSON.parse(localStorage.getItem("tmsxr_twin_"+u)||"null");}catch(e){}
+  try{payload.review=JSON.parse(localStorage.getItem("tmsxr_review_"+u)||"null");}catch(e){}
+  try{var acts=JSON.parse(localStorage.getItem("tmsxr_activity")||"[]");payload.activity=acts.filter(function(a){return a.user===u||a.name===currentUser.name;}).slice(0,100);}catch(e){}
+  var blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="tmsxr-progress-"+u+"-"+new Date().toISOString().slice(0,10)+".json";
+  document.body.appendChild(a);a.click();a.remove();
+  if($("dataStatus"))$("dataStatus").textContent="Exported progress for @"+u+". Keep this file private.";
+}
+function importMyProgress(file){
+  if(!currentUser){alert("Login first");return;}
+  var reader=new FileReader();
+  reader.onload=function(){
+    try{
+      var data=JSON.parse(reader.result);
+      if(!data||data.type!=="tmsxr-progress-v1")throw new Error("Not a TMS-XR progress file");
+      var u=currentUser.username;
+      if(data.user&&data.user.username&&data.user.username!==u){if(!confirm("File was for @"+data.user.username+". Import into @"+u+"?"))return;}
+      if(data.twin)localStorage.setItem("tmsxr_twin_"+u,JSON.stringify(data.twin));
+      if(data.review)localStorage.setItem("tmsxr_review_"+u,JSON.stringify(data.review));
+      try{refreshTwinCard();refreshDueBox();refreshWeakMap();}catch(e){}
+      if($("dataStatus"))$("dataStatus").textContent="Import OK for @"+u+".";
+      try{logAct("import_progress",u);}catch(e){}
+    }catch(err){if($("dataStatus"))$("dataStatus").textContent="Import failed";alert("Import failed: "+(err.message||""));}
+  };
+  reader.readAsText(file);
+}
+if($("btnExportData"))$("btnExportData").onclick=exportMyProgress;
+if($("btnImportData"))$("btnImportData").onclick=function(){if($("importFile"))$("importFile").click();};
+if($("importFile"))$("importFile").onchange=function(){if(this.files&&this.files[0])importMyProgress(this.files[0]);this.value="";};
+
 document.querySelectorAll("[data-mod]").forEach(b=>b.onclick=()=>setMode(b.getAttribute("data-mod")));
 $("homeBtn").onclick=function(){try{stopARCam();}catch(e){}setMode("menu");};$("btnAdmin").onclick=()=>setMode("admin");
 function refreshWeakMap(){
@@ -646,45 +731,215 @@ function refreshWeakMap(){
     };
   });
 }
+
+// ===== 2025-26 trend modules: AI clinical literacy + AMS coach =====
+const AI_LIT=[
+{stem:"A colleague pastes a ChatGPT differential for fever in pregnancy into the notes without checking. Best practice?",correct:"Treat AI output as untrusted draft — verify against patient data, guidelines, and your own reasoning before acting",wrong:["Copy into the chart as final diagnosis","Always prefer AI over senior review","Ignore the patient history if AI is confident"],why:"Education frameworks stress AI literacy, hallucination risk, and preserving independent clinical judgment.",tip:"AI is a draft assistant, not a clinician of record."},
+{stem:"What is a hallmark of an LLM hallucination in clinical advice?",correct:"Fluent, specific recommendations that are factually wrong or not applicable to this patient",wrong:["Advice that is always too short","Only occurs in non-English output","Impossible if the model cites numbers"],why:"Models can invent drugs, doses, or citations. Fluency is not truth.",tip:"Cross-check doses and rare claims."},
+{stem:"Before using an AI tool for treatment suggestions, you should prioritise?",correct:"Patient assessment, local guidelines/STG, and critical appraisal of any AI suggestion",wrong:["The most confident-sounding model","Whatever loads fastest offline only","Social media medical threads"],why:"Point-of-care AI is growing; evidence-based anchors still lead.",tip:"Guideline first, AI second, patient always."},
+{stem:"AI competency frameworks emphasise which risk of over-reliance?",correct:"Skill atrophy — reduced independent reasoning and procedural confidence if AI always decides",wrong:["Faster ECG machines","Improved hand-washing","Automatic consent"],why:"Training guidance stresses independent performance and skill preservation.",tip:"Practice without AI regularly."},
+{stem:"A patient brings a consumer symptom-checker printout insisting on CT. You should?",correct:"Take a proper history/exam, explain limits of consumer tools, and decide imaging on clinical grounds",wrong:["Order CT solely because the app suggested it","Dismiss the patient without assessment","Argue that all AI is useless"],why:"Direct-to-consumer AI is rising; clinicians still own the plan.",tip:"Respect concern; lead with clinical reasoning."},
+{stem:"Best way to use AI for learning cases as a student?",correct:"Ask for quiz questions or explanations, then close the tool and reason alone; verify facts in trusted sources",wrong:["Let AI write all assignments unedited","Only memorise AI answers","Avoid all digital tools"],why:"AI tutors help when they promote retrieval practice, not passive copy.",tip:"Generate, attempt, check."},
+{stem:"Which statement about clinical AI in LMIC primary care is most balanced?",correct:"Decision support may help triage and consistency if validated and supervised; infrastructure and governance still limit impact",wrong:["AI replaces the need for clinicians in rural posts","AI never helps in low-resource settings","All AI tools are equally regulated worldwide"],why:"Regional CDSS pilots show potential with human oversight.",tip:"Supervise; do not abdicate."},
+{stem:"Documentation of AI use in care should ideally?",correct:"Be transparent when AI materially influenced a decision, per local policy — clinician remains accountable",wrong:["Never be mentioned","Replace the clinical note entirely","Be hidden from the patient always"],why:"Transparency and professionalism are explicit AI training domains.",tip:"You sign the order — you own it."},
+{stem:"An AI tool suggests a drug dose far above the STG maximum. You?",correct:"Do not administer — recheck weight/STG/pharmacy resources and treat AI as wrong until proven",wrong:["Give the AI dose because models are always right","Average the AI dose with a guess","Ignore STG permanently"],why:"Dose safety overrides model confidence.",tip:"STG and labelling beat chatbot arithmetic."},
+{stem:"Skill preservation means?",correct:"Maintaining ability to assess and decide without AI, especially in outages or poor connectivity",wrong:["Never learning guidelines","Only using AI offline","Avoiding patients"],why:"Connectivity is imperfect; clinical skill is the backup.",tip:"Drill core emergencies offline."}
+];
+const AMS_CASES=[
+{stem:"Viral upper respiratory infection, 3 days, no red flags. Antibiotic?",correct:"No antibiotic — counsel symptomatic care and return precautions (stewardship)",wrong:["Amoxicillin just in case","Azithromycin for all coughs","Inject ceftriaxone routinely"],why:"Most antibiotic use is in primary care; unnecessary use drives AMR (WHO PHC focus).",tip:"No antibiotic is often the correct prescription."},
+{stem:"Suspected uncomplicated cystitis in non-pregnant woman, local E. coli sensitive to nitrofurantoin. Choice?",correct:"Nitrofurantoin (if eGFR adequate) for guideline duration — avoid fluoroquinolone first-line",wrong:["Ciprofloxacin first for all UTIs","IV meropenem outpatient","No urine consideration ever"],why:"Prefer narrow, guideline-first agents; reserve broad drugs.",tip:"Match drug to syndrome and resistance."},
+{stem:"Child with watery diarrhoea, no blood, some dehydration. Antibiotics?",correct:"ORS + zinc; antibiotics only if specific indications (e.g. bloody diarrhoea/cholera protocols)",wrong:["Metronidazole for all diarrhoea","Ciprofloxacin syrup routine","Stop breastfeeding"],why:"IMCI + stewardship: fluids first; avoid empiric Abx for watery GE.",tip:"ORS saves lives; unnecessary Abx do not."},
+{stem:"Surgical prophylaxis principle?",correct:"Give the right drug at the right time (usually within 60 min before incision), do not continue for days without indication",wrong:["Continue IV Abx for 7 days for every clean case","Skip prophylaxis for contaminated cases always","Any antibiotic at any time is fine"],why:"Prolonged prophylaxis increases resistance without benefit in many clean procedures.",tip:"Timing over duration for clean surgery."},
+{stem:"Health-post level: caregiver demands injectable antibiotic for cold. Best response?",correct:"Explain viral illness, no antibiotic benefit, safety/AMR; offer symptomatic care and clear return precautions",wrong:["Inject antibiotic to satisfy demand","Refuse to see the patient","Give adult dose to child"],why:"Primary care education is central to AMR action plans.",tip:"Communication is an AMS intervention."},
+{stem:"Blood culture before antibiotics in sepsis when it will not materially delay care?",correct:"Yes — obtain cultures when feasible without delaying the first antibiotic hour targets",wrong:["Delay antibiotics many hours for cultures","Never culture","Culture only after recovery"],why:"Stewardship includes de-escalation guided by data.",tip:"Source control + cultures + timely Abx."},
+{stem:"Reviewing a patient on day 3 of broad IV Abx now stable with directed oral option?",correct:"Consider IV-to-oral switch and narrow spectrum based on culture/clinical pathway",wrong:["Complete 14 days IV always","Add a second broad agent empirically without reason","Stop all therapy abruptly without plan"],why:"IV-to-oral and streamlining are core AMS interventions.",tip:"Daily antibiotic review."},
+{stem:"Penicillin allergy label — first step often?",correct:"Clarify the reaction history; many labels are not true IgE allergy — de-label when appropriate via local pathway",wrong:["Give carbapenem for every minor infection","Ignore allergy history","Assume all allergies are anaphylaxis"],why:"False allergy labels drive broader unnecessary antibiotics.",tip:"History quality matters."},
+{stem:"Otitis media with effusion without acute infection signs. Antibiotics?",correct:"Usually no acute antibiotic — observe/safety-net per guideline",wrong:["Broad IV therapy always","Azithromycin monthly always","Ear candles"],why:"Distinguish acute otitis media criteria from effusion.",tip:"Treat infections, not fluid alone."},
+{stem:"Completing a short effective course is better than?",correct:"Automatically long residual courses without indication",wrong:["Never stopping early when failure is clear","Cultures","Source control"],why:"Duration is an AMS lever — follow evidence-based lengths.",tip:"Right duration is stewardship."}
+];
+function openAiLit(){
+  try{setHomeMode("trends");}catch(e){}
+  var panel=$("aiAmsPanel"); if(!panel)return;
+  panel.classList.remove("hidden");
+  var q=AI_LIT[Math.floor(Math.random()*AI_LIT.length)];
+  var opts=shuffle([q.correct].concat(q.wrong));
+  panel.innerHTML="<h3>AI clinical literacy</h3><p class='muted'>2025–26 theme: use AI as a tutor/draft tool — verify everything clinically.</p><div class='stem'>"+esc(q.stem)+"</div><div id='aiOpts'></div><div id='aiFb' class='hidden'></div><button type='button' class='primary' id='aiNext' style='margin-top:8px;width:100%'>Another scenario</button>";
+  $("aiOpts").innerHTML=opts.map(function(o){return "<button type='button' class='opt-btn' data-v='"+String(o).replace(/"/g,"&quot;")+"'>"+esc(o)+"</button>";}).join("");
+  $("aiOpts").querySelectorAll("button").forEach(function(b){b.onclick=function(){
+    var ok=b.getAttribute("data-v")===q.correct;
+    $("aiOpts").querySelectorAll("button").forEach(function(x){if(x.getAttribute("data-v")===q.correct)x.classList.add("correct");});
+    b.classList.add(ok?"correct":"wrong");
+    var fb=$("aiFb");fb.classList.remove("hidden");fb.className=ok?"feedback-box":"feedback-box bad";
+    fb.innerHTML=(ok?"<b>Correct.</b> ":"<b>Not best.</b> ")+esc(q.why)+"<p class='muted'><b>Tip:</b> "+esc(q.tip)+"</p>";
+  };});
+  $("aiNext").onclick=openAiLit;
+}
+function openAms(){
+  try{setHomeMode("trends");}catch(e){}
+  var panel=$("aiAmsPanel"); if(!panel)return;
+  panel.classList.remove("hidden");
+  var q=AMS_CASES[Math.floor(Math.random()*AMS_CASES.length)];
+  var opts=shuffle([q.correct].concat(q.wrong));
+  panel.innerHTML="<h3>Antimicrobial stewardship coach</h3><p class='muted'>WHO PHC/AMR priority: right drug, patient, dose, duration — or no antibiotic.</p><div class='stem'>"+esc(q.stem)+"</div><div id='amsOpts'></div><div id='amsFb' class='hidden'></div><button type='button' class='primary' id='amsNext' style='margin-top:8px;width:100%'>Another AMS case</button>";
+  $("amsOpts").innerHTML=opts.map(function(o){return "<button type='button' class='opt-btn' data-v='"+String(o).replace(/"/g,"&quot;")+"'>"+esc(o)+"</button>";}).join("");
+  $("amsOpts").querySelectorAll("button").forEach(function(b){b.onclick=function(){
+    var ok=b.getAttribute("data-v")===q.correct;
+    $("amsOpts").querySelectorAll("button").forEach(function(x){if(x.getAttribute("data-v")===q.correct)x.classList.add("correct");});
+    b.classList.add(ok?"correct":"wrong");
+    var fb=$("amsFb");fb.classList.remove("hidden");fb.className=ok?"feedback-box":"feedback-box bad";
+    fb.innerHTML=(ok?"<b>Stewardship-aligned.</b> ":"<b>Not ideal stewardship.</b> ")+esc(q.why)+"<p class='muted'><b>Tip:</b> "+esc(q.tip)+"</p>";
+  };});
+  $("amsNext").onclick=openAms;
+}
+
+
 function globalSearch(q){
   q=(q||"").toLowerCase().trim();
   var box=$("searchResults");
   if(!box)return;
-  if(!q){box.classList.add("hidden");box.innerHTML="";document.querySelectorAll("#modGrid button[data-mod]").forEach(function(b){b.style.display="";});return;}
-  document.querySelectorAll("#modGrid button[data-mod]").forEach(function(b){
-    b.style.display=!q||((b.getAttribute("data-keys")||"")+b.textContent).toLowerCase().indexOf(q)>=0?"":"none";
-  });
+  if(!q){box.classList.add("hidden");box.innerHTML="";return;}
   var hits=[];
-  // modules
-  document.querySelectorAll("#modGrid button[data-mod]").forEach(function(b){
-    var label=b.textContent.replace(/\s+/g," ").trim();
-    if(label.toLowerCase().indexOf(q)>=0||(b.getAttribute("data-keys")||"").indexOf(q)>=0)
-      hits.push({type:"Module",title:label,go:function(){setMode(b.getAttribute("data-mod"));}});
+  function add(type,title,sub,go,rank){
+    hits.push({type:type,title:title,sub:sub||"",go:go,rank:rank||0});
+  }
+  function match(text){return (text||"").toLowerCase().indexOf(q)>=0;}
+  function rankIn(title,blob){
+    title=(title||"").toLowerCase();
+    if(title===q)return 100;
+    if(title.indexOf(q)===0)return 80;
+    if(title.indexOf(q)>=0)return 60;
+    if((blob||"").toLowerCase().indexOf(q)>=0)return 30;
+    return 0;
+  }
+
+  // —— Modules (home entry points)
+  var modules=[
+    {id:"drugs",title:"Drugs & doses",keys:"drug pharmacology dose interaction medication prescription"},
+    {id:"radiology",title:"Imaging & labs",keys:"xray ct mri ultrasound lab alp radiology imaging"},
+    {id:"proc",title:"Procedures",keys:"procedure iv cannula blood catheter ngt trach venepuncture"},
+    {id:"anat",title:"Anatomy & suture",keys:"anatomy dissection suture bone muscle nerve"},
+    {id:"delivery",title:"Delivery & resus",keys:"delivery labour labor resus neonatal obstetric"},
+    {id:"surg",title:"Virtual surgeries",keys:"surgery operation theatre"},
+    {id:"telas",title:"TelasDoc revision",keys:"telas quiz revision exam osce nbs"},
+    {id:"twin",title:"Patient Twin",keys:"twin patient ward case longitudinal"},
+    {id:"chat",title:"Contacts (local)",keys:"chat contacts message"}
+  ];
+  modules.forEach(function(m){
+    var r=rankIn(m.title,m.keys);
+    if(r) add("Module",m.title,m.keys.split(" ").slice(0,4).join(", "),function(){setMode(m.id);},r+5);
   });
-  // drugs
+
+  // —— Drugs (name, indication, MOA, cautions, notes, monitoring)
   if(typeof DRUGS!=="undefined")DRUGS.forEach(function(d,i){
-    var blob=(d.t+" "+d.ind+" "+(d.detail||"")).toLowerCase();
-    if(blob.indexOf(q)>=0)hits.push({type:"Drug",title:d.t,sub:d.ind,go:function(){setMode("drugs");setTimeout(function(){openDrugIndex(i);},50);}});
+    var blob=[d.t,d.ind,d.ad,d.ch,d.moa,d.ci,d.detail,d.monitor].join(" ");
+    var r=rankIn(d.t,blob);
+    if(r) add("Drug",d.t,d.ind,function(){setMode("drugs");setTimeout(function(){openDrugIndex(i);},40);},r);
   });
-  // radiology
+
+  // —— Labs vs imaging (RAD entries)
   if(typeof RAD!=="undefined")RAD.forEach(function(r,i){
-    var blob=(r.t+" "+r.m+" "+r.f+" "+(r.lab||"")).toLowerCase();
-    if(blob.indexOf(q)>=0)hits.push({type:r.m,title:r.t,sub:r.f.slice(0,80),go:function(){setMode("radiology");setTimeout(function(){openRadIndex(i);},50);}});
+    var blob=[r.t,r.m,r.f,r.depth,r.lab,r.tip].join(" ");
+    var rk=rankIn(r.t,blob);
+    if(!rk)return;
+    var isLab=(String(r.m).toUpperCase()==="LAB")||/lab|alp|alt|ast|troponin|potassium|sodium|creatinine|csf|d-dimer|anaemia|anemia|aki/i.test(r.t+" "+r.m);
+    add(isLab?"Lab":("Imaging · "+r.m), r.t, (r.f||"").slice(0,90), function(){setMode("radiology");setTimeout(function(){openRadIndex(i);},40);}, rk+(isLab?2:0));
   });
-  // telas courses
+
+  // —— Procedures (PROCS keys + friendly names)
+  if(typeof PROCS!=="undefined"){
+    var procMeta={
+      iv:{title:"IV cannulation",keys:"iv cannula cannulation drip tourniquet flashback flush venepuncture line"},
+      blood:{title:"Venepuncture / blood draw",keys:"blood sample tube phlebotomy venepuncture"},
+      cath:{title:"Urethral catheterisation",keys:"catheter foley urine bladder"},
+      ngt:{title:"Nasogastric tube (NGT)",keys:"ngt ng tube nasogastric feed aspiration"},
+      trach:{title:"Tracheostomy care",keys:"tracheostomy suction airway stoma"},
+      ar:{title:"Procedure visual coach (camera)",keys:"ar camera guide angle injection im"}
+    };
+    Object.keys(PROCS).forEach(function(k){
+      var meta=procMeta[k]||{title:PROCS[k].t||k,keys:k};
+      var blob=meta.title+" "+meta.keys+" "+(PROCS[k].t||"");
+      var r=rankIn(meta.title,blob);
+      if(r) add("Procedure",meta.title, "Open in Procedures", function(){setMode("proc");setTimeout(function(){loadProc(k);},40);}, r+3);
+    });
+    // also AR tab
+    var arBlob="ar camera visual coach needle angle im injection neonatal airway";
+    if(match(arBlob)||match("ar")||match("camera guide"))
+      add("Procedure","Visual coaching overlay","Camera guide for IV / IM / neonatal airway",function(){setMode("proc");setTimeout(function(){loadProc("ar");},40);},50);
+  }
+
+  // —— Surgery scenarios
+  if(typeof SURGS!=="undefined")SURGS.forEach(function(s,i){
+    var r=rankIn(s.t,s.t);
+    if(r) add("Surgery topic",s.t,"Virtual surgery decision case",function(){setMode("surg");setTimeout(function(){showSurgList();var btn=$("surgList")&&$("surgList").querySelectorAll("button")[i];if(btn)btn.click();},80);},r);
+  });
+
+  // —— Delivery pathways
+  if(match("delivery")||match("labour")||match("labor")||match("resus")||match("neonatal")||match("apgar")||match("ppv")){
+    add("Topic","Normal delivery pathway","Delivery & resus module",function(){setMode("delivery");},55);
+    add("Topic","Neonatal resuscitation pathway","Delivery & resus module",function(){setMode("delivery");setTimeout(function(){if($("delRes"))$("delRes").click();},40);},54);
+  }
+
+  // —— Telas courses + topic keywords from BANK stems (limited)
   if(typeof COURSES!=="undefined")COURSES.forEach(function(c){
-    if(c.toLowerCase().indexOf(q)>=0)hits.push({type:"Telas course",title:c,go:function(){setMode("telas");tCourse=c;tMode="full";usedStems.clear();startTelas();}});
+    var r=rankIn(c,c);
+    if(r) add("Telas course",c,"Revision questions",function(){resetTelasUI();setMode("telas");tCourse=c;tMode="full";usedStems.clear();startTelas();},r);
   });
-  // twin patients
+  if(typeof BANK!=="undefined"){
+    var topicHits={}, n=0;
+    for(var bi=0;bi<BANK.length&&n<40;bi++){
+      var item=BANK[bi];
+      var blob=(item.stem+" "+item.correct+" "+(item.c||"")).toLowerCase();
+      if(blob.indexOf(q)<0)continue;
+      var key=(item.c||"Topic")+"|"+(item.stem||"").slice(0,60);
+      if(topicHits[key])continue;
+      topicHits[key]=1;n++;
+      add("Topic", (item.c||"Clinical")+": "+(item.stem||"").slice(0,70), "Telas · "+(item.correct||"").slice(0,50), function(course,stem){
+        return function(){
+          resetTelasUI();setMode("telas");tMode="full";tCourse=course;usedStems.clear();
+          // jump into course; user continues from bank
+          startTelas();
+        };
+      }(item.c,item.stem), 25);
+    }
+  }
+
+  // —— Twin patients
   if(typeof TWIN_DEFS!=="undefined")TWIN_DEFS.forEach(function(p){
-    if((p.name+" "+p.dx).toLowerCase().indexOf(q)>=0)hits.push({type:"Twin",title:p.name,sub:p.dx,go:function(){setMode("twin");}});
+    var blob=p.name+" "+p.dx+" "+(p.hx||"")+" "+(p.exam||"");
+    var r=rankIn(p.name,blob);
+    if(r) add("Patient Twin",p.name,p.dx,function(){setMode("twin");},r);
   });
-  hits=hits.slice(0,20);
+
+  // —— Anatomy quick topics
+  var anatTopics=[
+    {t:"Skin / soft tissue layer",k:"skin soft tissue"},
+    {t:"Muscle layer",k:"muscle myology"},
+    {t:"Bone / skeleton",k:"bone skeleton osteology 206"},
+    {t:"Vessels",k:"vessel artery vein circulation"},
+    {t:"Nerves",k:"nerve plexus innervation"},
+    {t:"Suturing practice",k:"suture stitch wound"}
+  ];
+  anatTopics.forEach(function(a){
+    if(match(a.t)||match(a.k))
+      add("Anatomy",a.t,"Anatomy module",function(){setMode("anat");setTimeout(function(){showAnat(a.t.toLowerCase().indexOf("suture")>=0?"suture":"layers");},40);},40);
+  });
+
+  hits.sort(function(a,b){return (b.rank||0)-(a.rank||0);});
+  // de-dupe by type+title
+  var seen={}, uniq=[];
+  hits.forEach(function(h){
+    var k=h.type+"|"+h.title;
+    if(seen[k])return;seen[k]=1;uniq.push(h);
+  });
+  hits=uniq.slice(0,30);
+
   box.classList.remove("hidden");
-  if(!hits.length){box.innerHTML="<p class='muted'>No matches</p>";return;}
-  box.innerHTML=hits.map(function(h,idx){return "<div class='case-card' data-hit='"+idx+"'><span class='tag'>"+h.type+"</span> <strong>"+h.title+"</strong>"+(h.sub?"<br><span class='muted'>"+h.sub+"</span>":"")+"</div>";}).join("");
+  if(!hits.length){box.innerHTML="<p class='muted'>No matches for "+esc(q)+". Try a drug name, lab (e.g. ALP), procedure (IV), or topic (asthma).</p>";return;}
+  box.innerHTML="<p class='muted' style='margin:0 0 6px'>"+hits.length+" result(s)</p>"+hits.map(function(h,idx){
+    return "<div class='case-card' data-hit='"+idx+"'><span class='tag'>"+esc(h.type)+"</span> <strong>"+esc(h.title)+"</strong>"+(h.sub?"<br><span class='muted'>"+esc(h.sub)+"</span>":"")+"</div>";
+  }).join("");
   box.querySelectorAll("[data-hit]").forEach(function(el){
-    el.onclick=function(){hits[+el.getAttribute("data-hit")].go();box.classList.add("hidden");$("modSearch").value="";};
+    el.onclick=function(){hits[+el.getAttribute("data-hit")].go();box.classList.add("hidden");if($("modSearch"))$("modSearch").value="";};
   });
 }
 function openDrugIndex(i){
@@ -2184,6 +2439,20 @@ const DRUGS=[
  ci:"Severe shock — IV first; persistent vomiting limiting intake",
  detail:"Still underused. In cholera, combine with zinc in children and antibiotics when indicated by protocol.",
  monitor:"Hydration, urine, ongoing losses chart"}
+,{t:"Amoxicillin (expanded note)",ind:"Otitis, dental infection, some pneumonia per STG",ad:"500 mg–1 g TDS",ch:"Weight-band",moa:"Beta-lactam",ci:"Penicillin anaphylaxis",detail:"Workhorse narrow-spectrum agent when organism likely sensitive. Complete the course; do not use for pure viral colds (AMS).",monitor:"Allergy, diarrhoea"}
+,{t:"Cloxacillin / oxacillin-class",ind:"MSSA skin and soft tissue where available",ad:"Per local label QDS",ch:"Weight-band",moa:"Penicillinase-stable penicillin",ci:"Penicillin allergy",detail:"Prefer over broad agents for simple MSSA when sensitive. MRSA needs different therapy.",monitor:"Allergy, LFTs prolonged"}
+,{t:"Cefazolin",ind:"Surgical prophylaxis, MSSA infections selected",ad:"1–2 g IV timed before incision for prophylaxis",ch:"Protocol mg/kg",moa:"First-generation cephalosporin",ci:"Severe beta-lactam allergy risk assessment",detail:"Common prophylaxis choice — timing within 60 minutes before cut is critical AMS/surgical quality metric.",monitor:"Allergy, dosing in renal impairment"}
+,{t:"Meropenem",ind:"ESBL/severe nosocomial infection directed use",ad:"1 g TDS IV typical (adjust renal)",ch:"Specialist weight-band",moa:"Carbapenem",ci:"Reserve; allergy",detail:"Do not use as first-line for community mild infections — stewardship reserve drug.",monitor:"Seizure risk high dose/renal failure, superinfection"}
+,{t:"Linezolid",ind:"MRSA/VRE selected infections; toxicity limits duration",ad:"600 mg BD",ch:"Specialist",moa:"Oxazolidinone 50S",ci:"MAO interactions; myelosuppression with duration",detail:"Oral bioavailability excellent; watch platelets/serotonin syndrome risk with interacting drugs.",monitor:"FBC if >1–2 weeks, interactions"}
+,{t:"Clindamycin",ind:"Skin/soft tissue, some anaerobic; toxin suppression adjunct in streptococcal toxic syndromes",ad:"300–450 mg TDS–QDS oral",ch:"Weight-band",moa:"50S inhibition",ci:"C. diff risk high; allergy",detail:"Excellent tissue penetration; counsel on diarrhoea and when to stop/seek care.",monitor:"Diarrhoea, LFTs"}
+,{t:"Azithromycin (AMS caution)",ind:"Selected indications only — resistance rising",ad:"500 mg daily ×3 or indication-specific",ch:"10 mg/kg ×3 days many protocols",moa:"Macrolide",ci:"QT risk combinations",detail:"Do not use for undifferentiated viral cough. Stewardship: indication must be clear.",monitor:"QT drugs, hearing rare"}
+,{t:"Ivermectin",ind:"Onchocerciasis, strongyloides, scabies mass-treatment contexts per programme",ad:"200 mcg/kg single or programme schedule",ch:"Height/weight programme bands",moa:"Parasite neuromuscular paralysis",ci:"Loa loa co-endemic caution in some regions",detail:"Public health cornerstone in NTD programmes — follow national campaign rules.",monitor:"Reaction in heavy microfilarial load"}
+,{t:"Artemisinin combination therapy class note",ind:"Uncomplicated falciparum — complete full ACT course",ad:"Weight-band FDC",ch:"Weight-band",moa:"Rapid parasite clearance + partner protection",ci:"Severe malaria needs artesunate first",detail:"Never partial courses. If vomiting early, repeat per protocol.",monitor:"Clinical failure → review resistance/alternative diagnosis"}
+,{t:"Tranexamic acid (trauma/PPH)",ind:"Trauma haemorrhage early; PPH within timeframe; selected bleeding",ad:"1 g IV protocols",ch:"Research weight-based trauma dosing",moa:"Antifibrinolytic",ci:"Caution active thrombosis contexts",detail:"Adjunct to source control — classic trauma evidence emphasises early use.",monitor:"Thrombosis symptoms"}
+,{t:"Vitamin B12",ind:"Deficiency, pernicious anaemia, some neuropathy pathways",ad:"IM loading then maintenance or high-dose oral per pathway",ch:"Age-specific",moa:"Cofactor for methionine synthase / myelin",ci:"Rare allergy to injections",detail:"Replace cause investigation (diet, IF, malabsorption). Correct after or with folate thoughtfully.",monitor:"FBC, neurological response"}
+,{t:"ORS reduced osmolarity",ind:"Dehydration when able to drink",ad:"Volume by losses",ch:"IMCI plans",moa:"Na-glucose cotransport",detail:"Underused life-saving therapy. Continue feeding.",monitor:"Hydration status"}
+,{t:"Oxygen (as therapy)",ind:"Hypoxaemia targets by condition (not always 100%)",ad:"Titrate to target SpO2",ch:"Target saturations by disease",moa:"Increases inspired O2 fraction",ci:"Uncontrolled hyperoxia risks in some groups; CO2 retainers need controlled targets",detail:"Treat hypoxaemia; avoid reflexive 15 L in everyone without assessment.",monitor:"SpO2, work of breathing"}
+
 ];
 function showDrugs(){
   $("drugList").classList.remove("hidden");$("drugDetail").classList.add("hidden");
@@ -2745,6 +3014,56 @@ add("Microbiology","Empiric neonatal early-onset sepsis cover often includes?",
 "Know your unit’s regimen.","Oral therapy is not neonatal sepsis care.");
 
 // More NBS items appended by replacing NBS array
+
+// === Expanded content pack 48 items ===
+add("Internal Medicine","Acute decompensated heart failure with hypoxia. First supportive steps?","Sit up, oxygen, nitrates if BP allows, diuretic as indicated",["Flat and 2L saline bolus", "Home without treatment", "Oral iron only"],"Reduce preload and support gas exchange.","Position and oxygen before chronic meds debate.");
+add("Internal Medicine","Suspected PE, haemodynamically stable, high probability. Next?","CTPA (or VQ if CTPA unsuitable) and anticoagulate per protocol when appropriate",["D-dimer only to rule in high probability", "Home aspirin", "Abdominal ultrasound first"],"High probability needs imaging, not dimer-only rule-out.","Pre-test probability drives the pathway.");
+add("Internal Medicine","New AF with RVR, stable BP. Acute rate control option class?","Beta-blocker or non-DHP calcium blocker as appropriate to phenotype",["Digoxin alone always first in young high catecholamine states", "No rate control needed", "Immediate discharge"],"Match agent to heart failure/asthma context.","Rate, rhythm, anticoagulate risk.");
+add("Surgery","Suspected acute mesenteric ischaemia. Key early action?","Urgent surgical/vascular review; resuscitation; do not delay for prolonged non-urgent tests",["Outpatient review in 2 weeks", "Oral antacids only", "Routine hernia repair booking only"],"Time-critical ischaemia.","Pain out of proportion is a clue.");
+add("Surgery","Pancreatitis diagnosis is primarily?","Clinical + biochemical (lipase/amylase); imaging for complications/uncertainty",["CXR alone", "Urine dip only", "Always immediate laparotomy"],"Atlanta/clinical pathways.","Severity stratification next.");
+add("Paediatrics","WHO danger signs in a child under 5 include?","Unable to drink/breastfeed, vomiting everything, convulsions, lethargy/unconscious, stridor, severe malnutrition contexts",["Only mild runny nose", "Happy playing toddler with cold", "Single sneeze"],"IMCI prioritises danger signs.","Urgent facility care.");
+add("Paediatrics","Severe croup with stridor at rest. Management principle?","Keep calm, oxygen if needed, nebulised adrenaline and systemic steroid per protocol",["Force throat exam repeatedly", "Oral antibiotics alone", "Discharge without observation"],"Airway-first medical therapy.","Do not agitate.");
+add("Obstetrics & Gynaecology","Active management of third stage aims to reduce?","Postpartum haemorrhage",["Neonatal jaundice only", "Breast engorgement only", "Normal lochia duration only"],"Oxytocin and controlled cord traction per protocol.","PPH prevention.");
+add("Obstetrics & Gynaecology","Magnesium toxicity sign cluster includes?","Loss of reflexes, respiratory depression, low urine output \u2014 stop Mg and give calcium per protocol",["Isolated mild thirst only", "Orange urine only", "Always asymptomatic"],"Monitor while on MgSO4.","Calcium gluconate ready.");
+add("Pharmacology","Enzyme inducers such as rifampicin may?","Reduce levels of many co-medications including some ART and contraceptives",["Increase all drug levels always", "Have no interactions", "Only affect topical creams"],"Counsel and adjust regimens.","Orange urine expected with rifampicin.");
+add("Pharmacology","Vancomycin infusion reaction (red man) is reduced by?","Slower infusion rate (not always true allergy)",["Doubling the rate", "Skipping the dose forever without review", "Giving IM only"],"Rate-related histamine release.","Levels still matter for efficacy/toxicity.");
+add("Microbiology","ESBL-producing organisms often need?","Carbapenems or other directed agents per susceptibility \u2014 not routine ceftriaxone alone",["Oral nitrofurantoin for bacteraemia", "Always antifungals", "No antibiotics"],"Stewardship and correct spectrum.","Cultures guide de-escalation.");
+add("Radiology","Silhouette sign on CXR helps?","Localise consolidation by loss of border with adjacent structure",["Measure bone density", "Diagnose anaemia", "Replace the need for history"],"RML obscures right heart border classic teaching.","Pattern + clinical correlation.");
+add("Radiology","FAST positive in unstable trauma patient suggests?","Haemoperitoneum/pericardial fluid pathway toward theatre or intervention",["Normal findings", "Need for elective hernia repair only", "Viral illness"],"Bedside triage tool.","Does not exclude all injuries.");
+add("Anaesthesia","Malignant hyperthermia management cornerstone drug?","Dantrolene (plus stop triggers, support)",["Naloxone only", "Vitamin K only", "Oral ibuprofen"],"Rare crisis \u2014 know the location of dantrolene.","Volatiles/sux risk in susceptibles.");
+add("Medical Forensics","Capacity assessment is?","Decision-specific and time-specific \u2014 not a global label from disagreeing with doctors",["Automatically absent if unwise choice", "Never required in emergency", "Only decided by family without patient"],"Autonomy with safeguards.","Document the process.");
+add("Dermatology","Stevens\u2013Johnson / TEN management principle?","Stop culprit drug, supportive care, urgent specialist involvement",["Increase the suspected drug dose", "Routine short antibiotic for all rashes", "Ignore mucosal involvement"],"Life-threatening cutaneous emergency.","Nikolsky context.");
+add("Ophthalmology","Chemical eye burn first action?","Immediate irrigation with available water/saline \u2014 do not delay for visual acuity formalities",["Pad and send home without irrigation", "Neutralise acid with alkali at home experiments", "Wait for ophthalmology before any rinse"],"Minutes matter.","Irrigate then assess.");
+add("Physiology","In hypovolaemic shock, pulse pressure often?","Narrows (low stroke volume)",["Always widens dramatically", "Is unrelated to volume", "Only depends on height"],"Compensated shock teaching.","Trends matter more than one number.");
+add("Pathology","Virchow triad components?","Stasis, endothelial injury, hypercoagulability",["Only fever", "Only hyponatraemia", "Only high BMI without other factors"],"Framework for thrombosis risk.","VTE prevention logic.");
+add("Anatomy","Structures in the femoral triangle include?","Femoral nerve, artery, vein (lateral to medial NAVEL teaching variants)",["Only the sciatic nerve", "Only the aorta", "Cranial nerves"],"Procedural and hernia relevance.","Vein is medial to artery.");
+add("Psychiatry","Acute dystonia from antipsychotics \u2014 acute treatment?","Anticholinergic (e.g. procyclidine/benztropine) per protocol",["Give more haloperidol immediately", "Ignore until chronic", "High-dose caffeine only"],"Recognise oculogyric/crisis dystonia.","Review the antipsychotic plan.");
+add("Emergency","OPEN fracture \u2014 early priority beyond ABC?","Early IV antibiotics, tetanus status, cover wound, urgent ortho",["Delay Abx until after all X-rays next day", "Close dirty wound tightly in ED without washout plan", "Home without review"],"Infection prevention is time-sensitive.","Photograph before cover if protocol allows.");
+add("Emergency","Status epilepticus first-line class after ABC?","Benzodiazepine pathway then escalation per protocol",["Oral antiepileptic only at home", "CT before any oxygen", "No glucose check ever"],"Stop seizures, protect airway.","Don't stack sedatives blindly.");
+add("Internal Medicine","Teaching point recognition (Internal Medicine): which principle is correct?","Hypertensive emergency with end-organ signs needs controlled reduction and treatment of the organ injury \u2014 not sudden normalisation to 90 systolic.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"Hypertensive emergency with end-organ signs needs controlled reduction and treatment of the organ injury \u2014 not sudden normalisation to 90 systolic.","Anchor on this principle in similar stems.");
+add("Internal Medicine","Teaching point recognition (Internal Medicine): which principle is correct?","Community-acquired pneumonia severity tools (e.g. local/CURB-like) guide site of care; antibiotics per local resistance.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"Community-acquired pneumonia severity tools (e.g. local/CURB-like) guide site of care; antibiotics per local resistance.","Anchor on this principle in similar stems.");
+add("Internal Medicine","Teaching point recognition (Internal Medicine): which principle is correct?","DKA treatment pillars are fluids, insulin, potassium vigilance, and treating the trigger.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"DKA treatment pillars are fluids, insulin, potassium vigilance, and treating the trigger.","Anchor on this principle in similar stems.");
+add("Internal Medicine","Teaching point recognition (Internal Medicine): which principle is correct?","NSTEMI pathway emphasises anti-ischaemic therapy, antithrombotics as indicated, and risk-stratified invasive strategy.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"NSTEMI pathway emphasises anti-ischaemic therapy, antithrombotics as indicated, and risk-stratified invasive strategy.","Anchor on this principle in similar stems.");
+add("Surgery","Teaching point recognition (Surgery): which principle is correct?","Abscess needs drainage; antibiotics alone rarely suffice for large collections.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"Abscess needs drainage; antibiotics alone rarely suffice for large collections.","Anchor on this principle in similar stems.");
+add("Surgery","Teaching point recognition (Surgery): which principle is correct?","Tension pneumothorax is a clinical diagnosis in extremis \u2014 decompress without waiting for X-ray.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"Tension pneumothorax is a clinical diagnosis in extremis \u2014 decompress without waiting for X-ray.","Anchor on this principle in similar stems.");
+add("Surgery","Teaching point recognition (Surgery): which principle is correct?","Anastomotic leak presents with fever, tachycardia, peritonitis \u2014 urgent surgical review.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"Anastomotic leak presents with fever, tachycardia, peritonitis \u2014 urgent surgical review.","Anchor on this principle in similar stems.");
+add("Paediatrics","Teaching point recognition (Paediatrics): which principle is correct?","Neonatal hypoglycaemia protocols use measured glucose and age-specific thresholds; feed or 10% dextrose pathways.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"Neonatal hypoglycaemia protocols use measured glucose and age-specific thresholds; feed or 10% dextrose pathways.","Anchor on this principle in similar stems.");
+add("Paediatrics","Teaching point recognition (Paediatrics): which principle is correct?","Severe acute malnutrition with complications needs inpatient stabilisation before full RUTF phase.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"Severe acute malnutrition with complications needs inpatient stabilisation before full RUTF phase.","Anchor on this principle in similar stems.");
+add("Paediatrics","Teaching point recognition (Paediatrics): which principle is correct?","Epiglottitis suspected \u2014 do not force tongue depressor exams; senior airway support.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"Epiglottitis suspected \u2014 do not force tongue depressor exams; senior airway support.","Anchor on this principle in similar stems.");
+add("Obstetrics & Gynaecology","Teaching point recognition (Obstetrics & Gynaecology): which principle is correct?","Eclampsia: MgSO4, BP control, delivery plan \u2014 not outpatient observation.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"Eclampsia: MgSO4, BP control, delivery plan \u2014 not outpatient observation.","Anchor on this principle in similar stems.");
+add("Obstetrics & Gynaecology","Teaching point recognition (Obstetrics & Gynaecology): which principle is correct?","Shoulder dystocia: McRoberts and suprapubic pressure first-line manoeuvres after help called.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"Shoulder dystocia: McRoberts and suprapubic pressure first-line manoeuvres after help called.","Anchor on this principle in similar stems.");
+add("Obstetrics & Gynaecology","Teaching point recognition (Obstetrics & Gynaecology): which principle is correct?","Cord prolapse: elevate presenting part, urgent delivery.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"Cord prolapse: elevate presenting part, urgent delivery.","Anchor on this principle in similar stems.");
+add("Pharmacology","Teaching point recognition (Pharmacology): which principle is correct?","Aminoglycosides: nephro/ototoxicity \u2014 dosing and levels matter.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"Aminoglycosides: nephro/ototoxicity \u2014 dosing and levels matter.","Anchor on this principle in similar stems.");
+add("Pharmacology","Teaching point recognition (Pharmacology): which principle is correct?","Metformin: hold in hypoxia/AKI/contrast pathways per policy to reduce lactic acidosis risk.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"Metformin: hold in hypoxia/AKI/contrast pathways per policy to reduce lactic acidosis risk.","Anchor on this principle in similar stems.");
+add("Microbiology","Teaching point recognition (Microbiology): which principle is correct?","Blood cultures before antibiotics when it does not delay sepsis care.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"Blood cultures before antibiotics when it does not delay sepsis care.","Anchor on this principle in similar stems.");
+add("Microbiology","Teaching point recognition (Microbiology): which principle is correct?","C. difficile risk rises with broad-spectrum antibiotics \u2014 stewardship and IPC.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"C. difficile risk rises with broad-spectrum antibiotics \u2014 stewardship and IPC.","Anchor on this principle in similar stems.");
+add("Radiology","Teaching point recognition (Radiology): which principle is correct?","CT head non-contrast first for suspected ICH.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"CT head non-contrast first for suspected ICH.","Anchor on this principle in similar stems.");
+add("Radiology","Teaching point recognition (Radiology): which principle is correct?","Ultrasound first-line for gallstones and many obstetric questions.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"Ultrasound first-line for gallstones and many obstetric questions.","Anchor on this principle in similar stems.");
+add("Anaesthesia","Teaching point recognition (Anaesthesia): which principle is correct?","Difficult airway: prioritise oxygenation; know failed intubation pathways.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"Difficult airway: prioritise oxygenation; know failed intubation pathways.","Anchor on this principle in similar stems.");
+add("Emergency","Teaching point recognition (Emergency): which principle is correct?","Anaphylaxis: IM adrenaline first \u2014 not antihistamine-only.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"Anaphylaxis: IM adrenaline first \u2014 not antihistamine-only.","Anchor on this principle in similar stems.");
+add("Emergency","Teaching point recognition (Emergency): which principle is correct?","Opioid toxicity: support ventilation; naloxone titrated.",["Ignore guidelines and always maximise antibiotic spectrum for every case", "Delay all emergencies for full imaging regardless of instability", "Discharge all unstable patients for outpatient review only"],"Opioid toxicity: support ventilation; naloxone titrated.","Anchor on this principle in similar stems.");
+add("AI Clinical Literacy","When AI and your exam disagree, you should?","Re-examine the patient and verify with trusted sources \u2014 do not outsource final judgment",["Always trust the AI confidence score", "Delete the examination findings", "Follow social media consensus only"],"Independent clinical performance remains essential in AI-augmented practice.","You remain accountable.");
+add("Antimicrobial Stewardship","Most important AMS question before prescribing an antibiotic?","Does this patient have a bacterial infection likely to benefit, and is this the narrowest effective choice?",["Which antibiotic is newest?", "What does the patient demand injectable?", "What has the longest IV duration?"],"Need, spectrum, dose, duration, route.","Start with need.");
 // NBS-style short items
 const NBS=[
 {stem:"ECG: anterior STEMI. Next best step?",correct:"Activate primary PCI pathway",wrongs:["Home with GTN","Outpatient clinic","CT abdomen first"],why:"Reperfusion saves muscle.",roast:"The cath lab is not optional entertainment."},
@@ -2763,6 +3082,12 @@ const NBS=[
 {stem:"Needle-stick from known HIV source. Next?",correct:"Wash, risk assess, urgent PEP pathway ideally within hours",wrongs:["Wait for symptoms in 6 months before acting","No documentation","Squeeze the wound aggressively as sole action"],why:"PEP is time-sensitive.",roast:"Optimism is not antiretroviral therapy."},
 {stem:"Burn patient, singed nasal hairs, hoarse voice in closed-space fire. Priority concern?",correct:"Airway injury — early senior airway assessment",wrongs:["Discharge with cream only","Ignore voice change","Fluid withhold deliberately"],why:"Inhalation injury can obstruct later.",roast:"Hoarse after fire is not a fashion statement."},
 {stem:"Child with non-blanching rash and fever. Action?",correct:"Urgent senior review and immediate management for possible meningococcal disease",wrongs:["Home with cream","Wait for clinic next week","Antibiotics only if culture positive in 3 days"],why:"Do not delay.",roast:"Glass test positivity is not a spa day."}
+,{stem:"Suspected sepsis — hour-1 bundle mindset?",correct:"Cultures when feasible, timely empiric Abx, fluids for hypotension, source control pathway",wrongs:["Wait for full ward round before any Abx","Home oral vitamins","CT first delaying Abx by many hours without cause"],why:"Sepsis is time-sensitive.",roast:"Sepsis does not wait for the tea trolley."}
+,{stem:"Hypoglycaemia with decreased consciousness. Immediate?",correct:"Protect airway; give glucose (IV dextrose or alternative pathway)",wrongs:["Long-acting insulin bolus","Discharge without glucose check","High-dose aspirin"],why:"Glucose is immediately reversible.",roast:"Never guess the sugar."}
+,{stem:"Suspected spinal cord compression (cancer). Next?",correct:"Urgent steroids per protocol and emergency imaging/referral",wrongs:["Outpatient physio only in 2 months","Ignore urinary retention","High-dose NSAID only"],why:"Hours matter for residual function.",roast:"Weak legs and cancer history is not routine backache."}
+,{stem:"Peritonsillar abscess signs. Management principle?",correct:"Urgent ENT drainage pathway + antibiotics",wrongs:["Oral Abx alone always without review","Home without assessment","Intubate every case immediately without exam"],why:"Drain the pus.",roast:"Antibiotics do not evacuate an abscess by themselves."}
+,{stem:"AI app suggests rare tropical toxin for common viral illness. You?",correct:"Rely on history/exam and common diagnoses first; verify exotic claims",wrongs:["Order every test the app lists","Ignore the patient story","Treat the app as peer-reviewed"],why:"Base rates and verification.",roast:"Zebras are rare even when the chatbot is poetic."}
+
 ];
 
 const COURSES=[...new Set(BANK.map(x=>x.c))];
@@ -3201,8 +3526,13 @@ if("serviceWorker" in navigator && (location.protocol==="https:"||location.hostn
 }
 try{refreshDueBox();refreshWeakMap();}catch(e){}
 if($("weakMap"))$("weakMap").onclick=function(){setMode("telas");};
+if($("btnAiLit"))$("btnAiLit").onclick=function(e){e.preventDefault();openAiLit();};
+if($("btnAms"))$("btnAms").onclick=function(e){e.preventDefault();openAms();};
 // Local-only auth notice once per session
-try{const CACHE='tmsxr-v1';
+try{
+  if(sessionStorage.getItem("tmsxr_local_notice")!=="1"){
+    sessionStorage.setItem("tmsxr_local_notice","1");
+  }const CACHE='tmsxr-v1';
 self.addEventListener('install',function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(['./']).catch(function(){});}).then(function(){return self.skipWaiting();}));
 });
@@ -3216,10 +3546,8 @@ self.addEventListener('fetch',function(e){
   }));
 });
 
-  if(sessionStorage.getItem("tmsxr_local_notice")!=="1"){
-    sessionStorage.setItem("tmsxr_local_notice","1");
-  }
 }catch(e){}
 </script>
 </body>
 </html>
+
