@@ -74,6 +74,14 @@ body.auth-open a-scene{visibility:hidden!important;pointer-events:none!important
 .due-card{border-color:rgba(240,200,74,.5)!important;background:rgba(240,200,74,.08)}
 .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;background:#1a3a4a;margin-right:4px}
 #osceChecks label{display:block;margin:6px 0;font-size:13px}
+
+#telasPanel{display:flex;flex-direction:column;z-index:80!important;pointer-events:auto!important;max-height:calc(100dvh - 16px)!important;}
+#telasPanel .telas-scroll{flex:1;overflow-y:auto;min-height:0;-webkit-overflow-scrolling:touch}
+#telasPanel .telas-footer{flex-shrink:0;padding-top:10px;border-top:1px solid rgba(80,130,160,.35);background:rgba(8,18,30,.98);position:relative;z-index:90}
+#telasPanel .telas-footer button{pointer-events:auto!important;position:relative;z-index:91}
+#telasTimerBar #telasTimer.urgent{color:#f66}
+body.no-vr #telasPanel{z-index:80!important}
+
 </style>
 </head>
 <body class="no-vr">
@@ -502,7 +510,7 @@ body.auth-open a-scene{visibility:hidden!important;pointer-events:none!important
 <section id="telasPanel" class="panel wide full hidden">
   <h1>Telas Doc · Clinical Revision</h1>
   <p class="muted">Clinical revision by course</p>
-  <div id="telasHome">
+  <div id="telasHome" class="telas-scroll">
     <p class="muted" id="dueBox" style="cursor:pointer;margin-bottom:10px"><span id="dueTitle">Due today: 0</span> · <span id="dueSub">Tap to review weak items</span></p>
     <p class="muted" style="margin:0 0 8px">Choose a course. Each course mixes <b>short</b>, <b>long</b>, and <b>scenario</b> questions.</p>
     <div id="courseGrid" class="mod-grid" style="margin-bottom:12px"></div>
@@ -516,25 +524,29 @@ body.auth-open a-scene{visibility:hidden!important;pointer-events:none!important
     </div>
   </div>
   <div id="telasPlay" class="hidden">
-    <div class="status" id="telasMeta"></div>
-    <div id="telasTimerBar" style="display:flex;gap:10px;align-items:center;margin:6px 0 10px;flex-wrap:wrap">
-      <span class="tag">TIMER</span>
-      <strong id="telasTimer">00:00</strong>
-      <span class="muted" id="telasQTimer">Question 0:00</span>
-      <button type="button" id="telasTimerPause" style="padding:4px 10px">Pause</button>
+    <div class="telas-scroll">
+      <div class="status" id="telasMeta"></div>
+      <div id="telasTimerBar" style="display:flex;gap:10px;align-items:center;margin:6px 0 10px;flex-wrap:wrap">
+        <span class="tag">TIME LEFT</span>
+        <strong id="telasTimer">--:--</strong>
+        <span class="muted" id="telasQTimer">Limit --</span>
+        <button type="button" id="telasTimerPause" style="padding:4px 10px">Pause</button>
+      </div>
+      <div id="shiftBoard" class="hidden" style="margin:8px 0"></div>
+      <div class="stem" id="telasStem"></div>
+      <div id="telasOpts"></div>
+      <div id="osceChecks" class="hidden"></div>
+      <div id="telasFb" class="hidden"></div>
+      <div id="telasDebrief" class="debrief hidden"></div>
     </div>
-    <div id="shiftBoard" class="hidden" style="margin:8px 0"></div>
-    <div class="stem" id="telasStem"></div>
-    <div id="telasOpts"></div>
-    <div id="osceChecks" class="hidden"></div>
-    <div id="telasFb" class="hidden"></div>
-    <div id="telasDebrief" class="debrief hidden"></div>
-    <div class="button-grid">
-      <button type="button" class="primary" id="telasNext">Next</button>
-      <button type="button" id="telasScoreBtn"><span id="tScore">0</span>/<span id="tTotal">0</span></button>
+    <div class="telas-footer">
+      <div class="button-grid">
+        <button type="button" class="primary" id="telasNext">Next</button>
+        <button type="button" id="telasScoreBtn"><span id="tScore">0</span>/<span id="tTotal">0</span></button>
+        <button type="button" id="telasExit" class="danger">Exit</button>
+      </div>
     </div>
   </div>
-  <div id="telasExitBar" style="position:sticky;bottom:0;padding-top:8px;background:rgba(8,18,30,.98);z-index:30"><button type="button" id="telasExit" class="danger" style="width:100%">Exit</button></div>
 </section>
 
 <section id="chatPanel" class="panel wide hidden">
@@ -635,7 +647,7 @@ function setMode(m){
   else if(m==="surg"){$("surgPanel").classList.remove("hidden");$("surgScene").setAttribute("visible",true);showSurgList();}
   else if(m==="radiology"){$("radPanel").classList.remove("hidden");showRad();}
   else if(m==="drugs"){$("drugPanel").classList.remove("hidden");showDrugs();fillIxSelects();if($("ixGo"))$("ixGo").onclick=runIx;}
-  else if(m==="telas"){$("telasPanel").classList.remove("hidden");$("telasHome").classList.remove("hidden");$("telasPlay").classList.add("hidden");resetTelasUI();tMode="course";tCourse=null;usedStems.clear();window._shortLeft=null;window._courseTypeCycle=["short","long","scenario"];window._courseTypeIdx=0;buildCourses();refreshDueBox();}
+  else if(m==="telas"){document.body.classList.add("no-vr");$("telasPanel").classList.remove("hidden");$("telasHome").classList.remove("hidden");$("telasPlay").classList.add("hidden");resetTelasUI();tMode="course";tCourse=null;usedStems.clear();window._shortLeft=null;window._courseTypeCycle=["short","long","scenario"];window._courseTypeIdx=0;buildCourses();refreshDueBox();try{bindTelasControls();}catch(e){}}
   else if(m==="chat"){$("chatPanel").classList.remove("hidden");showChat();}
   else if(m==="admin"){$("adminPanel").classList.remove("hidden");const L=JSON.parse(localStorage.getItem("tmsxr_activity")||"[]");$("admLog").innerHTML=L.slice(0,50).map(x=>"<div>"+esc(x.name)+" · "+esc(x.action)+" "+esc(x.detail||"")+" · "+esc(new Date(x.time).toLocaleString())+"</div>").join("")||"Empty";}
   else if(m==="twin"){$("twinPanel").classList.remove("hidden");openTwin();}
@@ -5772,54 +5784,83 @@ function bindOpts(){
   });
 }
 
-// ===== 1000 questions per course + timer =====
-var telasTimerOn=true, telasT0=0, telasQ0=0, telasTimerIv=null, telasPausedAt=0, telasPausedMs=0;
+
+// ===== Countdown timer by question type + 1000 bank =====
+var telasTimerOn=true, telasDeadline=0, telasLimitMs=30000, telasTimerIv=null, telasPausedLeft=0, telasTimedOut=false;
 function fmtTime(ms){
   ms=Math.max(0,ms|0);
   var s=Math.floor(ms/1000), m=Math.floor(s/60); s=s%60;
   return (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
 }
+function limitForQuestion(q){
+  var tpe=(q&&q.qType)||"long";
+  if(q&&q.follow) tpe="scenario";
+  if(tpe==="short") return 30*1000;
+  if(tpe==="scenario") return 150*1000; // 2.5 minutes (within 2–3 min)
+  return 60*1000; // long
+}
 function telasTimerTick(){
   if(!telasTimerOn)return;
-  var now=Date.now()-telasPausedMs;
-  if($("telasTimer"))$("telasTimer").textContent=fmtTime(now-telasT0);
-  if($("telasQTimer"))$("telasQTimer").textContent="Question "+fmtTime(now-telasQ0);
+  var left=telasDeadline-Date.now();
+  var el=$("telasTimer");
+  if(el){
+    el.textContent=fmtTime(left);
+    if(left<=5000) el.classList.add("urgent"); else el.classList.remove("urgent");
+  }
+  if(left<=0 && !telasTimedOut){
+    telasTimedOut=true;
+    telasTimerOn=false;
+    onTelasTimeout();
+  }
 }
-function startTelasTimer(){
-  telasTimerOn=true; telasPausedMs=0; telasPausedAt=0;
-  telasT0=Date.now(); telasQ0=Date.now();
+function startQuestionCountdown(q){
+  telasTimedOut=false;
+  telasLimitMs=limitForQuestion(q);
+  telasDeadline=Date.now()+telasLimitMs;
+  telasTimerOn=true;
+  telasPausedLeft=0;
+  if($("telasQTimer"))$("telasQTimer").textContent="Limit "+fmtTime(telasLimitMs)+(q&&q.qType?(" · "+q.qType):"");
   if(telasTimerIv)clearInterval(telasTimerIv);
-  telasTimerIv=setInterval(telasTimerTick,250);
+  telasTimerIv=setInterval(telasTimerTick,200);
   telasTimerTick();
   var btn=$("telasTimerPause");
-  if(btn){btn.textContent="Pause";btn.onclick=function(){
-    if(telasTimerOn){telasTimerOn=false;telasPausedAt=Date.now();btn.textContent="Resume";}
-    else{telasPausedMs+=(Date.now()-telasPausedAt);telasTimerOn=true;btn.textContent="Pause";}
-  };}
+  if(btn){
+    btn.textContent="Pause";
+    btn.onclick=function(e){
+      if(e){e.preventDefault();e.stopPropagation();}
+      if(telasTimerOn){
+        telasTimerOn=false;
+        telasPausedLeft=Math.max(0,telasDeadline-Date.now());
+        btn.textContent="Resume";
+      }else if(!telasTimedOut){
+        telasDeadline=Date.now()+telasPausedLeft;
+        telasTimerOn=true;
+        btn.textContent="Pause";
+      }
+    };
+  }
 }
-function stopTelasTimer(){telasTimerOn=false;if(telasTimerIv){clearInterval(telasTimerIv);telasTimerIv=null;}}
-function markNewQuestionTimer(){telasQ0=Date.now()-telasPausedMs;}
-
-var COURSE_PRINCIPLES={
-"Surgery":["Assess ABC and escalate surgical emergencies early","Source control often needs drainage or theatre","Irreducible painful hernia is strangulated until proven otherwise","Appendicitis classically migrates to RIF","Gallstone disease is investigated with ultrasound first","Trauma priorities follow cABC principles","Anastomotic leak presents with sepsis after bowel surgery","Pre-operative checklist reduces avoidable harm","Limb ischaemia is time-critical","Peritonitis needs urgent senior surgical review","Antibiotics do not replace drainage of abscess","Burns fluid resuscitation uses TBSA and weight","Mesenteric ischaemia pain is out of proportion","Critical view of safety protects the bile duct","Post-operative tachycardia needs a cause"],
-"Internal Medicine":["Adrenaline IM is first in anaphylaxis","STEMI needs urgent reperfusion pathway","DKA needs fluids insulin and potassium care","Sepsis needs early antibiotics and source control","Asthma silent chest is life-threatening","AF decisions include rate rhythm and anticoagulation","Heart failure treatment targets congestion and cause","Hyponatraemia work-up needs volume status","COPD oxygen should be targeted","Meningism needs urgent assessment and treatment","Stroke pathway starts with time of onset and CT","PE work-up uses probability then imaging","Thyroid storm is a clinical emergency","GI bleed unstable patients are resuscitated first","Glucose must be checked in reduced consciousness"],
-"Paediatrics":["IMCI danger signs need urgent care","Neonates with fever need serious infection pathways","ORS and zinc are central in diarrhoea care","Weight-band dosing prevents errors","Croup with stridor at rest needs active treatment","Epiglottitis — do not agitate the airway","Intussusception is a surgical emergency pathway","Pyloric stenosis needs electrolyte correction before surgery","Neonatal resuscitation starts with warmth and airway","Immunisation prevents invasive disease","Dehydration assessment guides Plan A B or C","Petechiae with fever is urgent","Severe malnutrition needs stabilisation rules","Asthma in children uses spacer technique","Congenital heart disease may present with feeding difficulty"],
-"Obstetrics & Gynaecology":["PPH needs help massage and uterotonics","Ectopic is excluded in pain with positive pregnancy test","MgSO4 is used in eclampsia pathways","Anti-D follows Rh-negative protocols","Shoulder dystocia uses McRoberts and suprapubic pressure","Placenta praevia is painless bleeding until placenta is localised","Abruption is painful bleeding with a hard uterus","HELLP is a severe pre-eclampsia spectrum","CTG is interpreted in clinical context","Sepsis in pregnancy can progress rapidly","Cord prolapse needs elevation and urgent delivery","Active third stage reduces PPH","Hypertension in pregnancy has specific pathways","Ruptured membranes with fever suggests chorioamnionitis","Consent remains essential in obstetric care"],
-"Pharmacology":["Check allergies before prescribing","Renal impairment needs dose adjustment","Warfarin is monitored with INR","Adrenaline is first in anaphylaxis","Naloxone reverses opioid toxicity","N-acetylcysteine is for paracetamol overdose","Rifampicin induces many drug pathways","Metformin is held in significant AKI risk contexts","Gentamicin risks nephro and ototoxicity","Narrow antibiotics when cultures allow","IV to oral switch when appropriate","Pregnancy changes drug safety profiles","QT prolonging combinations need caution","Steroids have infection and glucose effects","Digoxin toxicity is more likely with low potassium"],
-"Microbiology":["Cultures before antibiotics when feasible without delay","Resistance patterns guide empiric therapy","Hand hygiene breaks transmission","Vaccines prevent disease","TB needs multi-drug regimens","Malaria tests use RDT and films","C difficile follows antibiotic exposure","ESBL organisms need directed therapy","Blood culture volume affects yield","Viral illnesses often need no antibiotic","IPC includes isolation when indicated","HIV testing needs consent and linkage to care","Gram stain morphology narrows differentials","Abscesses need drainage","Stewardship protects future patients"],
-"Radiology":["Choose the modality that answers the question","Unstable patients are treated before imaging","Ultrasound is first-line for gallstones","Non-contrast CT for suspected ICH","CTPA investigates PE when indicated","Free air under the diaphragm suggests perforation","FAST looks for free fluid in trauma","MRI is powerful for soft tissue and spine","Contrast risks must be considered","Silhouette sign helps localise consolidation","Pregnancy limits ionising radiation when alternatives exist","Compare with old films when available","Clinical correlation always matters","Air bronchograms appear in alveolar processes","Do not delay decompression of tension pneumothorax for X-ray"],
-"Anatomy":["Surface landmarks guide safe procedures","Nerve injury produces predictable deficits","Arterial supply explains infarct patterns","Lymphatic drainage explains spread","Dermatomes map sensory loss","Myotomes map motor loss","Portal triad structures travel together","Recurrent laryngeal nerve is at risk in thyroid surgery","McBurney point relates to the appendix","Femoral vein lies medial to femoral artery","Cranial nerves have specific foramina","Vertebral levels relate to spinal segments","Embryology explains congenital anomalies","Fascia planes guide infection spread","Anatomical variation is common"],
-"Physiology":["Cardiac output equals HR times stroke volume","Mean arterial pressure relates to CO and SVR","Oxygen delivery needs haemoglobin and flow","Surfactant reduces alveolar surface tension","Starling forces govern capillary exchange","ADH controls water reabsorption","Aldosterone controls sodium and potassium","GFR estimates filtration function","Ventilation perfusion matching affects gas exchange","Acid-base balance uses respiratory and renal compensation","Action potentials depend on ion gradients","Muscle contraction needs calcium","Feedback loops regulate hormones","Shock is inadequate tissue perfusion","Fever is a regulated temperature rise"],
-"Pathology":["Inflammation is a host response to injury","Necrosis is uncontrolled cell death","Apoptosis is programmed cell death","Neoplasia is clonal proliferation","Metaplasia is reversible cell type change","Dysplasia is disordered growth with atypia","Thrombosis follows Virchow triad","Embolism is material in the circulation","Infarction is ischaemic necrosis","Oedema is excess interstitial fluid","Granulomas form in some chronic inflammations","Amyloid is misfolded protein deposition","Carcinoma invades and can metastasise","Grade and stage guide prognosis","Healing involves regeneration and fibrosis"],
-"Dermatology":["Lesion morphology guides diagnosis","Distribution patterns are diagnostic clues","Drug rashes can become life-threatening","SJS/TEN needs culprit drug cessation","Cellulitis is deeper than erysipelas","Scabies burrows in web spaces","Melanoma ABCDE aids recognition","Psoriasis shows extensors and scale","Eczema is itchy inflammation","Urticaria is transient wheals","Chronic disease needs trigger control","Skin is a barrier and immune organ","Phototherapy has defined indications","Secondary infection complicates many rashes","Document extent carefully"],
-"Emergency":["Primary survey is ABCDE","Catastrophic haemorrhage is controlled first","Adrenaline IM for anaphylaxis","Glucose for reduced consciousness","Naloxone for opioid toxicity","Tension pneumothorax is decompressed clinically","Sepsis needs early antibiotics","Status epilepticus needs benzodiazepines","Trauma uses cABC priorities","Hypothermia is below 35 C","Massive transfusion has metabolic risks","Airway obstruction is addressed immediately","Disability includes glucose and pupils","Exposure finds hidden injuries","Reassess after every intervention"],
-"Anaesthesia":["Airway assessment prevents unexpected difficulty","Fasting reduces aspiration risk","Monitoring standards protect patients","Malignant hyperthermia needs dantrolene","Analgesia is multimodal","Local anaesthetic toxicity is recognised early","Aspiration risk rises with full stomach","Difficult airway drills must be known","Hypotension after induction has many causes","Muscle relaxants need airway readiness","Post-operative nausea has prophylaxis options","Regional blocks need consent and landmarks","Anaphylaxis can occur to anaesthetic drugs","Recovery includes airway and pain assessment","Documentation of airway grade matters"],
-"Ophthalmology":["Chemical burns need immediate irrigation","Acute angle closure is an emergency","Sudden vision loss needs urgent assessment","Red eye has multiple causes","Fundoscopy reveals systemic disease","Relative afferent pupillary defect is important","Orbital cellulitis needs urgent care","Retinal detachment symptoms include flashes and field loss","Glaucoma damages the optic nerve","Cataract is lens opacity","Corneal abrasions are painful","Foreign bodies need careful removal","Contact lens keratitis is serious","Pupil reactions localise pathways","Never delay irrigation for formal acuity in chemical injury"],
-"Medical Forensics":["Document objectively and contemporaneously","Capacity is decision specific","Consent must be informed","Chain of custody protects samples","Injury patterns may suggest mechanism","Confidentiality has defined limits","Vulnerable patients need safeguards","Photography needs consent where required","Accurate timing matters","Avoid speculative language","Preserve evidence when indicated","Children need specialist pathways","Domestic violence needs sensitive enquiry","Mental state affects assessment","Reports should be clear and neutral"],
-"Psychiatry":["Risk assessment is ongoing","Capacity is decision specific","Psychosis involves loss of reality testing","Depression includes biological features","Self-harm needs compassionate assessment","Substance use complicates presentation","Delirium is acute and fluctuating","Dementia is chronic and progressive","Anxiety disorders are diagnosable conditions","Medication side effects include extrapyramidal symptoms","Acute dystonia needs anticholinergic treatment","Lithium needs level monitoring","Clozapine needs blood monitoring","Suicide risk is multifactorial","Therapeutic alliance matters"],
-"AI Clinical Literacy":["Verify AI output before acting","Clinician remains accountable","Hallucinations can look fluent","Patient assessment comes first","Guidelines outweigh chatbot confidence","Skill atrophy is a real risk","Transparency about AI use matters","Consumer symptom checkers are limited","Dose suggestions must match STG","Privacy applies to pasted data","AI is a draft not a prescription","Outages require independent skill","Teaching use should promote retrieval practice","Bias can exist in models","Local context may be missing from generic AI"],
-"Antimicrobial Stewardship":["No antibiotic for simple viral colds","Narrow spectrum when possible","Short effective duration beats automatic long courses","Clarify penicillin allergy labels","Cultures guide de-escalation","IV to oral switch when appropriate","Surgical prophylaxis timing matters","Abscesses need drainage","Resistance is a population threat","Daily antibiotic review helps","Community education reduces demand","Diagnostics improve targeting","Avoid unnecessary broad cover","Prolonged broad therapy has harms","Stewardship is patient safety"]
-};
+function stopTelasTimer(){
+  telasTimerOn=false;
+  if(telasTimerIv){clearInterval(telasTimerIv);telasTimerIv=null;}
+}
+function onTelasTimeout(){
+  if(!tQ||tLocked)return;
+  tLocked=true;tTotal++;
+  $("tTotal").textContent=tTotal;
+  var fb=$("telasFb");
+  if(fb){
+    fb.classList.remove("hidden");
+    fb.className="feedback-box bad";
+    fb.innerHTML="<b>Time up.</b> Correct answer: <b>"+esc(tQ.correct)+"</b>"+expandWhy(tQ);
+  }
+  if($("telasOpts"))$("telasOpts").querySelectorAll("button").forEach(function(x){
+    if(x.getAttribute("data-v")===tQ.correct)x.classList.add("correct");
+    x.disabled=true;
+  });
+  try{scheduleReview(tQ.stem,{ok:false,correct:tQ.correct,why:tQ.why,c:tQ.c});}catch(e){}
+}
+function startTelasTimer(){ /* session starts per question via startQuestionCountdown */ }
 
 function ensureCourseBank(course, target){
   target=target||1000;
@@ -5869,7 +5910,7 @@ function pickQuestion(){
     if(!poolN.length){usedNbs.clear();poolN=NBS.slice();}
     var n=poolN[Math.floor(Math.random()*poolN.length)];
     usedNbs.add(n.stem);
-    return {stem:n.stem,opts:shuffle([n.correct].concat(n.wrongs)),correct:n.correct,why:n.why,roast:n.roast,c:"Next-best-step",follow:null};
+    return {stem:n.stem,opts:shuffle([n.correct].concat(n.wrongs)),correct:n.correct,why:n.why,roast:n.roast,c:"Next-best-step",qType:"short",follow:null};
   }
   // Course session: continuous flow of mixed short/long/scenario in this course
   if(tCourse){try{ensureCourseBank(tCourse,1000);}catch(e){}}
@@ -5900,8 +5941,9 @@ function pickQuestion(){
   var base=typed[Math.floor(Math.random()*typed.length)];
   usedStems.add(base.stem);
   var opts=shuffle((base.opts||[base.correct]).slice());
-  var q={stem:base.stem,opts:opts,correct:base.correct,why:base.why,roast:base.roast,c:base.c,follow:null};
+  var q={stem:base.stem,opts:opts,correct:base.correct,why:base.why,roast:base.roast,c:base.c,qType:base.qType||want||"long",follow:null};
   if(base.follow){
+    q.qType="scenario";
     q.follow={stem:base.follow.stem,opts:shuffle(base.follow.opts.slice()),correct:base.follow.correct,why:base.follow.why,roast:base.follow.roast};
   }
   return q;
@@ -5911,7 +5953,7 @@ function startTelas(){
   if($("shiftBoard"))$("shiftBoard").classList.add("hidden");
   if($("osceChecks"))$("osceChecks").classList.add("hidden");
   if($("telasDebrief"))$("telasDebrief").classList.add("hidden");
-  try{startTelasTimer();}catch(e){}
+  /* per-question countdown */
   tPhase="main";loadT();
 }
 function loadT(){
@@ -5920,7 +5962,7 @@ function loadT(){
   if(tMode==="due"){loadDue();return;}
   if(tMode==="osce"){return;}
   tLocked=false;tQ=pickQuestion();
-  try{markNewQuestionTimer();}catch(e){}
+  try{startQuestionCountdown(tQ);}catch(e){}
   $("telasFb").classList.add("hidden");
   $("shiftBoard").classList.add("hidden");
   var left="";
@@ -5930,36 +5972,9 @@ function loadT(){
   $("telasOpts").innerHTML=tQ.opts.map(function(o){return '<button type="button" class="opt-btn" data-v="'+o.replace(/"/g,"&quot;")+'">'+o+"</button>";}).join("");
   bindOpts();
 }
-$("telasNext").onclick=function(){
-  if(tPhase==="main"&&tQ&&tQ.follow&&tLocked){
-    tPhase="follow";
-    var f=tQ.follow;
-    tQ={stem:f.stem,opts:f.opts,correct:f.correct,why:f.why,roast:f.roast,c:tQ.c,follow:null};
-    tLocked=false;$("telasFb").classList.add("hidden");
-    $("telasMeta").textContent=tQ.c+" · Follow-up · Score "+tScore+"/"+tTotal;
-    $("telasStem").textContent=tQ.stem;
-    $("telasOpts").innerHTML=tQ.opts.map(function(o){return '<button type="button" class="opt-btn" data-v="'+String(o).replace(/"/g,"&quot;")+'">'+o+"</button>";}).join("");
-    bindOpts();
-    return;
-  }
-  tPhase="main";
-  tLocked=false;
-  if(tMode==="strat"){loadStrat();return;}
-  if(tMode==="shift"){if(shiftState)loadShiftCase();return;}
-  if(tMode==="due"){loadDue();return;}
-  loadT();
-};
-function telasGoHome(){
-  try{if(shiftState&&shiftState.timer)clearInterval(shiftState.timer);}catch(e){}
-  shiftState=null;tLocked=false;
-  try{stopTelasTimer();}catch(e){}
-  try{stopARCam();}catch(e){}
-  setMode("menu");
-}
-if($("telasExit")){
-  $("telasExit").onclick=function(e){if(e){e.preventDefault();e.stopPropagation();}telasGoHome();};
-  $("telasExit").ontouchend=function(e){if(e){e.preventDefault();e.stopPropagation();}telasGoHome();};
-}
+/* telasNext via bindTelasControls */
+/* telasGoHome moved */
+/* telasExit via bindTelasControls */
 // Also allow Exit from play to return to course list first
 if($("telasNext")){
   var _prevNext=$("telasNext").onclick;
@@ -6006,6 +6021,96 @@ if("serviceWorker" in navigator && (location.protocol==="https:"||location.hostn
 }
 try{refreshDueBox();refreshWeakMap();}catch(e){}
 if($("weakMap"))$("weakMap").onclick=function(){setMode("telas");};
+
+var telasPauseIv=null, telasBetween=false;
+function clearTelasPause(){
+  telasBetween=false;
+  if(telasPauseIv){clearInterval(telasPauseIv);telasPauseIv=null;}
+}
+function telasGoHome(){
+  try{if(shiftState&&shiftState.timer)clearInterval(shiftState.timer);}catch(e){}
+  shiftState=null;tLocked=false;
+  try{clearTelasPause();}catch(e){}
+  try{stopTelasTimer();}catch(e){}
+  try{stopARCam();}catch(e){}
+  setMode("menu");
+}
+function startBetweenPause(thenFn, secs, label){
+  clearTelasPause();
+  try{stopTelasTimer();}catch(e){}
+  telasBetween=true;
+  secs=typeof secs==="number"?secs:30;
+  label=label||"Next question";
+  var left=secs;
+  if($("telasOpts"))$("telasOpts").innerHTML="";
+  if($("telasStem"))$("telasStem").textContent="Pause";
+  if($("telasFb")){
+    $("telasFb").classList.remove("hidden");
+    $("telasFb").className="feedback-box";
+    $("telasFb").innerHTML="<b>"+secs+"-second break</b><p class='muted'>"+label+" in <strong id='betweenLeft'>"+secs+"</strong>s</p><button type='button' class='primary' id='skipBetween' style='margin-top:8px;width:100%'>Skip pause</button>";
+  }
+  if($("telasMeta"))$("telasMeta").textContent="Break · Score "+tScore+"/"+tTotal;
+  if($("telasTimer"))$("telasTimer").textContent=fmtTime(secs*1000);
+  if($("telasQTimer"))$("telasQTimer").textContent="Pause "+secs+"s";
+  function finish(){
+    clearTelasPause();
+    if($("telasFb"))$("telasFb").classList.add("hidden");
+    thenFn();
+  }
+  function tick(){
+    left--;
+    var el=$("betweenLeft"); if(el) el.textContent=String(Math.max(0,left));
+    if($("telasTimer"))$("telasTimer").textContent=fmtTime(left*1000);
+    if(left<=0) finish();
+  }
+  telasPauseIv=setInterval(tick,1000);
+  setTimeout(function(){
+    var sk=$("skipBetween");
+    if(sk) sk.onclick=function(e){if(e){e.preventDefault();e.stopPropagation();}finish();};
+  },0);
+}
+function telasAdvance(){
+  if(telasBetween)return; // wait for pause or skip
+  if(tPhase==="main"&&tQ&&tQ.follow&&tLocked){
+    var f=tQ.follow;
+    var course=tQ.c;
+    startBetweenPause(function(){
+      tPhase="follow";
+      tQ={stem:f.stem,opts:f.opts,correct:f.correct,why:f.why,roast:f.roast,c:course,qType:"scenario",follow:null};
+      tLocked=false;
+      if($("telasFb"))$("telasFb").classList.add("hidden");
+      if($("telasMeta"))$("telasMeta").textContent=course+" · Follow-up · Score "+tScore+"/"+tTotal;
+      if($("telasStem"))$("telasStem").textContent=tQ.stem;
+      if($("telasOpts"))$("telasOpts").innerHTML=tQ.opts.map(function(o){return '<button type="button" class="opt-btn" data-v="'+String(o).replace(/"/g,"&quot;")+'">'+o+"</button>";}).join("");
+      bindOpts();
+      try{startQuestionCountdown(tQ);}catch(e){}
+    }, 10, "Follow-up");
+    return;
+  }
+  tPhase="main";
+  tLocked=false;
+  if(tMode==="strat"){startBetweenPause(function(){loadStrat();});return;}
+  if(tMode==="shift"){startBetweenPause(function(){if(shiftState)loadShiftCase();});return;}
+  if(tMode==="due"){startBetweenPause(function(){loadDue();});return;}
+  startBetweenPause(function(){loadT();});
+}
+function bindTelasControls(){
+  var root=$("telasPanel");
+  if(!root||root._telasBound)return;
+  root._telasBound=true;
+  root.addEventListener("click",function(e){
+    var t=e.target;
+    if(!t)return;
+    var id=t.id||(t.closest&&t.closest("button")&&t.closest("button").id);
+    if(id==="telasNext"){e.preventDefault();e.stopPropagation();telasAdvance();return;}
+    if(id==="telasExit"){e.preventDefault();e.stopPropagation();telasGoHome();return;}
+  },true);
+  // direct binds as backup
+  if($("telasNext"))$("telasNext").onclick=function(e){if(e){e.preventDefault();e.stopPropagation();}telasAdvance();};
+  if($("telasExit"))$("telasExit").onclick=function(e){if(e){e.preventDefault();e.stopPropagation();}telasGoHome();};
+}
+bindTelasControls();
+
 function bindAiAms(){
   var a=$("btnAiLit"), b=$("btnAms");
   if(a){a.onclick=function(e){e.preventDefault();e.stopPropagation();openAiLit();};}
