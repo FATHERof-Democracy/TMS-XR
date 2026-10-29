@@ -82,6 +82,18 @@ body.auth-open a-scene{visibility:hidden!important;pointer-events:none!important
 #telasTimerBar #telasTimer.urgent{color:#f66}
 body.no-vr #telasPanel{z-index:80!important}
 
+
+#telasFixedBar{position:fixed;left:0;right:0;bottom:0;z-index:100000!important;display:none;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:rgba(5,13,22,.96);border-top:1px solid rgba(80,130,160,.45);box-shadow:0 -8px 24px #0008;pointer-events:auto!important}
+#telasFixedBar.show{display:grid!important;grid-template-columns:1fr 1fr 1fr}
+#telasFixedBar button{pointer-events:auto!important;z-index:100001!important;min-height:48px;font-size:15px;text-align:center;touch-action:manipulation}
+body.telas-open a-scene,body.telas-open a-scene.a-fullscreen,body.telas-open canvas.a-canvas{display:none!important;visibility:hidden!important;pointer-events:none!important}
+body.telas-open #telasPanel{z-index:9000!important;pointer-events:auto!important;max-height:calc(100dvh - 80px)!important;overflow:hidden!important}
+body.telas-open #topRight{z-index:100002!important}
+
+
+#telasReentry{min-width:40px;text-align:center;animation:telasPulse 1.2s ease-in-out infinite}
+@keyframes telasPulse{0%,100%{opacity:1}50%{opacity:.55}}
+#telasReentry.hidden{display:none!important}
 </style>
 </head>
 <body class="no-vr">
@@ -531,6 +543,7 @@ body.no-vr #telasPanel{z-index:80!important}
         <strong id="telasTimer">--:--</strong>
         <span class="muted" id="telasQTimer">Limit --</span>
         <button type="button" id="telasTimerPause" style="padding:4px 10px">Pause</button>
+        <button type="button" id="telasReentry" class="hidden" title="Time ran out — retry this question" style="padding:4px 10px;border-color:#f0c84a;color:#f0c84a;font-size:16px;line-height:1">↻</button>
       </div>
       <div id="shiftBoard" class="hidden" style="margin:8px 0"></div>
       <div class="stem" id="telasStem"></div>
@@ -618,6 +631,8 @@ function logout(){clearSession();location.reload();}$("logoutBtn").onclick=logou
 
 const needsVR={proc:1,anat:1,delivery:1,surg:1};
 function hideAll(){
+  document.body.classList.remove("telas-open");
+  var fb=$("telasFixedBar");if(fb)fb.classList.remove("show");
   ["procPanel","anatPanel","delPanel","surgPanel","radPanel","drugPanel","telasPanel","chatPanel","adminPanel","twinPanel"].forEach(id=>{const e=$(id);if(e)e.classList.add("hidden");});
   ["procScene","anatScene","delScene","surgScene"].forEach(id=>{const e=$(id);if(e)e.setAttribute("visible",false);});
 }
@@ -647,7 +662,7 @@ function setMode(m){
   else if(m==="surg"){$("surgPanel").classList.remove("hidden");$("surgScene").setAttribute("visible",true);showSurgList();}
   else if(m==="radiology"){$("radPanel").classList.remove("hidden");showRad();}
   else if(m==="drugs"){$("drugPanel").classList.remove("hidden");showDrugs();fillIxSelects();if($("ixGo"))$("ixGo").onclick=runIx;}
-  else if(m==="telas"){document.body.classList.add("no-vr");$("telasPanel").classList.remove("hidden");$("telasHome").classList.remove("hidden");$("telasPlay").classList.add("hidden");resetTelasUI();tMode="course";tCourse=null;usedStems.clear();window._shortLeft=null;window._courseTypeCycle=["short","long","scenario"];window._courseTypeIdx=0;buildCourses();refreshDueBox();try{bindTelasControls();}catch(e){}}
+  else if(m==="telas"){document.body.classList.add("no-vr");document.body.classList.add("telas-open");$("telasPanel").classList.remove("hidden");$("telasHome").classList.remove("hidden");$("telasPlay").classList.add("hidden");var fb=$("telasFixedBar");if(fb)fb.classList.remove("show");resetTelasUI();tMode="course";tCourse=null;usedStems.clear();window._shortLeft=null;window._courseTypeCycle=["short","long","scenario"];window._courseTypeIdx=0;buildCourses();refreshDueBox();try{bindTelasControls();}catch(e){}}
   else if(m==="chat"){$("chatPanel").classList.remove("hidden");showChat();}
   else if(m==="admin"){$("adminPanel").classList.remove("hidden");const L=JSON.parse(localStorage.getItem("tmsxr_activity")||"[]");$("admLog").innerHTML=L.slice(0,50).map(x=>"<div>"+esc(x.name)+" · "+esc(x.action)+" "+esc(x.detail||"")+" · "+esc(new Date(x.time).toLocaleString())+"</div>").join("")||"Empty";}
   else if(m==="twin"){$("twinPanel").classList.remove("hidden");openTwin();}
@@ -5552,7 +5567,7 @@ function bindOptsShift(){
       b.classList.add(ok?"correct":"wrong");
       $("telasOpts").querySelectorAll("button").forEach(function(x){if(x.getAttribute("data-v")===tQ.correct)x.classList.add("correct");});
       if(ok)tScore++; else {shiftState.lives--;}
-      $("tScore").textContent=tScore;$("tTotal").textContent=tTotal;
+      $("tScore").textContent=tScore;$("tTotal").textContent=tTotal;if($("tScoreFixed"))$("tScoreFixed").textContent=tScore;if($("tTotalFixed"))$("tTotalFixed").textContent=tTotal;
       showFb(ok);
       if(ok){
         shiftState.queue=shiftState.queue.filter(function(p){return p.id!==tQ._shiftId;});
@@ -5692,7 +5707,7 @@ function startOsce(){
   $("osceSubmit").onclick=function(){
     var n=box.querySelectorAll("input:checked").length;
     tTotal=st.tasks.length;tScore=n;
-    $("tScore").textContent=tScore;$("tTotal").textContent=tTotal;
+    $("tScore").textContent=tScore;$("tTotal").textContent=tTotal;if($("tScoreFixed"))$("tScoreFixed").textContent=tScore;if($("tTotalFixed"))$("tTotalFixed").textContent=tTotal;
     var pass=n>=st.pass;
     $("telasFb").classList.remove("hidden");
     $("telasFb").className=pass?"feedback-box":"feedback-box bad";
@@ -5756,9 +5771,19 @@ function refreshDueBox(){
   try{refreshWeakMap();}catch(e){}
 }
 function showFb(ok){
+  var answeredInTime=!telasTimedOut;
+  try{stopTelasTimer();}catch(e){}
+  var re=$("telasReentry"); if(re) re.classList.add("hidden");
   var fb=$("telasFb");fb.classList.remove("hidden");
-  if(ok){fb.className="feedback-box";fb.innerHTML="<b>Correct — well done.</b>"+expandWhy(tQ);}
-  else{fb.className="feedback-box bad";fb.innerHTML="<b>Not quite.</b> "+tQ.roast+expandWhy(tQ);}
+  if(ok){
+    fb.className="feedback-box";
+    fb.innerHTML="<b>Correct — well done.</b>"+(answeredInTime?" <span class='tag'>In time</span>":"")+" "+expandWhy(tQ)+
+      (answeredInTime?"<p class='muted'><b>Tap Next</b> to continue.</p>":"<p class='muted'>Tap <b>Next</b> when ready.</p>");
+  }else{
+    fb.className="feedback-box bad";
+    fb.innerHTML="<b>Not quite.</b> "+tQ.roast+expandWhy(tQ)+
+      (answeredInTime?"<p class='muted'><b>Tap Next</b> to continue (answered in time).</p>":"<p class='muted'>Time was already up. Use <b>↻</b> to retry or Next to move on.</p>");
+  }
   if(tQ&&tQ.stem)scheduleReview(tQ.stem,{ok:ok,correct:tQ.correct,why:tQ.why,c:tQ.c});
   // running debrief chips
   var db=$("telasDebrief");
@@ -5776,10 +5801,16 @@ function bindOpts(){
       if(tLocked)return;tLocked=true;tTotal++;
       var ok=b.getAttribute("data-v")===tQ.correct;
       b.classList.add(ok?"correct":"wrong");
-      $("telasOpts").querySelectorAll("button").forEach(function(x){if(x.getAttribute("data-v")===tQ.correct)x.classList.add("correct");});
+      $("telasOpts").querySelectorAll("button").forEach(function(x){if(x.getAttribute("data-v")===tQ.correct)x.classList.add("correct"); x.disabled=true;});
       if(ok)tScore++;
-      $("tScore").textContent=tScore;$("tTotal").textContent=tTotal;
+      $("tScore").textContent=tScore;$("tTotal").textContent=tTotal;if($("tScoreFixed"))$("tScoreFixed").textContent=tScore;if($("tTotalFixed"))$("tTotalFixed").textContent=tTotal;
       showFb(ok);
+      // Pulse Next so user can proceed after answering in time
+      ["telasNext","telasNextFixed"].forEach(function(id){
+        var n=$(id); if(!n)return;
+        n.style.boxShadow="0 0 0 2px #43d6b4";
+        setTimeout(function(){n.style.boxShadow="";},1200);
+      });
     };
   });
 }
@@ -5848,17 +5879,41 @@ function onTelasTimeout(){
   if(!tQ||tLocked)return;
   tLocked=true;tTotal++;
   $("tTotal").textContent=tTotal;
+  if($("tTotalFixed"))$("tTotalFixed").textContent=tTotal;
   var fb=$("telasFb");
   if(fb){
     fb.classList.remove("hidden");
     fb.className="feedback-box bad";
-    fb.innerHTML="<b>Time up.</b> Correct answer: <b>"+esc(tQ.correct)+"</b>"+expandWhy(tQ);
+    fb.innerHTML="<b>Time up.</b> Correct answer: <b>"+esc(tQ.correct)+"</b>"+expandWhy(tQ)+
+      "<p class='muted'>Tap <b>↻</b> near the timer to re-enter this question, or <b>Next</b> to continue.</p>";
   }
   if($("telasOpts"))$("telasOpts").querySelectorAll("button").forEach(function(x){
     if(x.getAttribute("data-v")===tQ.correct)x.classList.add("correct");
     x.disabled=true;
   });
+  var re=$("telasReentry");
+  if(re){
+    re.classList.remove("hidden");
+    re.onclick=function(e){if(e){e.preventDefault();e.stopPropagation();}telasReenter();};
+  }
+  if($("telasTimer"))$("telasTimer").textContent="00:00";
+  if($("telasQTimer"))$("telasQTimer").textContent="Time up · ↻ to retry";
   try{scheduleReview(tQ.stem,{ok:false,correct:tQ.correct,why:tQ.why,c:tQ.c});}catch(e){}
+}
+function telasReenter(){
+  if(!tQ)return;
+  // Re-open same question with a fresh timer (do not change score again until new answer)
+  tLocked=false;
+  telasTimedOut=false;
+  var re=$("telasReentry"); if(re) re.classList.add("hidden");
+  if($("telasFb"))$("telasFb").classList.add("hidden");
+  if($("telasStem"))$("telasStem").textContent=tQ.stem;
+  if($("telasOpts")){
+    $("telasOpts").innerHTML=tQ.opts.map(function(o){return '<button type="button" class="opt-btn" data-v="'+String(o).replace(/"/g,"&quot;")+'">'+o+"</button>";}).join("");
+  }
+  bindOpts();
+  try{startQuestionCountdown(tQ);}catch(e){}
+  if($("telasMeta"))$("telasMeta").textContent=(tQ.c||"")+" · Re-entry · Score "+tScore+"/"+tTotal;
 }
 function startTelasTimer(){ /* session starts per question via startQuestionCountdown */ }
 
@@ -5949,12 +6004,15 @@ function pickQuestion(){
   return q;
 }
 function startTelas(){
+  document.body.classList.add("telas-open");
+  document.body.classList.add("no-vr");
   $("telasHome").classList.add("hidden");$("telasPlay").classList.remove("hidden");
+  var fb=$("telasFixedBar");if(fb)fb.classList.add("show");
   if($("shiftBoard"))$("shiftBoard").classList.add("hidden");
   if($("osceChecks"))$("osceChecks").classList.add("hidden");
   if($("telasDebrief"))$("telasDebrief").classList.add("hidden");
-  /* per-question countdown */
   tPhase="main";loadT();
+  try{bindTelasControls();}catch(e){}
 }
 function loadT(){
   if(tMode==="strat"){loadStrat();return;}
@@ -5962,6 +6020,7 @@ function loadT(){
   if(tMode==="due"){loadDue();return;}
   if(tMode==="osce"){return;}
   tLocked=false;tQ=pickQuestion();
+  var re=$("telasReentry"); if(re) re.classList.add("hidden");
   try{startQuestionCountdown(tQ);}catch(e){}
   $("telasFb").classList.add("hidden");
   $("shiftBoard").classList.add("hidden");
@@ -6033,6 +6092,8 @@ function telasGoHome(){
   try{clearTelasPause();}catch(e){}
   try{stopTelasTimer();}catch(e){}
   try{stopARCam();}catch(e){}
+  document.body.classList.remove("telas-open");
+  var fb=$("telasFixedBar");if(fb)fb.classList.remove("show");
   setMode("menu");
 }
 function startBetweenPause(thenFn, secs, label){
@@ -6070,7 +6131,14 @@ function startBetweenPause(thenFn, secs, label){
   },0);
 }
 function telasAdvance(){
-  if(telasBetween)return; // wait for pause or skip
+  if(telasBetween){
+    try{
+      if(telasPauseIv){clearInterval(telasPauseIv);telasPauseIv=null;}
+      var sk=$("skipBetween");
+      if(sk&&sk.onclick){sk.onclick();return;}
+    }catch(e){}
+    clearTelasPause();
+  }
   if(tPhase==="main"&&tQ&&tQ.follow&&tLocked){
     var f=tQ.follow;
     var course=tQ.c;
@@ -6095,19 +6163,35 @@ function telasAdvance(){
   startBetweenPause(function(){loadT();});
 }
 function bindTelasControls(){
-  var root=$("telasPanel");
-  if(!root||root._telasBound)return;
-  root._telasBound=true;
-  root.addEventListener("click",function(e){
-    var t=e.target;
-    if(!t)return;
-    var id=t.id||(t.closest&&t.closest("button")&&t.closest("button").id);
-    if(id==="telasNext"){e.preventDefault();e.stopPropagation();telasAdvance();return;}
-    if(id==="telasExit"){e.preventDefault();e.stopPropagation();telasGoHome();return;}
-  },true);
-  // direct binds as backup
-  if($("telasNext"))$("telasNext").onclick=function(e){if(e){e.preventDefault();e.stopPropagation();}telasAdvance();};
-  if($("telasExit"))$("telasExit").onclick=function(e){if(e){e.preventDefault();e.stopPropagation();}telasGoHome();};
+  function wire(id, fn){
+    var el=$(id);
+    if(!el)return;
+    el.onclick=function(e){if(e){e.preventDefault();e.stopPropagation();}fn();};
+    el.ontouchend=function(e){if(e){e.preventDefault();e.stopPropagation();}fn();};
+  }
+  wire("telasNext", function(){telasAdvance();});
+  wire("telasExit", function(){telasGoHome();});
+  wire("telasNextFixed", function(){telasAdvance();});
+  wire("telasExitFixed", function(){telasGoHome();});
+  if(!window._telasGlobalBound){
+    window._telasGlobalBound=true;
+    document.addEventListener("click",function(e){
+      var t=e.target; if(!t)return;
+      var btn=t.id?t:(t.closest?t.closest("button"):null);
+      if(!btn||!btn.id)return;
+      if(btn.id==="telasNext"||btn.id==="telasNextFixed"){e.preventDefault();e.stopPropagation();telasAdvance();}
+      if(btn.id==="telasExit"||btn.id==="telasExitFixed"){e.preventDefault();e.stopPropagation();telasGoHome();}
+      if(btn.id==="telasReentry"){e.preventDefault();e.stopPropagation();telasReenter();}
+    },true);
+    document.addEventListener("touchend",function(e){
+      var t=e.target; if(!t)return;
+      var btn=t.id?t:(t.closest?t.closest("button"):null);
+      if(!btn||!btn.id)return;
+      if(btn.id==="telasNext"||btn.id==="telasNextFixed"){e.preventDefault();telasAdvance();}
+      if(btn.id==="telasExit"||btn.id==="telasExitFixed"){e.preventDefault();telasGoHome();}
+      if(btn.id==="telasReentry"){e.preventDefault();telasReenter();}
+    },{capture:true,passive:false});
+  }
 }
 bindTelasControls();
 
@@ -6132,5 +6216,11 @@ try{
   }
 }catch(e){}
 </script>
+
+<div id="telasFixedBar" aria-label="Telas controls">
+  <button type="button" id="telasNextFixed" class="primary">Next</button>
+  <button type="button" id="telasScoreFixed"><span id="tScoreFixed">0</span>/<span id="tTotalFixed">0</span></button>
+  <button type="button" id="telasExitFixed" class="danger">Exit</button>
+</div>
 </body>
 </html>
