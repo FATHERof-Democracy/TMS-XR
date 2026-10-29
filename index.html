@@ -504,23 +504,18 @@ body.auth-open a-scene{visibility:hidden!important;pointer-events:none!important
   <p class="muted">Clinical revision by course</p>
   <div id="telasHome">
     <p class="muted" id="dueBox" style="cursor:pointer;margin-bottom:10px"><span id="dueTitle">Due today: 0</span> · <span id="dueSub">Tap to review weak items</span></p>
+    <p class="muted" style="margin:0 0 8px">Choose a course. Each course mixes <b>short</b>, <b>long</b>, and <b>scenario</b> questions.</p>
+    <div id="courseGrid" class="mod-grid" style="margin-bottom:12px"></div>
     <div class="button-grid">
-      <button type="button" class="primary" id="tStartMixed">Start mixed practice</button>
       <button type="button" id="tModeOsce">OSCE checklist</button>
       <button type="button" id="tModeShift">Golden Minute shift</button>
+      <button type="button" id="tModeNbs">Next-best-step</button>
     </div>
     <div id="stratSettings" class="hidden" style="margin-top:10px">
       <label class="muted">Resource level</label>
       <select id="stratLevel"><option value="health_post">Health post</option><option value="district">District</option><option value="central">Central</option></select>
-      <button type="button" class="primary" id="tModeStrat">Resource-stratified case</button>
+      <button type="button" class="primary" id="tModeStrat">Start stratified case</button>
     </div>
-    <p class="muted" style="margin-top:8px"><button type="button" id="tShowMore" style="background:transparent;border:none;color:#8ab;text-decoration:underline;padding:0">More modes</button></p>
-    <div id="telasMoreModes" class="hidden button-grid" style="margin-top:6px">
-      <button type="button" id="tModeShort">Short set (8)</button>
-      <button type="button" id="tModeNbs">Next-best-step</button>
-      <button type="button" id="tModeStratShow">Resource cases</button>
-    </div>
-    <div id="courseGrid" class="hidden"></div>
   </div>
   <div id="telasPlay" class="hidden">
     <div class="status" id="telasMeta"></div>
@@ -535,7 +530,7 @@ body.auth-open a-scene{visibility:hidden!important;pointer-events:none!important
       <button type="button" id="telasScoreBtn"><span id="tScore">0</span>/<span id="tTotal">0</span></button>
     </div>
   </div>
-  <button type="button" id="telasExit" class="danger" style="width:100%;margin-top:8px">Exit</button>
+  <div id="telasExitBar" style="position:sticky;bottom:0;padding-top:8px;background:rgba(8,18,30,.98);z-index:30"><button type="button" id="telasExit" class="danger" style="width:100%">Exit</button></div>
 </section>
 
 <section id="chatPanel" class="panel wide hidden">
@@ -636,7 +631,7 @@ function setMode(m){
   else if(m==="surg"){$("surgPanel").classList.remove("hidden");$("surgScene").setAttribute("visible",true);showSurgList();}
   else if(m==="radiology"){$("radPanel").classList.remove("hidden");showRad();}
   else if(m==="drugs"){$("drugPanel").classList.remove("hidden");showDrugs();fillIxSelects();if($("ixGo"))$("ixGo").onclick=runIx;}
-  else if(m==="telas"){$("telasPanel").classList.remove("hidden");$("telasHome").classList.add("hidden");$("telasPlay").classList.remove("hidden");resetTelasUI();tMode="mixed";tCourse=null;usedStems.clear();window._shortLeft=null;startTelas();refreshDueBox();}
+  else if(m==="telas"){$("telasPanel").classList.remove("hidden");$("telasHome").classList.remove("hidden");$("telasPlay").classList.add("hidden");resetTelasUI();tMode="course";tCourse=null;usedStems.clear();window._shortLeft=null;window._courseTypeCycle=["short","long","scenario"];window._courseTypeIdx=0;buildCourses();refreshDueBox();}
   else if(m==="chat"){$("chatPanel").classList.remove("hidden");showChat();}
   else if(m==="admin"){$("adminPanel").classList.remove("hidden");const L=JSON.parse(localStorage.getItem("tmsxr_activity")||"[]");$("admLog").innerHTML=L.slice(0,50).map(x=>"<div>"+esc(x.name)+" · "+esc(x.action)+" "+esc(x.detail||"")+" · "+esc(new Date(x.time).toLocaleString())+"</div>").join("")||"Empty";}
   else if(m==="twin"){$("twinPanel").classList.remove("hidden");openTwin();}
@@ -685,7 +680,7 @@ if($("btnImportData"))$("btnImportData").onclick=function(){if($("importFile"))$
 if($("importFile"))$("importFile").onchange=function(){if(this.files&&this.files[0])importMyProgress(this.files[0]);this.value="";};
 
 document.querySelectorAll("[data-mod]").forEach(b=>b.onclick=()=>setMode(b.getAttribute("data-mod")));
-$("homeBtn").onclick=function(){try{stopARCam();}catch(e){}setMode("menu");};$("btnAdmin").onclick=()=>setMode("admin");
+$("homeBtn").onclick=function(){try{stopARCam();}catch(e){}try{if(typeof telasGoHome==="function"&&mode==="telas"){telasGoHome();return;}}catch(e){}setMode("menu");};$("btnAdmin").onclick=()=>setMode("admin");
 function refreshWeakMap(){
   var r=loadReview(), counts={}, total=0;
   Object.keys(r).forEach(function(k){
@@ -2471,7 +2466,20 @@ function add(c,stem,correct,wrongs,why,roast,follow){
   const opts=[correct].concat(wrongs);
   const item={c,stem,opts,correct,why,roast};
   if(follow)item.follow=follow;
+  // Classify for course mix: short | long | scenario
+  var sl=(stem||"").length;
+  if(follow) item.qType="scenario";
+  else if(sl<110) item.qType="short";
+  else item.qType="long";
   BANK.push(item);
+}
+function classifyBankTypes(){
+  BANK.forEach(function(item){
+    if(item.qType)return;
+    if(item.follow) item.qType="scenario";
+    else if(((item.stem||"").length)<110) item.qType="short";
+    else item.qType="long";
+  });
 }
 // Helper to add follow-up object
 function F(stem,correct,wrongs,why,roast){return {stem,opts:[correct].concat(wrongs),correct,why,roast};}
@@ -3081,6 +3089,424 @@ const NBS=[
 
 ];
 
+
+// --- Short questions to balance each course mix ---
+add("Surgery","First-line imaging for suspected appendicitis in pregnancy?",
+"Ultrasound (then MRI if needed)",["Routine CT without discussion","No imaging ever","Plain skull X-ray"],
+"Limit ionising radiation in pregnancy when alternatives exist.","Protect the foetus when choosing modality.");
+add("Surgery","Boas' sign is associated with?",
+"Cholecystitis (hyperaesthesia)",["Appendicitis only","Meningitis","Otitis media"],
+"Clinical adjunct in biliary inflammation.","Pattern recognition.");
+add("Internal Medicine","First drug in anaphylaxis?",
+"Intramuscular adrenaline",["Oral antihistamine only","IV steroid alone first","Nebulised saline only"],
+"Adrenaline IM is first-line.","Do not delay for second-line drugs.");
+add("Internal Medicine","CURB-65 is used for?",
+"Community-acquired pneumonia severity / site-of-care",["Stroke thrombolysis","Labour progress","Glasgow coma only"],
+"Helps decide home vs hospital pathways.","Local tools may vary.");
+add("Paediatrics","IMCI danger sign example?",
+"Unable to drink or breastfeed",["Mild rhinitis alone","Single sneeze","Happy play"],
+"Danger signs need urgent care.","Do not miss lethargy or refusal to feed.");
+add("Paediatrics","Vitamin A is given in?",
+"Measles protocols / supplementation programmes as indicated",["All bacterial meningitis only","Never in children","Only adults"],
+"Programme and disease-specific use.","Follow national schedule.");
+add("Obstetrics & Gynaecology","Drug for eclampsia seizure control?",
+"Magnesium sulfate",["Oral diazepam only at home","Warfarin","High-dose aspirin alone"],
+"MgSO4 is cornerstone.","Know toxicity signs.");
+add("Obstetrics & Gynaecology","Most common cause of primary PPH?",
+"Uterine atony",["Always cervical cancer","Only clotting disorders","Normal lochia"],
+"Massage and uterotonics first.","ABCD and call for help.");
+add("Pharmacology","Major risk of gentamicin?",
+"Nephrotoxicity and ototoxicity",["Only hair growth","Always safe in dehydration","No monitoring ever"],
+"Dose and levels matter.","Hydration and duration.");
+add("Pharmacology","Antidote pathway for paracetamol overdose?",
+"N-acetylcysteine",["Naloxone","Vitamin K only","Flumazenil"],
+"Time-critical.","Use guidelines/nomogram.");
+add("Microbiology","Gram-positive cocci in clusters often?",
+"Staphylococci",["Only viruses","Always fungi","Mycobacteria only"],
+"Basic Gram morphology.","Guide empiric cover.");
+add("Radiology","First-line for suspected gallstones?",
+"Abdominal ultrasound",["Always PET","Skull X-ray","No imaging"],
+"US is sensitive and available.","Shadowing is classic.");
+add("Radiology","Hyperdense on non-contrast CT head suggests?",
+"Acute blood",["Always CSF only","Air only","Fat only"],
+"Acute ICH is bright on non-contrast CT.","Compare sides.");
+add("Anatomy","Number of thoracic vertebrae?",
+"12",["5","7","33"],
+"T1–T12.","Rib relationships.");
+add("Anatomy","Femoral artery lies lateral to?",
+"Femoral vein",["Femoral nerve only always","Aorta","IVC in the leg"],
+"NAVEL teaching variants.","Procedural landmark.");
+add("Physiology","Stroke volume × heart rate equals?",
+"Cardiac output",["Only BP","Only SVR","Tidal volume"],
+"CO = HR × SV.","Shock physiology.");
+add("Pathology","Caseous necrosis classic in?",
+"Tuberculosis",["Only fat necrosis of pancreas","Apoptosis only","Amyloid only"],
+"Granulomatous pattern.","Correlate clinically.");
+add("Dermatology","Nikolsky sign associated with?",
+"SJS/TEN / some blistering diseases",["Simple eczema only","Urticaria only","Tinea only"],
+"Medical emergency spectrum.","Stop culprit drugs.");
+add("Emergency","Reversible cause of cardiac arrest — 4 Hs include?",
+"Hypoxia, hypovolaemia, hypo/hyperkalaemia, hypothermia (and hydrogen ion)",["Only hypertension","Only hyperglycaemia mild","Hair loss"],
+"ALS reversible causes.","Treat while resuscitating.");
+add("Emergency","Tension pneumothorax treatment when unstable?",
+"Immediate decompression",["Wait for elective CT only","Home observation","Oral antibiotics"],
+"Clinical diagnosis in extremis.","Do not delay.");
+add("AI Clinical Literacy","AI clinical suggestions should be?",
+"Verified before acting",["Copied uncritically into notes","Always more accurate than seniors","Used without patient assessment"],
+"You remain accountable.","Draft ≠ decision.");
+add("Antimicrobial Stewardship","Viral cold — antibiotic?",
+"Not routinely indicated",["Always amoxicillin","Always azithromycin","Always injection"],
+"Stewardship starts with no unnecessary Abx.","Counsel return precautions.");
+
+
+// ===== Large per-course expansion (mixed short / long / scenario) =====
+function F2(stem,correct,w1,w2,w3,why,roast){return F(stem,correct,[w1,w2,w3],why,roast);}
+
+// SURGERY
+add("Surgery","Grey-Turner sign suggests?",
+"Retroperitoneal haemorrhage (e.g. pancreatitis)",["Appendicitis","Otitis media","Simple gastritis"],
+"Flank bruising is a late, serious sign.","Look at the whole patient.");
+add("Surgery","Best early investigation for suspected ureteric colic?",
+"Non-contrast CT KUB (or US if radiation concern)",["Barium swallow","EEG","Skull X-ray"],
+"CT KUB is highly sensitive for stones.","Match imaging to the question.");
+add("Surgery","A 45-year-old with sudden severe tearing chest pain radiating to the back, unequal BP in arms. Most worrying diagnosis?",
+"Acute aortic dissection",["Stable angina only","Gastroenteritis","Simple musculoskeletal pain"],
+"Tearing pain + pulse/BP deficit raises dissection.","Do not thrombolyse until dissection is excluded when suspected.",
+F("Immediate priority?",
+"Resuscitation, BP/HR control pathway, urgent CT angiography if stable enough","Discharge with PPI","Oral antibiotics","Home ECG only next week",
+"Time-critical vascular emergency.","Outpatient plans kill in dissection."));
+add("Surgery","Parkland formula is used for?",
+"Fluid resuscitation in major burns",["Insulin dosing in DKA only","Warfarin loading","ORS volume only"],
+"Burns fluid is weight and %TBSA based.","Urine output guides ongoing rates.");
+add("Surgery","Murphy's sign is associated with?",
+"Acute cholecystitis",["Meningism","Cerebellar disease","Deep vein thrombosis"],
+"Inspiratory arrest on RUQ palpation.","Correlate with US.");
+add("Surgery","A trauma patient is restless, tachycardic, with a distending abdomen after blunt injury. Next?",
+"Resuscitation and urgent surgical pathway for haemorrhage",["Oral fluids and observe 24h only","Elective clinic","Discharge"],
+"Unstable abdominal trauma needs theatre pathway.","Do not delay for non-essential imaging.");
+add("Surgery","Rovsing's sign is linked to?",
+"Appendicitis",["Cholecystitis only","PE","Asthma"],
+"Palpation of LIF causes RIF pain.","Adjunct only.");
+add("Surgery","What is the most appropriate initial management of a superficial abscess?",
+"Incision and drainage when indicated",["Antibiotics alone for all large collections","Ignore until spontaneous rupture only","High-dose steroids"],
+"Source control is drainage.","Abx adjunct when indicated.");
+add("Surgery","Courvoisier's law suggests?",
+"Painless jaundice with palpable gallbladder — consider malignant obstruction",["Always gallstones","Always hepatitis A","Always Gilbert syndrome"],
+"Classic surgical teaching.","Investigate biliary obstruction.");
+add("Surgery","A 60-year-old with progressive dysphagia to solids then liquids and weight loss. Most concerning?",
+"Oesophageal malignancy until proven otherwise",["Simple globus only","Always reflux alone","Dental caries only"],
+"Progressive dysphagia needs urgent pathway.","Do not assume benign.");
+add("Surgery","Pre-op WHO checklist aims to reduce?",
+"Avoidable peri-operative harm",["Theatre lighting costs only","Staff tea breaks","Suture brand choice only"],
+"Timeout, identity, site, allergies, plan.","Checklists save lives.");
+add("Surgery","A patient develops fever, tachycardia and peritonitis day 5 after bowel anastomosis. Worry about?",
+"Anastomotic leak",["Normal recovery only","Simple anxiety","Viral cold only"],
+"Leak until proven otherwise.","Urgent senior surgical review.");
+add("Surgery","First step in limb trauma with active arterial bleeding?",
+"Direct pressure / tourniquet as trained + resuscitation",["X-ray only first","Oral analgesia only","Ignore bleeding"],
+"C before detailed imaging when exsanguinating.","Stop the bleeding.");
+add("Surgery","Charcot's triad relates to?",
+"Ascending cholangitis",["Appendicitis","Meningitis","Otitis"],
+"RUQ pain, jaundice, fever.","Add hypotension/confusion in Reynolds pentad.");
+add("Surgery","A reducible groin swelling that disappears when supine is most consistent with?",
+"Hernia (reducible)",["Irreducible strangulated bowel always","Abscess always","Arterial aneurysm always"],
+"Reducible ≠ risk-free lifelong.","Counsel repair pathway.");
+
+// INTERNAL MEDICINE
+add("Internal Medicine","New ST elevation in II, III, aVF. Territory?",
+"Inferior wall",["Anterior septum only","Lateral only always","Normal variant only"],
+"Inferior STEMI pattern.","Watch for RV involvement.");
+add("Internal Medicine","First oral agent preferred in many T2DM guidelines when tolerated?",
+"Metformin",["Sliding-scale insulin only lifelong","Routine daily steroid","Glibenclamide first in all elderly frail"],
+"Metformin first-line if eGFR allows.","Sick-day rules.");
+add("Internal Medicine","A 70-year-old with sudden aphasia and right hemiparesis 1 hour ago. BP 170/90. Next pathway?",
+"Stroke pathway — urgent CT and reperfusion eligibility assessment",["Home aspirin only without assessment","Elective neuro next month","High-dose benzodiazepine only"],
+"Time is brain.","Exclude haemorrhage before lysis.");
+add("Internal Medicine","Massive PE with hypotension. Concept?",
+"High-risk PE — resuscitation and reperfusion consideration per protocol",["Ignore BP","Oral fluids only","Routine clinic"],
+"Unstable PE is an emergency.","Support RV/BP.");
+add("Internal Medicine","Beck's triad suggests?",
+"Cardiac tamponade",["Simple UTI","Migraine","Cellulitis"],
+"Hypotension, raised JVP, muffled heartsounds.","Urgent drainage pathway.");
+add("Internal Medicine","In asthma, a silent chest is?",
+"Life-threatening feature — urgent escalation",["Reassuring improvement","Normal finding","Only allergy"],
+"Little air entry is dangerous.","Do not be falsely reassured.");
+add("Internal Medicine","Target in DKA insulin therapy once glucose falls?",
+"Continue insulin with dextrose support per protocol until ketones/acidosis clear",["Stop all insulin when glucose <15 always without plan","Only give long-acting at night","Ignore potassium"],
+"Fixed-rate insulin until resolution criteria.","Watch K+.");
+add("Internal Medicine","Raised JVP, oedema, and pulmonary crackles suggest?",
+"Congestive cardiac failure phenotype",["Only dehydration","Only anaemia always","Simple rhinitis"],
+"Clinical congestion.","Treat cause and fluid status.");
+add("Internal Medicine","Wells score is used in?",
+"VTE probability assessment",["Apgar scoring","Labour progress","Glasgow only"],
+"Pre-test probability guides D-dimer/imaging.","Do not skip clinical assessment.");
+add("Internal Medicine","Thyroid storm management includes?",
+"Supportive care, antithyroid drugs, beta-blockade as appropriate — urgent",["Oral iodine alone at home without assessment","No treatment","Only antibiotics"],
+"Life-threatening thyrotoxicosis.","ITU/senior support.");
+add("Internal Medicine","A patient with cirrhosis has confusion and asterixis. Think?",
+"Hepatic encephalopathy",["Simple tiredness only","Always stroke only","Always meningitis only"],
+"Search for triggers (bleed, infection, electrolytes).","Lactulose pathways.");
+add("Internal Medicine","Uraemic pericarditis implies?",
+"Advanced renal failure needing urgent renal pathway",["Mild dehydration only","Normal finding in athletes","Only viral cold"],
+"Dialysis decision with nephrology.","Do not ignore chest pain in CKD.");
+
+// PAEDIATRICS
+add("Paediatrics","Neonatal resuscitation begins with?",
+"Warmth, airway, stimulation, assess breathing/HR",["Immediate adrenaline for all","CT head first","IV antibiotics before drying"],
+"Golden minute basics.","Ventilation before drugs.");
+add("Paediatrics","Stridor in a febrile toddler — differential includes?",
+"Croup, epiglottitis, foreign body among others",["Only simple rhinitis","Always asthma only","Only eczema"],
+"Airway caution — do not agitate.","Senior help early if toxic.");
+add("Paediatrics","Kawasaki disease incomplete forms still risk?",
+"Coronary artery complications — needs specialist pathway",["No cardiac risk ever","Only skin disease lifelong without review","Always viral and ignore"],
+"Fever plus features — do not miss.","Echo/follow-up.");
+add("Paediatrics","ORS is preferred over IV when?",
+"Child can drink and is not in shock",["Shock with poor perfusion","Unconscious always","Severe respiratory distress unable to protect airway"],
+"Plan A/B oral; Plan C IV.","Continue feeding.");
+add("Paediatrics","Pyloric stenosis classic age?",
+"Around 2–8 weeks of life",["Adolescents only","Only adults","Only newborns at 1 hour of life always"],
+"Projectile non-bilious vomiting.","Correct electrolytes before surgery.");
+add("Paediatrics","Intussusception classic stool?",
+"Redcurrant jelly stool (late)",["Rice-water stool only","Melaena of elderly only","Clay-coloured only"],
+"Intermittent colic + drawing up legs.","Urgent reduction pathway.");
+add("Paediatrics","Phototherapy is used for?",
+"Neonatal unconjugated hyperbilirubinaemia as per thresholds",["All anaemia","Only bacterial meningitis","Asthma"],
+"Plot on threshold charts.","Investigate cause.");
+add("Paediatrics","Hib/PCV vaccines help prevent?",
+"Invasive bacterial disease including some pneumonias/meningitis types",["All viral infections","Malaria only","Tetanus only"],
+"Immunisation is prevention.","Know national schedule.");
+add("Paediatrics","A child with petechiae and fever — action?",
+"Urgent assessment for possible meningococcal/sepsis pathway",["Home cream","Wait 1 week","Only allergy tablets"],
+"Do not delay.","Glass test context.");
+add("Paediatrics","Developmental dysplasia of hip screening uses?",
+"Ortolani/Barlow and imaging pathways as per age",["Only CT head","Only CXR","Ignore clicks always"],
+"Early detection matters.","Refer appropriately.");
+
+// OBSTETRICS
+add("Obstetrics & Gynaecology","Anti-D is for?",
+"Rh-negative mothers after sensitising events / protocol",["All mothers regardless of group","Only fathers","Vitamin supplement only"],
+"Prevent sensitisation.","Follow blood group protocol.");
+add("Obstetrics & Gynaecology","Shoulder dystocia first manoeuvres after help?",
+"McRoberts and suprapubic pressure",["Fundal pressure as first line","Immediate caesarean without manoeuvres always","Pull harder only"],
+"Help, manoeuvres, time-critical.","Document.");
+add("Obstetrics & Gynaecology","Placenta praevia presents classically with?",
+"Painless PV bleeding in later pregnancy",["Painful abruption only always","Always first trimester only","Never bleeding"],
+"No digital VE until placenta localised.","Resuscitate as needed.");
+add("Obstetrics & Gynaecology","Abruption classic clue?",
+"Painful bleeding / woody uterus / fetal distress",["Always painless","Only post-menopausal","Only with fever"],
+"Maternal-fetal emergency.","Resuscitate and deliver pathway.");
+add("Obstetrics & Gynaecology","HELLP syndrome involves?",
+"Haemolysis, elevated liver enzymes, low platelets",["High haemoglobin only","Low liver enzymes only","High platelets only"],
+"Severe pre-eclampsia spectrum.","Delivery planning.");
+add("Obstetrics & Gynaecology","Ectopic pregnancy triad teaching?",
+"Amenorrhoea, pain, bleeding (variable)",["Always heavy bleeding only","Never pain","Only after menopause"],
+"Positive test + pain = exclude ectopic.","Unstable → theatre pathway.");
+add("Obstetrics & Gynaecology","Active third stage reduces?",
+"Postpartum haemorrhage risk",["Neonatal jaundice only","Breast milk volume only","Maternal height"],
+"Oxytocin and controlled cord traction per protocol.","Watch tone and bleeding.");
+add("Obstetrics & Gynaecology","CTG late decelerations suggest?",
+"Uteroplacental insufficiency concern",["Always normal labour","Only maternal sleep","Artifact only always"],
+"Assess whole clinical picture.","Escalate as trained.");
+add("Obstetrics & Gynaecology","Magnesium toxicity antidote concept?",
+"Calcium gluconate (stop Mg)",["Naloxone","Vitamin K","Flumazenil"],
+"Monitor reflexes and respiration.","Have calcium ready.");
+add("Obstetrics & Gynaecology","Ruptured membranes + fever + tachycardia suggests?",
+"Chorioamnionitis until proven otherwise",["Normal labour only","Only dehydration","Always malaria only"],
+"Antibiotics and delivery pathway.","Maternal-fetal risk.");
+
+// PHARMACOLOGY
+add("Pharmacology","Warfarin monitoring uses?",
+"INR",["HbA1c only","Amylase only","Only BP"],
+"Target range by indication.","Interactions matter.");
+add("Pharmacology","Opioid toxicity antidote?",
+"Naloxone",["N-acetylcysteine","Flumazenil first always","Vitamin K"],
+"Support ventilation first.","May need repeat doses.");
+add("Pharmacology","Benzodiazepine toxicity antidote (selected use)?",
+"Flumazenil (caution)",["Naloxone","Atropine","Glucose only"],
+"Risk of seizures in chronic users.","Airway first.");
+add("Pharmacology","Methotrexate is?",
+"Antifolate antimetabolite — used in oncology/rheumatology protocols",["Antibiotic","Antifungal only","Insulin analogue"],
+"Folic acid co-therapy often used in non-oncology doses.","Toxicity monitoring.");
+add("Pharmacology","ACE inhibitors common adverse effect?",
+"Dry cough / hyperkalaemia / rising creatinine",["Orange urine only","Always hypoglycaemia alone","Hair growth only"],
+"Check U&E after starting.","Contraindicated in pregnancy.");
+add("Pharmacology","Statins main adverse concern?",
+"Myopathy / rare rhabdomyolysis",["Immediate anaphylaxis always","Only cough","Only orange urine"],
+"Check interactions (e.g. some macrolides).","Counsel muscle pain.");
+add("Pharmacology","Digoxin toxicity classic symptoms?",
+"Nausea, visual changes, arrhythmias",["Only constipation","Only hair loss","Only fever"],
+"Levels and electrolytes matter.","Caution in renal impairment.");
+add("Pharmacology","SSRI + tramadol risk?",
+"Serotonin syndrome risk",["Only hypoglycaemia","Only hyperkalaemia always","No interaction"],
+"Watch agitation, hyperreflexia, fever.","Review combinations.");
+add("Pharmacology","Isoniazid neuropathy prevention?",
+"Pyridoxine (B6)",["Vitamin C only","Iron only","Calcium only"],
+"Especially at-risk patients.","TB regimen counselling.");
+add("Pharmacology","Rifampicin body fluid effect?",
+"Orange discoloration of urine/tears",["Black stools only","Blue sclera only","No colour change"],
+"Warn patients.","Enzyme inducer interactions.");
+
+// MICROBIOLOGY
+add("Microbiology","Acid-fast bacilli suggest?",
+"Mycobacteria (e.g. TB)",["Only viruses","Only fungi always","Parasites only"],
+"Ziehl-Neelsen / auramine context.","Correlate clinically.");
+add("Microbiology","Clostridium difficile associated with?",
+"Antibiotic exposure and healthcare settings",["Only viral food poisoning","Only trauma","Only asthma"],
+"IPC and stewardship.","Diarrhoea after Abx — think C. diff.");
+add("Microbiology","Malaria gold-standard microscopy?",
+"Blood film / RDT pathways",["CXR only","Urine dip only","EEG"],
+"Species and density matter.","Severe features → artesunate.");
+add("Microbiology","Meningococcal prophylaxis for contacts follows?",
+"Public health / local protocol",["No action ever","Treat whole city without guidance","Only vitamin C"],
+"Not every classmate automatically.","Follow health protection advice.");
+add("Microbiology","Extended-spectrum beta-lactamase (ESBL) implication?",
+"Resistance to many beta-lactams — directed therapy needed",["Always sensitive to amoxicillin alone","Always viral","No resistance issues"],
+"Cultures guide therapy.","Stewardship reserve agents.");
+add("Microbiology","Candida albicans is a?",
+"Yeast / fungus",["Virus","Helminth","Prion"],
+"Opportunistic in the right host.","Not all thrush needs systemic drugs.");
+add("Microbiology","HIV tests window period means?",
+"Time after infection when tests may still be negative",["Lifelong false positive always","No need for repeat tests ever","Only applies to malaria"],
+"Repeat testing as indicated.","Use antigen/antibody assays as available.");
+add("Microbiology","Blood culture volume in adults ideally?",
+"Adequate volume per bottle improves yield",["One drop is always enough","Never culture","Only after recovery"],
+"Before Abx when possible without delay in sepsis.","Two sets often preferred.");
+
+// RADIOLOGY
+add("Radiology","Kerley B lines suggest?",
+"Interstitial oedema / heart failure context",["Normal bones only","Only fracture","Only pneumothorax"],
+"Correlate clinically.","Look for other failure signs.");
+add("Radiology","Air bronchograms are seen in?",
+"Alveolar consolidation",["Pure pneumothorax only","Only foreign body always","Normal dry lung only"],
+"Patent bronchi within consolidation.","Infection/oedema/blood.");
+add("Radiology","Ultrasound acoustic shadowing behind a bright focus in gallbladder?",
+"Gallstone pattern",["Simple cyst only","Always polyp without shadow","Air only"],
+"Classic teaching.","Mobile with position.");
+add("Radiology","CTPA looks for?",
+"Pulmonary embolus filling defects",["Gallstones","Renal stones only","Skull fractures only"],
+"Use probability pathways.","Contrast considerations.");
+add("Radiology","Free air under diaphragm on erect CXR suggests?",
+"Perforated viscus until proven otherwise",["Normal finding","Only asthma","Only pneumonia always"],
+"Surgical emergency pathway.","Clinical correlation.");
+add("Radiology","FAST scan in trauma assesses?",
+"Free fluid in peritoneum/pericardium",["Bone mineral density","Visual acuity","Hearing"],
+"Unstable positive → theatre pathway.","Negative does not exclude all injury.");
+add("Radiology","MRI is preferred for?",
+"Soft tissue, spinal cord, many brain characterisations",["Initial major trauma primary survey","Detecting metal always safely without screening","Lung screening first-line always"],
+"Contraindications/screening matter.","CT still first in many emergencies.");
+
+// ANATOMY
+add("Anatomy","Cranial nerve VII is?",
+"Facial nerve",["Optic","Vagus only","Accessory only"],
+"Facial palsy patterns.","Upper vs lower motor neuron.");
+add("Anatomy","Portal triad includes?",
+"Portal vein, hepatic artery, bile duct",["Only IVC","Only aorta","Only lymph"],
+"Calot/triangle relationships nearby surgically.","Know orientations.");
+add("Anatomy","The recurrent laryngeal nerve is near?",
+"Thyroid surgery risk structure",["Only the ankle","Only the kidney","Only the eye"],
+"Voice changes post-op matter.","Careful dissection.");
+add("Anatomy","McBurney's point relates to?",
+"Appendix surface marking",["Gallbladder fundus only","Spleen tip only","Kidney hilum only"],
+"Two-thirds from umbilicus to ASIS.","Clinical exam aid.");
+add("Anatomy","Foramen magnum transmits?",
+"Medulla / spinal cord transition and vertebral arteries among structures",["Only the aorta","Only the liver","Only the femur"],
+"Neurosurgical/trauma relevance.","Brainstem location.");
+add("Anatomy","Median nerve injury at wrist affects?",
+"Thenar function / sensation lateral hand (classic patterns)",["Only plantar flexion","Only hearing","Only vision"],
+"Carpal tunnel context.","Examine properly.");
+add("Anatomy","The saphenous vein is used sometimes as?",
+"Bypass graft conduit",["Nerve graft only always","Bone graft","Airway stent only"],
+"Know anatomy of harvest.","Surgical relevance.");
+
+// PHYSIOLOGY
+add("Physiology","ADH acts mainly on?",
+"Collecting duct water reabsorption",["Only proximal glucose always","Only bone","Only skin"],
+"Water balance.","SIADH vs diabetes insipidus contrast.");
+add("Physiology","Surfactant reduces?",
+"Alveolar surface tension",["Blood viscosity only","Bone density","Urine output only"],
+"Neonatal RDS context.","Keep alveoli open.");
+add("Physiology","Frank-Starling law relates?",
+"Preload to stroke volume",["Only afterload to heart rate","Only height to BP","Only age to GFR always linear"],
+"Heart failure physiology.","Optimal filling.");
+add("Physiology","Bohr effect describes?",
+"Oxygen unloading with raised CO2/H+",["Only iron absorption","Only bile secretion","Only ADH release"],
+"Exercise/tissue delivery.","Shift of oxyhaemoglobin curve.");
+add("Physiology","GFR is estimated clinically often by?",
+"Creatinine-based equations",["Only amylase","Only lipase","Only bilirubin always"],
+"Know limitations in low muscle mass.","AKI vs CKD.");
+
+// PATHOLOGY
+add("Pathology","Metaplasia is?",
+"Reversible change of one differentiated cell type to another",["Always irreversible cancer","Necrosis only","Apoptosis only"],
+"Barrett's oesophagus example.","Not yet invasion.");
+add("Pathology","Apoptosis is?",
+"Programmed cell death",["Always inflammatory necrosis","Only gangrene","Only atrophy from disuse"],
+"Cleaner than necrosis histologically.","Physiological and pathological roles.");
+add("Pathology","Amyloid is?",
+"Misfolded protein deposition",["Normal collagen only","Only calcium","Only pure fat"],
+"Congo red context.","Organ dysfunction.");
+add("Pathology","Dysplasia implies?",
+"Disordered growth with atypia — pre-malignant potential",["Always benign normal","Always metastatic already","Only inflammation"],
+"Cervical screening context.","Grading matters.");
+add("Pathology","Infarction is?",
+"Tissue death from ischaemia",["Only infection","Only neoplasia","Only hypertrophy"],
+"Red vs white infarct teaching.","Time-critical organs.");
+
+// DERMATOLOGY
+add("Dermatology","Target lesions classic for?",
+"Erythema multiforme",["Simple tinea always","Urticaria only","Psoriasis only"],
+"Look for triggers including infection/drugs.","Mucosal involvement matters.");
+add("Dermatology","Auspitz sign relates to?",
+"Psoriasis",["Scabies only","Melanoma only","Cellulitis only"],
+"Pinpoint bleeding on scale removal.","Clinical diagnosis aids.");
+add("Dermatology","Scabies mite burrows often where?",
+"Interdigital webs / wrists",["Only scalp always","Only nails only","Only trunk in all ages only"],
+"Itch worse at night classic.","Treat contacts as protocol.");
+add("Dermatology","ABCDE of melanoma?",
+"Asymmetry, Border, Colour, Diameter, Evolving",["Always bilateral symmetry only","Only colour same as skin","Never evolves"],
+"Refer suspicious lesions.","Photography helps monitoring.");
+add("Dermatology","Cellulitis vs erysipelas teaching?",
+"Erysipelas more superficial/well-demarcated; cellulitis deeper",["They are bones only","Only viral","Only fungal always"],
+"Mark borders and treat promptly.","Look for source.");
+
+// EMERGENCY
+add("Emergency","GCS components?",
+"Eye, verbal, motor",["Only BP","Only temperature","Only urine output"],
+"Score each domain.","Trending matters.");
+add("Emergency","AMPLE history stands for?",
+"Allergies, Medications, Past history, Last meal, Events",["Only age","Only address","Only next of kin"],
+"Trauma quick history.","Before theatre when possible.");
+add("Emergency","Needle thoracocentesis landmark classic teaching?",
+"2nd intercostal space midclavicular (or local updated lateral approaches as trained)",["Umbilicus","Popliteal fossa","Vertex of skull"],
+"Know your protocol.","Then definitive drain.");
+add("Emergency","cABC prioritises?",
+"Catastrophic haemorrhage then airway/breathing/circulation",["Only circulation last always","Ignore bleeding","Only temperature"],
+"Battlefield/trauma evolution of ABC.","Stop massive bleed.");
+add("Emergency","Hypothermia definition commonly?",
+"Core temperature below 35°C",["Above 40 only","Exactly 37 only","Only skin cool"],
+"Re-warm carefully.","Prevent further loss.");
+add("Emergency","Septic shock includes?",
+"Sepsis with profound circulatory/cellular/metabolic abnormalities and hypotension needing support",["Mild cold only","Only viral URTI","Anxiety only"],
+"Early Abx and fluids per protocol.","Source control.");
+add("Emergency","Flail chest is?",
+"Segment with paradoxical motion from multiple rib fractures",["Single rib bruise","Only pneumothorax without fractures","Normal breathing"],
+"Oxygen and analgesia; ventilatory support as needed.","Associated injuries.");
+
+// AI + AMS extra
+add("AI Clinical Literacy","Hallucinated citation in an AI answer means?",
+"The reference may be invented — verify independently",["It is always peer-reviewed","It replaces guidelines","It cannot be wrong"],
+"Check primary sources.","Fluency ≠ accuracy.");
+add("AI Clinical Literacy","Best student use of AI for exams?",
+"Self-test and then verify explanations in trusted materials",["Memorise AI only","Skip lectures forever","Submit AI essays unedited against rules"],
+"Academic integrity matters.","Learning > pasting.");
+add("Antimicrobial Stewardship","Prolonged surgical prophylaxis without indication increases?",
+"Resistance and side-effects without clear benefit in many clean cases",["Always better outcomes","Only better scar cosmetics","No effect on resistance"],
+"Stop when appropriate.","Timing at induction matters more than long tails.");
+add("Antimicrobial Stewardship","Narrowing antibiotics after cultures is called?",
+"De-escalation",["Escalation only","Prophylaxis only","Colonisation treatment always"],
+"Core AMS action.","Daily review.");
+
+classifyBankTypes();
 const COURSES=[...new Set(BANK.map(x=>x.c))];
 
 let tMode="full", tCourse=null, tQ=null, tPhase="main", tScore=0, tTotal=0, tLocked=false;
@@ -3245,8 +3671,32 @@ function loadStrat(){
 }
 
 function buildCourses(){
-  $("courseGrid").innerHTML=COURSES.map(c=>`<button type="button" data-c="${c}">${c}</button>`).join("");
-  $("courseGrid").querySelectorAll("button").forEach(b=>b.onclick=()=>{tCourse=b.getAttribute("data-c");tMode="full";usedStems.clear();startTelas();});
+  classifyBankTypes();
+  var grid=$("courseGrid");
+  if(!grid)return;
+  grid.classList.remove("hidden");
+  var counts={};
+  BANK.forEach(function(x){
+    if(!counts[x.c]) counts[x.c]={short:0,long:0,scenario:0,n:0};
+    counts[x.c].n++;
+    counts[x.c][x.qType||"long"]=(counts[x.c][x.qType||"long"]||0)+1;
+  });
+  grid.innerHTML=COURSES.map(function(c){
+    var k=counts[c]||{n:0};
+    return '<button type="button" data-c="'+c.replace(/"/g,"&quot;")+'"><span class="n">'+(k.n||"")+'</span><span class="t">'+c+'</span></button>';
+  }).join("");
+  grid.querySelectorAll("button").forEach(function(b){
+    b.onclick=function(){
+      resetTelasUI();
+      tCourse=b.getAttribute("data-c");
+      tMode="course";
+      usedStems.clear();
+      window._courseTypeCycle=["short","long","scenario"];
+      window._courseTypeIdx=0;
+      window._shortLeft=null;
+      startTelas();
+    };
+  });
 }
 $("tModeFull").onclick=()=>{$("telasMeta").textContent="Pick a course below";$("stratSettings").classList.add("hidden");};
 if($("tStartMixed"))$("tStartMixed").onclick=function(){resetTelasUI();tMode="mixed";tCourse=null;usedStems.clear();window._shortLeft=null;$("stratSettings").classList.add("hidden");startTelas();};
@@ -3407,38 +3857,47 @@ function bindOpts(){
   });
 }
 function pickQuestion(){
-  if(tMode==="short"){
-    if(typeof window._shortLeft!=="number")window._shortLeft=8;
-    if(window._shortLeft<=0){
-      return {stem:"Short session complete. Your score is shown above. Start again for a new set of 8.",opts:["Return to menu","Review due items","Start another short set","Open mixed revision"],correct:"Start another short set",why:"Short mode is a focused set of 8 questions — not an endless stream.",roast:"Session already finished.",c:"Short",follow:null,_shortEnd:1};
-    }
-    window._shortLeft--;
-    var pool=BANK.filter(function(x){return !usedStems.has(x.stem);});
-    if(!pool.length){usedStems.clear();pool=BANK.slice();}
-    var q=pool[Math.floor(Math.random()*pool.length)];
-    usedStems.add(q.stem);
-    return Object.assign({},q,{opts:shuffle(q.opts.slice())});
-  }
   if(tMode==="nbs"){
     var poolN=NBS.filter(function(n){return !usedNbs.has(n.stem);});
     if(!poolN.length){usedNbs.clear();poolN=NBS.slice();}
     var n=poolN[Math.floor(Math.random()*poolN.length)];
     usedNbs.add(n.stem);
-    return {stem:n.stem,opts:shuffle([n.correct].concat(n.wrongs)),correct:n.correct,why:n.why,roast:n.roast,c:"Next-best-step",follow:null};
+    return {stem:n.stem,opts:shuffle([n.correct].concat(n.wrongs)),correct:n.correct,why:n.why,roast:n.roast,c:"Next-best-step",qType:"short",follow:null};
   }
-  var pool=BANK;
-  if(tMode==="full"&&tCourse)pool=BANK.filter(function(x){return x.c===tCourse;});
-  if(!pool.length)pool=BANK;
-  var fresh=pool.filter(function(x){return !usedStems.has(x.stem);});
-  if(!fresh.length){usedStems.clear();fresh=pool.slice();}
-  var base=fresh[Math.floor(Math.random()*fresh.length)];
-  usedStems.add(base.stem);
-  var opts=shuffle(base.opts.slice());
-  var q={stem:base.stem,opts:opts,correct:base.correct,why:base.why,roast:base.roast,c:base.c,follow:null};
-  if(base.follow&&tMode==="full"){
-    q.follow={stem:base.follow.stem,opts:shuffle(base.follow.opts.slice()),correct:base.follow.correct,why:base.follow.why,roast:base.follow.roast};
+  // Course mode: rotate short → long → scenario within selected course
+  if(tMode==="course"&&tCourse){
+    classifyBankTypes();
+    var cycle=window._courseTypeCycle||["short","long","scenario"];
+    var idx=typeof window._courseTypeIdx==="number"?window._courseTypeIdx:0;
+    var want=cycle[idx%cycle.length];
+    window._courseTypeIdx=(idx+1)%cycle.length;
+    var coursePool=BANK.filter(function(x){return x.c===tCourse;});
+    if(!coursePool.length) coursePool=BANK.slice();
+    function pickFrom(type){
+      var p=coursePool.filter(function(x){return (x.qType||"long")===type && !usedStems.has(x.stem);});
+      if(!p.length) p=coursePool.filter(function(x){return (x.qType||"long")===type;});
+      if(!p.length) p=coursePool.filter(function(x){return !usedStems.has(x.stem);});
+      if(!p.length){usedStems.clear();p=coursePool.slice();}
+      return p[Math.floor(Math.random()*p.length)];
+    }
+    var base=pickFrom(want);
+    if(!base) base=coursePool[Math.floor(Math.random()*coursePool.length)];
+    usedStems.add(base.stem);
+    var opts=shuffle(base.opts.slice());
+    var q={stem:base.stem,opts:opts,correct:base.correct,why:base.why,roast:base.roast,c:base.c,qType:base.qType||want,follow:null};
+    if(base.follow){
+      q.follow={stem:base.follow.stem,opts:shuffle(base.follow.opts.slice()),correct:base.follow.correct,why:base.follow.why,roast:base.follow.roast};
+    }
+    return q;
   }
-  return q;
+  // Fallback mixed bank
+  var pool=BANK.filter(function(x){return !usedStems.has(x.stem);});
+  if(!pool.length){usedStems.clear();pool=BANK.slice();}
+  var base2=pool[Math.floor(Math.random()*pool.length)];
+  usedStems.add(base2.stem);
+  var q2={stem:base2.stem,opts:shuffle(base2.opts.slice()),correct:base2.correct,why:base2.why,roast:base2.roast,c:base2.c,qType:base2.qType||"long",follow:null};
+  if(base2.follow) q2.follow={stem:base2.follow.stem,opts:shuffle(base2.follow.opts.slice()),correct:base2.follow.correct,why:base2.follow.why,roast:base2.follow.roast};
+  return q2;
 }
 function startTelas(){
   $("telasHome").classList.add("hidden");$("telasPlay").classList.remove("hidden");
@@ -3478,7 +3937,21 @@ $("telasNext").onclick=function(){
   if(tMode==="due"){loadDue();return;}
   loadT();
 };
-$("telasExit").onclick=function(){if(shiftState&&shiftState.timer)clearInterval(shiftState.timer);shiftState=null;setMode("menu");};
+function telasGoHome(){
+  try{if(shiftState&&shiftState.timer)clearInterval(shiftState.timer);}catch(e){}
+  shiftState=null;tLocked=false;
+  try{stopARCam();}catch(e){}
+  setMode("menu");
+}
+if($("telasExit")){
+  $("telasExit").onclick=function(e){if(e){e.preventDefault();e.stopPropagation();}telasGoHome();};
+  $("telasExit").ontouchend=function(e){if(e){e.preventDefault();e.stopPropagation();}telasGoHome();};
+}
+// Also allow Exit from play to return to course list first
+if($("telasNext")){
+  var _prevNext=$("telasNext").onclick;
+}
+
 
 // CHAT
 function showChat(){
@@ -3539,20 +4012,7 @@ try{
   if(sessionStorage.getItem("tmsxr_local_notice")!=="1"){
     sessionStorage.setItem("tmsxr_local_notice","1");
   }
-}catch(e){}const CACHE='tmsxr-v1';
-self.addEventListener('install',function(e){
-  e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(['./']).catch(function(){});}).then(function(){return self.skipWaiting();}));
-});
-self.addEventListener('activate',function(e){e.waitUntil(self.clients.claim());});
-self.addEventListener('fetch',function(e){
-  e.respondWith(caches.open(CACHE).then(function(c){
-    return fetch(e.request).then(function(net){
-      if(e.request.method==='GET'&&net&&net.ok)try{c.put(e.request,net.clone());}catch(err){}
-      return net;
-    }).catch(function(){return c.match(e.request).then(function(hit){return hit||new Response('Offline',{status:503});});});
-  }));
-});
-
+}catch(e){}
 </script>
 </body>
 </html>
