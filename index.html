@@ -232,7 +232,6 @@ body.auth-open a-scene{visibility:hidden!important;pointer-events:none!important
   <div class="card">
     <div class="user-bar"><div class="avatar" id="userAvatar">👩‍⚕️</div><div><div id="userBarName">User</div><div class="muted" id="userBarRole"></div></div></div>
     <div class="brand" style="margin:8px 0"><div class="brand-mark">TX</div><div><h1 style="margin:0">TMS-XR</h1><p class="muted" style="margin:0">Clinical learning &amp; reference · v6 expanded</p></div></div>
-    <p class="muted" style="font-size:12px;margin:0 0 10px;padding:8px;border-radius:8px;background:rgba(240,200,74,.1);border:1px solid rgba(240,200,74,.25)"><b>Educational tool</b> — confirm doses and decisions with local STG, seniors, and facility protocols. Not a prescribing system.</p>
     <div class="subnav" id="homeModeNav" style="margin-bottom:10px">
       <button type="button" data-home="ref" class="on">Reference</button>
       <button type="button" data-home="practice">Practice</button>
@@ -270,7 +269,6 @@ body.auth-open a-scene{visibility:hidden!important;pointer-events:none!important
     </div>
 
     <div id="homeSkills" class="hidden">
-      <p class="muted" style="margin:8px 0">Skill trainers — practice sequences, not certification.</p>
       <div class="mod-grid">
         <button type="button" data-mod="proc" data-keys="procedure iv catheter ngt"><span class="n">01</span><span class="t">Procedures</span></button>
         <button type="button" data-mod="anat" data-keys="anatomy dissection suture"><span class="n">02</span><span class="t">Anatomy &amp; suture</span></button>
@@ -286,7 +284,7 @@ body.auth-open a-scene{visibility:hidden!important;pointer-events:none!important
         <button type="button" id="btnAms" data-keys="ams stewardship antibiotic amr"><span class="n">AMS</span><span class="t">Stewardship coach</span></button>
         <button type="button" data-mod="telas" data-keys="ai ethics"><span class="n">Q</span><span class="t">AI &amp; AMS questions</span></button>
       </div>
-      <div id="aiAmsPanel" class="hidden" style="margin-top:12px"></div>
+      <div id="aiAmsPanel" class="hidden" style="margin-top:12px;position:relative;z-index:5"></div>
     </div>
     <div id="homeData" class="hidden">
       <p class="muted" style="margin:8px 0">Progress is stored in <b>this browser</b>. Export a backup before clearing data or switching devices. Import restores Twin roster and Telas review schedule for your username.</p>
@@ -375,7 +373,7 @@ body.auth-open a-scene{visibility:hidden!important;pointer-events:none!important
     <p>Score <strong id="procScore">0</strong></p><div class="progress-bg"><div class="progress" id="procBar"></div></div>
   </div>
   <div id="arBlock" class="hidden">
-    <p class="muted"><b>Visual coaching overlay</b> (not marker-tracked AR). Uses your phone camera behind a fixed guide. Point at an arm/pillow and follow steps. Needs HTTPS + camera permission. Does not measure real needle angle.</p>
+    <p class="muted">Camera guide — point at an arm or practice surface and follow the steps.</p>
     <div class="subnav" id="arNav">
       <button type="button" data-ar="iv" class="on">IV angle</button>
       <button type="button" data-ar="im">IM site</button>
@@ -409,7 +407,7 @@ body.auth-open a-scene{visibility:hidden!important;pointer-events:none!important
 <!-- ANAT -->
 <section id="anatPanel" class="panel hidden">
   <h1>Anatomy &amp; Dissection</h1>
-  <p class="muted">Layered study model · not a full 206-bone mesh (needs dedicated anatomy software for that). Use layers + labels to revise.</p>
+  <p class="muted">Toggle layers and select structures to revise.</p>
   <div class="subnav">
     <button type="button" data-a="layers" class="on">Layers</button>
     <button type="button" data-a="suture">Suturing</button>
@@ -484,7 +482,7 @@ body.auth-open a-scene{visibility:hidden!important;pointer-events:none!important
   <h1>Drug Physiology</h1>
   <div id="ixBox" style="margin-bottom:10px;padding:10px;border-radius:10px;background:rgba(255,255,255,.04)">
     <b>Interaction check</b>
-    <p class="muted" style="margin:4px 0">Pick up to 3 drugs — common teaching cautions (not a full formulary).</p>
+    <p class="muted" style="margin:4px 0">Pick up to 3 drugs to check common interactions.</p>
     <select id="ix1" style="width:100%;margin:4px 0;padding:8px;border-radius:8px;background:#0d2233;color:#e8f1f6;border:1px solid #345"></select>
     <select id="ix2" style="width:100%;margin:4px 0;padding:8px;border-radius:8px;background:#0d2233;color:#e8f1f6;border:1px solid #345"></select>
     <select id="ix3" style="width:100%;margin:4px 0;padding:8px;border-radius:8px;background:#0d2233;color:#e8f1f6;border:1px solid #345"></select>
@@ -505,34 +503,24 @@ body.auth-open a-scene{visibility:hidden!important;pointer-events:none!important
   <h1>Telas Doc · Clinical Revision</h1>
   <p class="muted">Clinical revision by course</p>
   <div id="telasHome">
-    <div id="dueBox" class="case-card due-card" style="cursor:pointer;margin-bottom:10px">
-      <span class="tag">SPACED REVIEW</span>
-      <strong id="dueTitle">Due today: 0</strong>
-      <p class="muted" id="dueSub" style="margin:4px 0 0">Missed items return after 1 day · strengthen weak spots</p>
-    </div>
-    <h2>Mode</h2>
+    <p class="muted" id="dueBox" style="cursor:pointer;margin-bottom:10px"><span id="dueTitle">Due today: 0</span> · <span id="dueSub">Tap to review weak items</span></p>
     <div class="button-grid">
-      <button type="button" class="primary" id="tModeFull">Course deep-dive</button>
-      <button type="button" class="primary" id="tModeShort">Short sharp (roulette)</button>
-      <button type="button" class="primary" id="tModeNbs">Next-best-step</button>
-      <button type="button" id="tModeMixed">Mixed random</button>
-      <button type="button" class="primary" id="tModeStrat">Resource-stratified</button>
-      <button type="button" class="primary" id="tModeShift">Golden Minute shift</button>
-      <button type="button" class="primary" id="tModeOsce">OSCE checklist</button>
-      <button type="button" id="tModeDue">Review due items</button>
+      <button type="button" class="primary" id="tStartMixed">Start mixed practice</button>
+      <button type="button" id="tModeOsce">OSCE checklist</button>
+      <button type="button" id="tModeShift">Golden Minute shift</button>
     </div>
-    <div id="stratSettings" class="hidden" style="margin:10px 0;padding:10px;border-radius:10px;background:rgba(255,255,255,.04)">
-      <b>Hospital setting</b>
-      <div class="subnav" id="stratNav">
-        <button type="button" data-set="central" class="on">Central</button>
-        <button type="button" data-set="district">District</button>
-        <button type="button" data-set="post">Health post</button>
-      </div>
-      <p class="muted">Same patient — correct next step changes with what you have available.</p>
-      <button type="button" class="primary" id="stratGo">Start stratified cases</button>
+    <div id="stratSettings" class="hidden" style="margin-top:10px">
+      <label class="muted">Resource level</label>
+      <select id="stratLevel"><option value="health_post">Health post</option><option value="district">District</option><option value="central">Central</option></select>
+      <button type="button" class="primary" id="tModeStrat">Resource-stratified case</button>
     </div>
-    <h2>Course (for deep-dive)</h2>
-    <div class="course-grid" id="courseGrid"></div>
+    <p class="muted" style="margin-top:8px"><button type="button" id="tShowMore" style="background:transparent;border:none;color:#8ab;text-decoration:underline;padding:0">More modes</button></p>
+    <div id="telasMoreModes" class="hidden button-grid" style="margin-top:6px">
+      <button type="button" id="tModeShort">Short set (8)</button>
+      <button type="button" id="tModeNbs">Next-best-step</button>
+      <button type="button" id="tModeStratShow">Resource cases</button>
+    </div>
+    <div id="courseGrid" class="hidden"></div>
   </div>
   <div id="telasPlay" class="hidden">
     <div class="status" id="telasMeta"></div>
@@ -648,7 +636,7 @@ function setMode(m){
   else if(m==="surg"){$("surgPanel").classList.remove("hidden");$("surgScene").setAttribute("visible",true);showSurgList();}
   else if(m==="radiology"){$("radPanel").classList.remove("hidden");showRad();}
   else if(m==="drugs"){$("drugPanel").classList.remove("hidden");showDrugs();fillIxSelects();if($("ixGo"))$("ixGo").onclick=runIx;}
-  else if(m==="telas"){$("telasPanel").classList.remove("hidden");$("telasHome").classList.remove("hidden");$("telasPlay").classList.add("hidden");buildCourses();refreshDueBox();}
+  else if(m==="telas"){$("telasPanel").classList.remove("hidden");$("telasHome").classList.add("hidden");$("telasPlay").classList.remove("hidden");resetTelasUI();tMode="mixed";tCourse=null;usedStems.clear();window._shortLeft=null;startTelas();refreshDueBox();}
   else if(m==="chat"){$("chatPanel").classList.remove("hidden");showChat();}
   else if(m==="admin"){$("adminPanel").classList.remove("hidden");const L=JSON.parse(localStorage.getItem("tmsxr_activity")||"[]");$("admLog").innerHTML=L.slice(0,50).map(x=>"<div>"+esc(x.name)+" · "+esc(x.action)+" "+esc(x.detail||"")+" · "+esc(new Date(x.time).toLocaleString())+"</div>").join("")||"Empty";}
   else if(m==="twin"){$("twinPanel").classList.remove("hidden");openTwin();}
@@ -659,6 +647,7 @@ function setHomeMode(mode){
   Object.keys(map).forEach(function(k){var el=$(map[k]); if(el) el.classList.toggle("hidden",k!==mode);});
   document.querySelectorAll("#homeModeNav button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-home")===mode);});
   if(mode==="practice"){try{refreshTwinCard();refreshWeakMap();}catch(e){}}
+  if(mode==="trends"){try{bindAiAms();}catch(e){}}
 }
 document.querySelectorAll("#homeModeNav button").forEach(function(b){b.onclick=function(){setHomeMode(b.getAttribute("data-home"));};});
 function exportMyProgress(){
@@ -759,8 +748,9 @@ const AMS_CASES=[
 ];
 function openAiLit(){
   try{setHomeMode("trends");}catch(e){}
-  var panel=$("aiAmsPanel"); if(!panel)return;
+  var panel=$("aiAmsPanel"); if(!panel){alert("AI panel missing");return;}
   panel.classList.remove("hidden");
+  panel.style.display="block";
   var q=AI_LIT[Math.floor(Math.random()*AI_LIT.length)];
   var opts=shuffle([q.correct].concat(q.wrong));
   panel.innerHTML="<h3>AI clinical literacy</h3><p class='muted'>2025–26 theme: use AI as a tutor/draft tool — verify everything clinically.</p><div class='stem'>"+esc(q.stem)+"</div><div id='aiOpts'></div><div id='aiFb' class='hidden'></div><button type='button' class='primary' id='aiNext' style='margin-top:8px;width:100%'>Another scenario</button>";
@@ -776,8 +766,9 @@ function openAiLit(){
 }
 function openAms(){
   try{setHomeMode("trends");}catch(e){}
-  var panel=$("aiAmsPanel"); if(!panel)return;
+  var panel=$("aiAmsPanel"); if(!panel){alert("AMS panel missing");return;}
   panel.classList.remove("hidden");
+  panel.style.display="block";
   var q=AMS_CASES[Math.floor(Math.random()*AMS_CASES.length)];
   var opts=shuffle([q.correct].concat(q.wrong));
   panel.innerHTML="<h3>Antimicrobial stewardship coach</h3><p class='muted'>WHO PHC/AMR priority: right drug, patient, dose, duration — or no antibiotic.</p><div class='stem'>"+esc(q.stem)+"</div><div id='amsOpts'></div><div id='amsFb' class='hidden'></div><button type='button' class='primary' id='amsNext' style='margin-top:8px;width:100%'>Another AMS case</button>";
@@ -947,14 +938,14 @@ function openDrugIndex(i){
   var d=DRUGS[i];if(!d)return;
   $("drugList").classList.add("hidden");$("drugDetail").classList.remove("hidden");
   $("drugStatus").innerHTML="<strong>"+d.t+"</strong>";
-  $("drugBody").innerHTML="<p><b>Indications:</b> "+d.ind+"</p><p><b>Adult dosing:</b> "+d.ad+"</p><p><b>Children:</b> "+d.ch+"</p><p><b>How it works (MOA):</b> "+d.moa+"</p><p><b>Cautions / contraindications:</b> "+d.ci+"</p>"+(d.detail?"<p><b>Clinical notes:</b> "+d.detail+"</p>":"")+(d.monitor?"<p><b>What to monitor:</b> "+d.monitor+"</p>":"")+"<p class='muted'>Educational summary — confirm local STG before prescribing.</p>";
+  $("drugBody").innerHTML="<p><b>Indications:</b> "+d.ind+"</p><p><b>Adult dosing:</b> "+d.ad+"</p><p><b>Children:</b> "+d.ch+"</p><p><b>How it works (MOA):</b> "+d.moa+"</p><p><b>Cautions / contraindications:</b> "+d.ci+"</p>"+(d.detail?"<p><b>Clinical notes:</b> "+d.detail+"</p>":"")+(d.monitor?"<p><b>What to monitor:</b> "+d.monitor+"</p>":"")+"";
 }
 function openRadIndex(i){
   showRad();
   var r=RAD[i];if(!r)return;
   $("radList").classList.add("hidden");$("radDetail").classList.remove("hidden");
   $("radStatus").innerHTML='<span class="tag">'+r.m+"</span> <strong>"+r.t+"</strong>";
-  $("radVisual").innerHTML=(r.svg||"")+'<p class="muted" style="margin-top:8px">Teaching schematic (not a real patient image)</p>';
+  $("radVisual").innerHTML=(r.svg||"")+'';
   $("radBody").innerHTML="<p><b>Classical imaging / pattern:</b> "+r.f+"</p>"+(r.depth?"<p><b>In more depth:</b> "+r.depth+"</p>":"")+(r.lab?"<p><b>Labs & correlation:</b> "+r.lab+"</p>":"")+"<p><b>Clinical tip:</b> "+r.tip+"</p>";
 }
 $("modSearch").oninput=function(){globalSearch(this.value);};
@@ -1795,7 +1786,7 @@ function rp(){
       if(pd){
         pd.classList.remove("hidden");
         var tips=pLog.length?("<ol style='margin:6px 0 0 18px'>"+pLog.map(function(x){return "<li>"+x+"</li>";}).join("")+"</ol>"):"<p class='muted'>Clean run — no wrong-tool events logged.</p>";
-        pd.innerHTML="<h3>Procedure debrief</h3><p><b>"+P.t+"</b></p><p>Score <b>"+ps+"/100</b> · Time <b>"+secs+"s</b> · Wrong clicks <b>"+pWrong+"</b> · Total clicks <b>"+pAttempts+"</b></p>"+tips+"<p class='muted'>Ward checklist still required: indication, consent, asepsis, sharps, documentation. This is sequence practice, not a full sterile-field sim.</p>";
+        pd.innerHTML="<h3>Procedure debrief</h3><p><b>"+P.t+"</b></p><p>Score <b>"+ps+"/100</b> · Time <b>"+secs+"s</b> · Wrong clicks <b>"+pWrong+"</b> · Total clicks <b>"+pAttempts+"</b></p>"+tips;
       }
       try{logAct("proc_complete",pk+" "+ps+"/100");}catch(e){}
       return;
@@ -1854,8 +1845,8 @@ $("lySkin").onclick=()=>{onlyLayer("layerSkin");$("anatStatus").textContent="Ski
 $("lyMus").onclick=()=>{onlyLayer("layerMuscle");$("anatStatus").textContent="Muscle layer";};
 $("lyBone").onclick=()=>{onlyLayer("layerBone");$("anatStatus").textContent="Bone layer — major bones shown";};
 $("lyVes").onclick=()=>{onlyLayer("layerVessel");$("anatStatus").textContent="Major vessels";};
-$("lyNer").onclick=()=>{onlyLayer("layerNerve");$("anatStatus").textContent="Nerve regions (schematic)";};
-$("lyLym").onclick=()=>{onlyLayer("layerLymph");$("anatStatus").textContent="Lymph node groups (schematic)";};
+$("lyNer").onclick=()=>{onlyLayer("layerNerve");$("anatStatus").textContent="Nerve regions";};
+$("lyLym").onclick=()=>{onlyLayer("layerLymph");$("anatStatus").textContent="Lymph node groups";};
 document.querySelectorAll(".anat").forEach(el=>el.addEventListener("click",()=>{$("anatStatus").textContent="Selected: "+(el.getAttribute("data-n")||"?");el.setAttribute("material","emissive","#38e6ba");el.setAttribute("material","emissiveIntensity","0.35");}));
 
 const SUT=[
@@ -1946,7 +1937,7 @@ function showRad(){
   $("radList").querySelectorAll(".case-card").forEach(function(el){el.onclick=function(){
     var r=RAD[+el.dataset.i];$("radList").classList.add("hidden");$("radDetail").classList.remove("hidden");
     $("radStatus").innerHTML='<span class="tag">'+r.m+"</span> <strong>"+r.t+"</strong>";
-    $("radVisual").innerHTML=(r.svg||"")+'<p class="muted" style="margin-top:8px">Teaching schematic (not a real patient image)</p>';
+    $("radVisual").innerHTML=(r.svg||"")+'';
     $("radBody").innerHTML="<p><b>Classical imaging / pattern:</b> "+r.f+"</p>"+
       (r.depth?"<p><b>In more depth:</b> "+r.depth+"</p>":"")+
       (r.lab?"<p><b>Labs & correlation:</b> "+r.lab+"</p>":"")+
@@ -2468,7 +2459,7 @@ function showDrugs(){
       "<p><b>Cautions / contraindications:</b> "+d.ci+"</p>"+
       (d.detail?"<p><b>Clinical notes:</b> "+d.detail+"</p>":"")+
       (d.monitor?"<p><b>What to monitor:</b> "+d.monitor+"</p>":"")+
-      "<p class='muted'>Educational summary — confirm Zambia STG / hospital protocol before prescribing.</p>";
+      "";
   };});
 }
 $("drugBack").onclick=showDrugs;$("drugExit").onclick=()=>setMode("menu");
@@ -3258,6 +3249,9 @@ function buildCourses(){
   $("courseGrid").querySelectorAll("button").forEach(b=>b.onclick=()=>{tCourse=b.getAttribute("data-c");tMode="full";usedStems.clear();startTelas();});
 }
 $("tModeFull").onclick=()=>{$("telasMeta").textContent="Pick a course below";$("stratSettings").classList.add("hidden");};
+if($("tStartMixed"))$("tStartMixed").onclick=function(){resetTelasUI();tMode="mixed";tCourse=null;usedStems.clear();window._shortLeft=null;$("stratSettings").classList.add("hidden");startTelas();};
+if($("tShowMore"))$("tShowMore").onclick=function(){var el=$("telasMoreModes");if(el)el.classList.toggle("hidden");};
+if($("tModeStratShow"))$("tModeStratShow").onclick=function(){$("stratSettings").classList.remove("hidden");};
 $("tModeShort").onclick=()=>{resetTelasUI();window._shortLeft=8;tMode="short";tCourse=null;usedStems.clear();$("stratSettings").classList.add("hidden");startTelas();};
 $("tModeNbs").onclick=()=>{resetTelasUI();tMode="nbs";usedNbs.clear();$("stratSettings").classList.add("hidden");startTelas();};
 $("tModeMixed").onclick=()=>{resetTelasUI();tMode="mixed";tCourse=null;usedStems.clear();$("stratSettings").classList.add("hidden");startTelas();};
@@ -3526,13 +3520,26 @@ if("serviceWorker" in navigator && (location.protocol==="https:"||location.hostn
 }
 try{refreshDueBox();refreshWeakMap();}catch(e){}
 if($("weakMap"))$("weakMap").onclick=function(){setMode("telas");};
-if($("btnAiLit"))$("btnAiLit").onclick=function(e){e.preventDefault();openAiLit();};
-if($("btnAms"))$("btnAms").onclick=function(e){e.preventDefault();openAms();};
+function bindAiAms(){
+  var a=$("btnAiLit"), b=$("btnAms");
+  if(a){a.onclick=function(e){e.preventDefault();e.stopPropagation();openAiLit();};}
+  if(b){b.onclick=function(e){e.preventDefault();e.stopPropagation();openAms();};}
+  var ht=$("homeTrends");
+  if(ht){ht.addEventListener("click",function(e){
+    var t=e.target;
+    if(!t)return;
+    if(t.id==="btnAiLit"||(t.closest&&t.closest("#btnAiLit"))){e.preventDefault();openAiLit();}
+    if(t.id==="btnAms"||(t.closest&&t.closest("#btnAms"))){e.preventDefault();openAms();}
+  });}
+}
+bindAiAms();
+
 // Local-only auth notice once per session
 try{
   if(sessionStorage.getItem("tmsxr_local_notice")!=="1"){
     sessionStorage.setItem("tmsxr_local_notice","1");
-  }const CACHE='tmsxr-v1';
+  }
+}catch(e){}const CACHE='tmsxr-v1';
 self.addEventListener('install',function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(['./']).catch(function(){});}).then(function(){return self.skipWaiting();}));
 });
@@ -3546,8 +3553,6 @@ self.addEventListener('fetch',function(e){
   }));
 });
 
-}catch(e){}
 </script>
 </body>
 </html>
-
