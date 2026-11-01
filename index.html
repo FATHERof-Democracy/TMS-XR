@@ -83,9 +83,9 @@ body.auth-open a-scene{visibility:hidden!important;pointer-events:none!important
 body.no-vr #telasPanel{z-index:80!important}
 
 
-#telasFixedBar{position:fixed;left:0;right:0;bottom:0;z-index:100000!important;display:none;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:rgba(5,13,22,.96);border-top:1px solid rgba(80,130,160,.45);box-shadow:0 -8px 24px #0008;pointer-events:auto!important}
+#telasFixedBar{position:fixed;left:0;right:0;bottom:0;z-index:2147483646!important;display:none;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:rgba(5,13,22,.96);border-top:1px solid rgba(80,130,160,.45);box-shadow:0 -8px 24px #0008;pointer-events:auto!important}
 #telasFixedBar.show{display:grid!important;grid-template-columns:1fr 1fr 1fr}
-#telasFixedBar button{pointer-events:auto!important;z-index:100001!important;min-height:48px;font-size:15px;text-align:center;touch-action:manipulation}
+#telasFixedBar button{pointer-events:auto!important;z-index:2147483647!important;min-height:48px;font-size:15px;text-align:center;touch-action:manipulation}
 body.telas-open a-scene,body.telas-open a-scene.a-fullscreen,body.telas-open canvas.a-canvas{display:none!important;visibility:hidden!important;pointer-events:none!important}
 body.telas-open #telasPanel{z-index:9000!important;pointer-events:auto!important;max-height:min(92vh,calc(100dvh - 70px))!important;width:min(540px,calc(100vw - 16px))!important;left:50%!important;transform:translateX(-50%)!important;overflow-y:auto!important}
 #telasPanel .telas-footer{display:none!important}
@@ -98,10 +98,10 @@ body.telas-open #topRight{z-index:100002!important}
 </style>
 </head>
 <body class="no-vr">
-<div id="telasFixedBar" aria-label="Telas controls">
-  <button type="button" id="telasNextFixed" class="primary">Next</button>
+<div id="telasFixedBar" aria-label="Telas controls" class="">
+  <button type="button" id="telasNextFixed" class="primary" onclick="try{window.telasAdvance()}catch(e){alert(e)}">Next</button>
   <button type="button" id="telasScoreFixed"><span id="tScoreFixed">0</span>/<span id="tTotalFixed">0</span></button>
-  <button type="button" id="telasExitFixed" class="danger">Exit</button>
+  <button type="button" id="telasExitFixed" class="danger" onclick="try{window.telasGoHome()}catch(e){location.reload()}">Exit</button>
 </div>
 
 
@@ -5777,8 +5777,8 @@ function showFb(ok){
   var re=$("telasReentry"); if(re){ if(answeredInTime) re.classList.add("hidden"); }
   var fb=$("telasFb");fb.classList.remove("hidden");
   var cont='<div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
-    '<button type="button" class="primary" id="telasContinueBtn" style="text-align:center;min-height:44px">Next question</button>'+
-    '<button type="button" class="danger" id="telasExitBtn2" style="text-align:center;min-height:44px">Exit</button></div>';
+    '<button type="button" class="primary" id="telasContinueBtn" style="text-align:center;min-height:44px" onclick="try{window.telasAdvance()}catch(e){alert(e)}">Next question</button>'+
+    '<button type="button" class="danger" id="telasExitBtn2" style="text-align:center;min-height:44px" onclick="try{window.telasGoHome()}catch(e){}">Exit</button></div>';
   if(ok){
     fb.className="feedback-box";
     fb.innerHTML="<b>Correct — well done.</b>"+(answeredInTime?" <span class='tag'>In time</span>":"")+expandWhy(tQ)+cont;
@@ -5897,8 +5897,8 @@ function onTelasTimeout(){
     fb.innerHTML="<b>Time up.</b> Correct answer: <b>"+esc(tQ.correct)+"</b>"+expandWhy(tQ)+
       "<p class='muted'>Tap <b>↻</b> to retry, or use the buttons below.</p>"+
       '<div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
-      '<button type="button" class="primary" id="telasContinueBtn" style="text-align:center;min-height:44px">Next question</button>'+
-      '<button type="button" class="danger" id="telasExitBtn2" style="text-align:center;min-height:44px">Exit</button></div>';
+      '<button type="button" class="primary" id="telasContinueBtn" style="text-align:center;min-height:44px" onclick="try{window.telasAdvance()}catch(e){alert(e)}">Next question</button>'+
+      '<button type="button" class="danger" id="telasExitBtn2" style="text-align:center;min-height:44px" onclick="try{window.telasGoHome()}catch(e){}">Exit</button></div>';
   }
   if($("telasOpts"))$("telasOpts").querySelectorAll("button").forEach(function(x){
     if(x.getAttribute("data-v")===tQ.correct)x.classList.add("correct");
@@ -6041,8 +6041,8 @@ function loadT(){
   tLocked=false;tQ=pickQuestion();
   var re=$("telasReentry"); if(re) re.classList.add("hidden");
   try{startQuestionCountdown(tQ);}catch(e){}
-  $("telasFb").classList.add("hidden");
-  $("shiftBoard").classList.add("hidden");
+  if($("telasFb")){$("telasFb").classList.add("hidden");$("telasFb").innerHTML="";}
+  if($("shiftBoard"))$("shiftBoard").classList.add("hidden");
   var left="";
   if(tCourse){var leftN=BANK.filter(function(x){return String(x.c).toLowerCase()===String(tCourse).toLowerCase()&&!usedStems.has(x.stem);}).length;left=" · "+leftN+" left in bank";}
   $("telasMeta").textContent=(tQ.c||"")+" · Score "+tScore+"/"+tTotal+left+(tPhase==="follow"?" · Follow-up":"");
@@ -6149,37 +6149,47 @@ function startBetweenPause(thenFn, secs, label){
   },0);
 }
 function telasAdvance(){
-  if(telasBetween){
-    try{
-      if(telasPauseIv){clearInterval(telasPauseIv);telasPauseIv=null;}
-      var sk=$("skipBetween");
-      if(sk&&sk.onclick){sk.onclick();return;}
-    }catch(e){}
-    clearTelasPause();
-  }
-  if(tPhase==="main"&&tQ&&tQ.follow&&tLocked){
-    var f=tQ.follow;
-    var course=tQ.c;
-    startBetweenPause(function(){
+  try{
+    // Always clear pause / timer so Next never soft-locks
+    try{clearTelasPause();}catch(e){}
+    try{stopTelasTimer();}catch(e){}
+    telasBetween=false;
+    telasTimedOut=false;
+
+    // Scenario follow-up (no pause — reliability first)
+    if(tPhase==="main"&&tQ&&tQ.follow&&tLocked){
+      var f=tQ.follow;
+      var course=tQ.c;
       tPhase="follow";
-      tQ={stem:f.stem,opts:f.opts,correct:f.correct,why:f.why,roast:f.roast,c:course,qType:"scenario",follow:null};
+      tQ={stem:f.stem,opts:f.opts.slice?f.opts.slice():f.opts,correct:f.correct,why:f.why,roast:f.roast,c:course,qType:"scenario",follow:null};
+      if(tQ.opts&&tQ.opts.slice) tQ.opts=shuffle(tQ.opts.slice());
       tLocked=false;
-      if($("telasFb"))$("telasFb").classList.add("hidden");
+      if($("telasFb")){$("telasFb").classList.add("hidden");$("telasFb").innerHTML="";}
       if($("telasMeta"))$("telasMeta").textContent=course+" · Follow-up · Score "+tScore+"/"+tTotal;
       if($("telasStem"))$("telasStem").textContent=tQ.stem;
-      if($("telasOpts"))$("telasOpts").innerHTML=tQ.opts.map(function(o){return '<button type="button" class="opt-btn" data-v="'+String(o).replace(/"/g,"&quot;")+'">'+o+"</button>";}).join("");
+      if($("telasOpts"))$("telasOpts").innerHTML=(tQ.opts||[]).map(function(o){return '<button type="button" class="opt-btn" data-v="'+String(o).replace(/"/g,"&quot;")+'">'+o+"</button>";}).join("");
+      var re=$("telasReentry"); if(re) re.classList.add("hidden");
       bindOpts();
       try{startQuestionCountdown(tQ);}catch(e){}
-    }, 5, "Follow-up");
-    return;
+      return;
+    }
+
+    // Next main question immediately
+    tPhase="main";
+    tLocked=false;
+    if(tMode==="strat"){loadStrat();return;}
+    if(tMode==="shift"){if(shiftState)loadShiftCase();return;}
+    if(tMode==="due"){loadDue();return;}
+    if(tMode==="osce"){return;}
+    loadT();
+  }catch(err){
+    try{console.error("telasAdvance",err);}catch(e){}
+    try{alert("Next failed: "+(err&&err.message?err.message:err));}catch(e){}
   }
-  tPhase="main";
-  tLocked=false;
-  if(tMode==="strat"){startBetweenPause(function(){loadStrat();},3,"Next");return;}
-  if(tMode==="shift"){startBetweenPause(function(){if(shiftState)loadShiftCase();},3,"Next");return;}
-  if(tMode==="due"){startBetweenPause(function(){loadDue();},3,"Next");return;}
-  startBetweenPause(function(){loadT();},3,"Next question");
 }
+window.telasAdvance=telasAdvance;
+window.telasGoHome=function(){try{telasGoHome();}catch(e){setMode("menu");}};
+
 function bindTelasControls(){
   function wire(id, fn){
     var el=$(id);
