@@ -5667,6 +5667,7 @@ function startDueReview(){
   window._dueQueue=list.slice();
   loadDue();
 }
+window.loadStrat=loadStrat;
 function loadDue(){
   if(!window._dueQueue||!window._dueQueue.length){
     $("telasStem").textContent="Due review complete";
@@ -5797,6 +5798,7 @@ function showFb(ok){
       "</p><p class='muted'>Focus: time-critical steps first. Wrong items reappear in <b>Due today</b>.</p>";
   }
 }
+window.loadDue=loadDue;
 function bindOpts(){
   $("telasOpts").querySelectorAll("button").forEach(function(b){
     b.onclick=function(){
@@ -6018,9 +6020,11 @@ function startTelas(){
   if($("shiftBoard"))$("shiftBoard").classList.add("hidden");
   if($("osceChecks"))$("osceChecks").classList.add("hidden");
   if($("telasDebrief"))$("telasDebrief").classList.add("hidden");
-  tPhase="main";loadT();
+  tPhase="main";window.tPhase="main";
+  if(window.loadT)window.loadT();else loadT();
   try{bindTelasControls();}catch(e){}
 }
+window.startTelas=startTelas;
 function loadT(){
   if(tMode==="strat"){loadStrat();return;}
   if(tMode==="shift"){loadShiftCase();return;}
@@ -6042,9 +6046,17 @@ function loadT(){
   if($("tScore"))$("tScore").textContent=String(tQNum);
   if($("tTotal"))$("tTotal").textContent=String(tQMax);
   $("telasStem").textContent=tQ.stem;
-  $("telasOpts").innerHTML=tQ.opts.map(function(o){return '<button type="button" class="opt-btn" data-v="'+o.replace(/"/g,"&quot;")+'">'+o+"</button>";}).join("");
+  $("telasOpts").innerHTML=tQ.opts.map(function(o){return '<button type="button" class="opt-btn" data-v="'+String(o).replace(/"/g,"&quot;")+'">'+o+"</button>";}).join("");
   bindOpts();
+  window.tQ=tQ; window.tQNum=tQNum; window.tQMax=tQMax; window.tPhase=tPhase; window.tLocked=tLocked;
 }
+window.loadT=loadT;
+window.pickQuestion=pickQuestion;
+window.startTelas=startTelas;
+window.bindOpts=bindOpts;
+window.startQuestionCountdown=startQuestionCountdown;
+window.stopTelasTimer=stopTelasTimer;
+window.clearTelasPause=typeof clearTelasPause==="function"?clearTelasPause:function(){};
 /* telasNext via bindTelasControls */
 /* telasGoHome moved */
 /* telasExit via bindTelasControls */
@@ -6196,11 +6208,13 @@ function telasAdvance(){
     try{tPhase="main";}catch(e){}
     try{tLocked=false;}catch(e){}
     var mode=window.tMode||"course";
-    if(mode==="strat"){loadStrat();return;}
-    if(mode==="shift"){if(typeof shiftState!=="undefined"&&shiftState)loadShiftCase();return;}
-    if(mode==="due"){loadDue();return;}
+    if(mode==="strat"){if(window.loadStrat)window.loadStrat();else loadStrat();return;}
+    if(mode==="shift"){if(typeof shiftState!=="undefined"&&shiftState){if(window.loadShiftCase)window.loadShiftCase();else loadShiftCase();}return;}
+    if(mode==="due"){if(window.loadDue)window.loadDue();else loadDue();return;}
     if(mode==="osce"){return;}
-    loadT();
+    if(typeof window.loadT==="function"){window.loadT();}
+    else if(typeof loadT==="function"){loadT();}
+    else {alert("loadT missing — hard refresh the page");}
   }catch(err){
     try{console.error("telasAdvance",err);}catch(e){}
     try{alert("Next failed: "+(err&&err.message?err.message:String(err)));}catch(e){}
