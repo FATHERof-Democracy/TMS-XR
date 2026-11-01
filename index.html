@@ -5448,6 +5448,28 @@ add("Internal Medicine","Internal Medicine practice item 99: safest principle?",
 add("Internal Medicine","A patient presents with a clinical picture where the following is asked: Internal Medicine practice item 100: safest principle?","Assess the patient, follow evidence-based pathways, escalate early when unstable",["Ignore red flags", "Delay all care for paperwork only", "Discharge unstable patients"],"Core Internal Medicine teaching point for practice.","Revisit this Internal Medicine principle.");
 classifyBankTypes();
 const COURSES=[...new Set(BANK.map(x=>x.c))];
+function telasCourseBankStats(course){
+  const items=BANK.filter(q=>String(q.c).toLowerCase()===String(course).toLowerCase());
+  const topics=new Set(items.map(q=>q.topic).filter(Boolean));
+  const difficulties=new Set(items.map(q=>q.difficulty).filter(Boolean));
+  return {count:items.length,target:TELAS_BANK_TARGET_PER_COURSE,remaining:Math.max(0,TELAS_BANK_TARGET_PER_COURSE-items.length),topics:topics.size,difficulties:[...difficulties]};
+}
+function telasValidateQuestion(q){
+  const errors=[];
+  if(!q||typeof q!=="object")return ["Question must be an object."];
+  if(!q.c)errors.push("Missing course.");
+  if(!q.topic)errors.push("Missing topic tag.");
+  if(!q.subtopic)errors.push("Missing subtopic tag.");
+  if(!q.stem||q.stem.length<35)errors.push("Question stem is too short or missing.");
+  if(!Array.isArray(q.opts)||q.opts.length!==4)errors.push("Exactly four options are required.");
+  if(new Set(q.opts||[]).size!==(q.opts||[]).length)errors.push("Options must be distinct.");
+  if(!q.correct||!(q.opts||[]).includes(q.correct))errors.push("Correct answer must match exactly one option.");
+  if(!q.why||q.why.length<40)errors.push("A substantive explanation is required.");
+  if(!q.reference||!q.reference.book||!q.reference.chapter)errors.push("Textbook reference (book and chapter) is required.");
+  if(!["foundation","application","clinical-reasoning","integration"].includes(q.difficulty))errors.push("Difficulty tag is invalid or missing.");
+  return errors;
+}
+
 
 var tMode="full", tCourse=null, tQ=null, tPhase="main", tScore=0, tTotal=0, tLocked=false, tQNum=0, tQMax=0;
 window.tMode=tMode;window.tCourse=tCourse;window.tQ=tQ;window.tPhase=tPhase;window.tScore=tScore;window.tTotal=tTotal;window.tLocked=tLocked;window.tQNum=tQNum;window.tQMax=tQMax;
@@ -5635,7 +5657,6 @@ function buildCourses(){
       window._courseTypeCycle=["short","long","scenario"];
       window._courseTypeIdx=0;
       window._shortLeft=null;
-      try{ensureCourseBank(tCourse,1000);}catch(e){}
       tQNum=0;tQMax=0;tScore=0;tTotal=0;
       startTelas();
     };
@@ -5927,46 +5948,49 @@ function telasReenter(){
 }
 function startTelasTimer(){ /* session starts per question via startQuestionCountdown */ }
 
-function ensureCourseBank(course, target){
-  target=target||1000;
-  if(!course)return;
-  classifyBankTypes();
-  var existing=BANK.filter(function(x){return String(x.c).toLowerCase()===String(course).toLowerCase();});
-  var need=target-existing.length;
-  if(need<=0)return;
-  var principles=COURSE_PRINCIPLES[course];
-  if(!principles){
-    Object.keys(COURSE_PRINCIPLES).forEach(function(k){
-      if(!principles && (k.toLowerCase().indexOf(String(course).toLowerCase())>=0||String(course).toLowerCase().indexOf(k.toLowerCase())>=0)) principles=COURSE_PRINCIPLES[k];
-    });
+// TELASDOC ACADEMIC BANK POLICY
+// Never manufacture questions to reach a target count. A course only serves
+// authored, reviewed items that are actually present in BANK.
+const TELAS_BANK_TARGET_PER_COURSE = 500;
+const TELAS_BANK_VERSION = "academic-500-v1";
+
+// Topic blueprints are coverage checklists, not question substitutes.
+// Question records should be authored against the named standard textbooks,
+// tagged with topic/subtopic/difficulty and supplied with a defensible rationale.
+const TELAS_COURSE_BLUEPRINTS = {
+  "Anatomy": ["General anatomy and terminology", "Upper limb", "Lower limb", "Thorax", "Abdomen", "Pelvis and perineum", "Head and neck", "Back and vertebral column", "Neuroanatomy", "Gross anatomy and clinical correlations", "Histology and microscopic anatomy", "Embryology and congenital anomalies"],
+  "Physiology": ["Cellular physiology and homeostasis", "Nerve and muscle", "Blood and immunity", "Cardiovascular", "Respiratory", "Renal and acid-base", "Gastrointestinal", "Endocrine", "Reproductive", "Central nervous system and special senses", "Exercise and environmental physiology"],
+  "Biochemistry": ["Molecular biology and genetics", "Enzymes and bioenergetics", "Carbohydrate metabolism", "Lipid metabolism", "Amino acids and proteins", "Nucleotide metabolism", "Vitamins and minerals", "Nutrition", "Molecular diagnostics and clinical biochemistry"],
+  "Histology": ["Cell structure and tissue methods", "Epithelium and glands", "Connective tissue", "Cartilage and bone", "Blood and haematopoiesis", "Muscle", "Nervous tissue", "Cardiovascular", "Lymphoid", "Respiratory", "Digestive", "Urinary", "Endocrine", "Reproductive"],
+  "Embryology": ["Gametogenesis and fertilisation", "First two weeks", "Gastrulation and germ layers", "Neurulation and folding", "Placenta and fetal membranes", "Cardiovascular development", "Respiratory development", "Gastrointestinal development", "Urogenital development", "Musculoskeletal development", "Head and neck development", "Congenital anomalies and teratology"],
+  "Pharmacology": ["General principles and pharmacokinetics", "Pharmacodynamics and receptors", "Autonomic pharmacology", "Cardiovascular drugs", "Renal drugs and diuretics", "CNS drugs", "Analgesia and anaesthesia", "Endocrine drugs", "Antimicrobials", "Anticancer and immunomodulatory drugs", "Toxicology and adverse drug reactions", "Prescribing in special populations"],
+  "Pathology": ["Cell injury and adaptation", "Inflammation and repair", "Haemodynamic disorders", "Genetic and paediatric disease", "Neoplasia", "Immunopathology", "Infectious disease pathology", "Haematopathology", "Systemic pathology", "Diagnostic pathology and laboratory interpretation"],
+  "Microbiology": ["Microbial structure and genetics", "Bacterial pathogens", "Virology", "Mycology", "Parasitology", "Immunology", "Specimen collection and diagnostics", "Antimicrobial susceptibility and resistance", "Infection prevention and control", "Clinical infectious syndromes"],
+  "Internal Medicine": ["Clinical assessment and diagnostic reasoning", "Cardiology", "Respiratory medicine", "Gastroenterology and hepatology", "Nephrology", "Endocrinology and diabetes", "Neurology", "Haematology", "Rheumatology", "Infectious diseases", "Oncology", "Dermatology", "Emergency presentations and critical illness"],
+  "Surgery": ["Perioperative care", "Fluid, electrolyte and acid-base disorders", "Shock and trauma", "Wound healing and infection", "Breast and endocrine surgery", "Upper gastrointestinal surgery", "Hepatobiliary and pancreatic surgery", "Colorectal surgery", "Hernias and abdominal wall", "Vascular surgery", "Urology", "Paediatric surgery", "Surgical oncology"],
+  "Paediatrics": ["Growth and development", "Neonatology", "Nutrition", "Immunisation", "Paediatric emergencies", "Respiratory", "Cardiovascular", "Gastrointestinal", "Renal", "Neurology", "Infectious diseases", "Haematology and oncology", "Endocrine and adolescent health"],
+  "Obstetrics & Gynaecology": ["Maternal physiology and antenatal care", "Normal labour and delivery", "Obstetric complications", "Hypertensive disorders", "Obstetric haemorrhage", "Medical disorders in pregnancy", "Fetal assessment", "Postpartum care", "Gynaecological history and examination", "Menstrual disorders", "Contraception and infertility", "Gynaecological infections", "Benign and malignant gynaecology"],
+  "Radiology": ["Imaging principles and radiation safety", "Chest radiography", "Abdominal imaging", "Musculoskeletal imaging", "Neuroimaging", "Ultrasound", "CT and MRI principles", "Contrast and adverse reactions", "Image interpretation and urgent findings"],
+  "Anaesthesia": ["Pre-anaesthetic assessment", "Airway assessment and management", "Anaesthetic pharmacology", "General and regional anaesthesia", "Monitoring", "Fluids and transfusion", "Pain management", "Perioperative complications", "Resuscitation and critical care"],
+  "Emergency": ["ABCDE assessment", "Resuscitation", "Trauma", "Shock", "Acute cardiovascular presentations", "Acute respiratory presentations", "Neurological emergencies", "Toxicology", "Sepsis and infection", "Paediatric and obstetric emergencies"],
+  "Ophthalmology": ["Ocular anatomy and physiology", "History and examination", "Eyelid and adnexa", "Conjunctiva and cornea", "Uvea and sclera", "Lens and cataract", "Glaucoma", "Retina and optic nerve", "Neuro-ophthalmology", "Ocular trauma", "Paediatric ophthalmology"],
+  "Dermatology": ["Skin structure and lesions", "Clinical morphology and examination", "Eczema and dermatitis", "Papulosquamous disorders", "Infections and infestations", "Autoimmune and blistering disease", "Drug eruptions", "Pigmentary disorders", "Skin tumours and emergencies"],
+  "Psychiatry": ["Psychiatric assessment", "Classification and diagnosis", "Mood disorders", "Psychotic disorders", "Anxiety and trauma-related disorders", "Substance use", "Child and adolescent psychiatry", "Cognitive disorders", "Psychopharmacology", "Risk assessment and mental health law"],
+  "Medical Forensics": ["Medical ethics and consent", "Capacity and confidentiality", "Death certification", "Injury documentation", "Forensic examination", "Sexual violence care", "Chain of custody", "Medico-legal reporting"],
+  "Antimicrobial Stewardship": ["Antimicrobial principles", "Resistance mechanisms", "Culture and susceptibility interpretation", "Empiric and targeted therapy", "De-escalation and duration", "Stewardship systems", "Infection prevention", "Local antibiograms and surveillance"],
+  "AI Clinical Literacy": ["Clinical data quality", "AI fundamentals", "Bias and fairness", "Clinical validation", "Privacy and governance", "Human oversight", "Safe clinical implementation"]
+};
+
+// Remove legacy auto-generated placeholder items from the old bank. Keep genuine
+// authored questions; no placeholder is allowed to masquerade as a real MCQ.
+(function removeLegacyPlaceholderQuestions(){
+  const placeholder = /practice item\s*\d+|safest principle\?|clinical picture where the following is asked|which principle should guide your first decisions|mixed picture \(vitals may be abnormal/i;
+  for (let i = BANK.length - 1; i >= 0; i--) {
+    const q = BANK[i];
+    const blob = [q.stem, q.correct, q.why, q.roast].join(" ");
+    if (placeholder.test(blob)) BANK.splice(i, 1);
   }
-  if(!principles) principles=["Assess the patient","Escalate when unstable","Follow local guidelines","Reassess after intervention","Document clearly"];
-  var wrongPool=["Ignore abnormal vital signs","Discharge without safety-net advice","Delay emergency care for non-essential tests only","Treat with an unrelated medication without indication","Skip reassessment after treatment","Assume the first diagnosis is always final","Avoid senior help when unsure"];
-  for(var i=0;i<need;i++){
-    var n=existing.length+i+1;
-    var prin=principles[n%principles.length];
-    var w1=wrongPool[n%wrongPool.length];
-    var w2=wrongPool[(n+2)%wrongPool.length];
-    var w3=wrongPool[(n+4)%wrongPool.length];
-    var mode=n%3;
-    var stem, follow=null, qType;
-    if(mode===0){
-      qType="short";
-      stem=course+" · rapid "+n+": which principle is correct?";
-    }else if(mode===1){
-      qType="long";
-      stem="In a "+course.toLowerCase()+" clinical encounter (item "+n+"), applying safe practice, which statement is most appropriate?";
-    }else{
-      qType="scenario";
-      stem="Scenario "+n+" — "+course+": A patient arrives with a mixed picture (vitals may be abnormal, history incomplete, and resources limited). You must prioritise safe clinical reasoning. Which principle should guide your first decisions?";
-      follow={stem:"Follow-up "+n+": The patient is only partly improved after your first action. What is the most appropriate next step?",opts:shuffle(["Reassess ABCs/response, refine the diagnosis, and escalate if still unstable","Assume the problem is solved and stop monitoring","Discharge home immediately without safety-net advice","Order only unrelated tests and leave the bedside"]),correct:"Reassess ABCs/response, refine the diagnosis, and escalate if still unstable",why:"Scenarios need a closed loop: act, reassess, escalate.",roast:"One action without review is incomplete care."};
-    }
-    var opts=shuffle([prin,w1,w2,w3]);
-    var item={c:course,stem:stem,opts:opts,correct:prin,why:"Core "+course+" practice principle for repeated drilling.",roast:"Return to this "+course+" principle until automatic.",qType:qType};
-    if(follow)item.follow=follow;
-    BANK.push(item);
-  }
-}
+})();
 
 
 function pickQuestion(){
@@ -5978,7 +6002,6 @@ function pickQuestion(){
     return {stem:n.stem,opts:shuffle([n.correct].concat(n.wrongs)),correct:n.correct,why:n.why,roast:n.roast,c:"Next-best-step",qType:"short",follow:null};
   }
   // Course session: continuous flow of mixed short/long/scenario in this course
-  if(tCourse){try{ensureCourseBank(tCourse,1000);}catch(e){}}
   var coursePool=BANK.slice();
   if(tCourse){
     coursePool=BANK.filter(function(x){return String(x.c).toLowerCase()===String(tCourse).toLowerCase();});
