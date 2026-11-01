@@ -5807,9 +5807,10 @@ function bindOpts(){
       b.classList.add(ok?"correct":"wrong");
       $("telasOpts").querySelectorAll("button").forEach(function(x){if(x.getAttribute("data-v")===tQ.correct)x.classList.add("correct"); x.disabled=true;});
       if(ok)tScore++;
+      window.tLocked=true; window.tScore=tScore; window.tTotal=tTotal;
       if($("telasMeta"))$("telasMeta").textContent=(tQ.c||"")+" · Q "+tQNum+"/"+tQMax+" · Score "+tScore+"/"+tTotal;
-      if($("tScoreFixed"))$("tScoreFixed").textContent=String(tQNum);
-      if($("tTotalFixed"))$("tTotalFixed").textContent=String(tQMax);
+      if($("tScoreFixed"))$("tScoreFixed").textContent=String(tScore);
+      if($("tTotalFixed"))$("tTotalFixed").textContent=String(tTotal);
       showFb(ok);
       // Pulse Next so user can proceed after answering in time
       ["telasNext","telasNextFixed"].forEach(function(id){
@@ -6041,10 +6042,10 @@ function loadT(){
   if($("telasFb")){$("telasFb").classList.add("hidden");$("telasFb").innerHTML="";}
   if($("shiftBoard"))$("shiftBoard").classList.add("hidden");
   $("telasMeta").textContent=(tQ.c||"")+" · Q "+tQNum+"/"+tQMax+" · Score "+tScore+"/"+tTotal+(tPhase==="follow"?" · Follow-up":"");
-  if($("tScoreFixed"))$("tScoreFixed").textContent=String(tQNum);
-  if($("tTotalFixed"))$("tTotalFixed").textContent=String(tQMax);
-  if($("tScore"))$("tScore").textContent=String(tQNum);
-  if($("tTotal"))$("tTotal").textContent=String(tQMax);
+  if($("tScoreFixed"))$("tScoreFixed").textContent=String(tScore);
+  if($("tTotalFixed"))$("tTotalFixed").textContent=String(tTotal);
+  if($("tScore"))$("tScore").textContent=String(tScore);
+  if($("tTotal"))$("tTotal").textContent=String(tTotal);
   $("telasStem").textContent=tQ.stem;
   $("telasOpts").innerHTML=tQ.opts.map(function(o){return '<button type="button" class="opt-btn" data-v="'+String(o).replace(/"/g,"&quot;")+'">'+o+"</button>";}).join("");
   bindOpts();
@@ -6084,7 +6085,6 @@ $("chatSend").onclick=()=>{
 $("chatExit").onclick=()=>setMode("menu");$("admExit").onclick=()=>setMode("menu");
 
 const ex=loadSession();if(ex){currentUser=ex;enterApp();}
-})();
 // PWA manifest (valid JSON)
 try{
   var man={name:"TMS-XR",short_name:"TMS-XR",start_url:".",display:"standalone",background_color:"#050d16",theme_color:"#050d16"};
@@ -6113,12 +6113,15 @@ function clearTelasPause(){
 }
 function telasGoHome(){
   try{if(shiftState&&shiftState.timer)clearInterval(shiftState.timer);}catch(e){}
-  shiftState=null;tLocked=false;
+  shiftState=null;tLocked=false;tPhase="main";telasBetween=false;
   try{clearTelasPause();}catch(e){}
   try{stopTelasTimer();}catch(e){}
   try{stopARCam();}catch(e){}
   document.body.classList.remove("telas-open");
   var fb=$("telasFixedBar");if(fb)fb.classList.remove("show");
+  var panel=$("telasPanel");if(panel)panel.classList.add("hidden");
+  var home=$("telasHome");if(home)home.classList.remove("hidden");
+  var play=$("telasPlay");if(play)play.classList.add("hidden");
   setMode("menu");
 }
 function startBetweenPause(thenFn, secs, label){
@@ -6277,6 +6280,7 @@ try{
     sessionStorage.setItem("tmsxr_local_notice","1");
   }
 }catch(e){}
+})();
 </script>
 </body>
 </html>
