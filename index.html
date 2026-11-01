@@ -87,7 +87,8 @@ body.no-vr #telasPanel{z-index:80!important}
 #telasFixedBar.show{display:grid!important;grid-template-columns:1fr 1fr 1fr}
 #telasFixedBar button{pointer-events:auto!important;z-index:100001!important;min-height:48px;font-size:15px;text-align:center;touch-action:manipulation}
 body.telas-open a-scene,body.telas-open a-scene.a-fullscreen,body.telas-open canvas.a-canvas{display:none!important;visibility:hidden!important;pointer-events:none!important}
-body.telas-open #telasPanel{z-index:9000!important;pointer-events:auto!important;max-height:calc(100dvh - 80px)!important;overflow:hidden!important}
+body.telas-open #telasPanel{z-index:9000!important;pointer-events:auto!important;max-height:min(92vh,calc(100dvh - 70px))!important;width:min(540px,calc(100vw - 16px))!important;left:50%!important;transform:translateX(-50%)!important;overflow-y:auto!important}
+#telasPanel .telas-footer{display:none!important}
 body.telas-open #topRight{z-index:100002!important}
 
 
@@ -97,6 +98,12 @@ body.telas-open #topRight{z-index:100002!important}
 </style>
 </head>
 <body class="no-vr">
+<div id="telasFixedBar" aria-label="Telas controls">
+  <button type="button" id="telasNextFixed" class="primary">Next</button>
+  <button type="button" id="telasScoreFixed"><span id="tScoreFixed">0</span>/<span id="tTotalFixed">0</span></button>
+  <button type="button" id="telasExitFixed" class="danger">Exit</button>
+</div>
+
 
 <a-scene id="vrScene" background="color:#c5d5e0" renderer="colorManagement:true" vr-mode-ui="enabled:true" cursor="rayOrigin:mouse" raycaster="objects:.clickable" loading-screen="enabled:false">
   <a-entity light="type:ambient;intensity:1.1"></a-entity>
@@ -275,12 +282,6 @@ body.telas-open #topRight{z-index:100002!important}
         <span class="tag">WARD PRACTICE</span>
         <strong id="twinCardTitle">Your Patient Twin</strong>
         <p class="muted" id="twinCardSub" style="margin:4px 0 0">Ongoing cases with doses, routes &amp; calculations</p>
-      </div>
-      <div id="weakMap" class="case-card" style="margin:8px 0;cursor:pointer">
-        <span class="tag">WEAK TOPICS</span>
-        <strong id="weakTitle">Personal weak-topic map</strong>
-        <p class="muted" id="weakSub" style="margin:4px 0 0">Answer Telas questions to build your map</p>
-        <div id="weakBars" style="margin-top:8px"></div>
       </div>
       <div class="mod-grid">
         <button type="button" data-mod="telas" data-keys="telas quiz revision nbs osce"><span class="n">01</span><span class="t">TelasDoc revision</span></button>
@@ -5773,18 +5774,25 @@ function refreshDueBox(){
 function showFb(ok){
   var answeredInTime=!telasTimedOut;
   try{stopTelasTimer();}catch(e){}
-  var re=$("telasReentry"); if(re) re.classList.add("hidden");
+  var re=$("telasReentry"); if(re){ if(answeredInTime) re.classList.add("hidden"); }
   var fb=$("telasFb");fb.classList.remove("hidden");
+  var cont='<div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+    '<button type="button" class="primary" id="telasContinueBtn" style="text-align:center;min-height:44px">Next question</button>'+
+    '<button type="button" class="danger" id="telasExitBtn2" style="text-align:center;min-height:44px">Exit</button></div>';
   if(ok){
     fb.className="feedback-box";
-    fb.innerHTML="<b>Correct — well done.</b>"+(answeredInTime?" <span class='tag'>In time</span>":"")+" "+expandWhy(tQ)+
-      (answeredInTime?"<p class='muted'><b>Tap Next</b> to continue.</p>":"<p class='muted'>Tap <b>Next</b> when ready.</p>");
+    fb.innerHTML="<b>Correct — well done.</b>"+(answeredInTime?" <span class='tag'>In time</span>":"")+expandWhy(tQ)+cont;
   }else{
     fb.className="feedback-box bad";
-    fb.innerHTML="<b>Not quite.</b> "+tQ.roast+expandWhy(tQ)+
-      (answeredInTime?"<p class='muted'><b>Tap Next</b> to continue (answered in time).</p>":"<p class='muted'>Time was already up. Use <b>↻</b> to retry or Next to move on.</p>");
+    fb.innerHTML="<b>Not quite.</b> "+(tQ.roast||"")+expandWhy(tQ)+cont;
   }
-  if(tQ&&tQ.stem)scheduleReview(tQ.stem,{ok:ok,correct:tQ.correct,why:tQ.why,c:tQ.c});
+  if(tQ&&tQ.stem)try{scheduleReview(tQ.stem,{ok:ok,correct:tQ.correct,why:tQ.why,c:tQ.c});}catch(e){}
+  setTimeout(function(){
+    var c=$("telasContinueBtn"), x=$("telasExitBtn2");
+    if(c){c.onclick=function(e){if(e)e.stopPropagation();telasAdvance();}; c.ontouchend=function(e){if(e){e.preventDefault();e.stopPropagation();}telasAdvance();};}
+    if(x){x.onclick=function(e){if(e)e.stopPropagation();telasGoHome();}; x.ontouchend=function(e){if(e){e.preventDefault();e.stopPropagation();}telasGoHome();};}
+    try{bindTelasControls();}catch(e){}
+  },0);
   // running debrief chips
   var db=$("telasDebrief");
   if(db){
@@ -5825,10 +5833,12 @@ function fmtTime(ms){
 }
 function limitForQuestion(q){
   var tpe=(q&&q.qType)||"long";
+  // Follow-up parts of a scenario
+  if(tPhase==="follow") return 15*1000;
   if(q&&q.follow) tpe="scenario";
-  if(tpe==="short") return 30*1000;
-  if(tpe==="scenario") return 150*1000; // 2.5 minutes (within 2–3 min)
-  return 60*1000; // long
+  if(tpe==="short") return 15*1000;
+  if(tpe==="scenario") return 60*1000; // 1 minute main scenario
+  return 30*1000; // long
 }
 function telasTimerTick(){
   if(!telasTimerOn)return;
@@ -5885,7 +5895,10 @@ function onTelasTimeout(){
     fb.classList.remove("hidden");
     fb.className="feedback-box bad";
     fb.innerHTML="<b>Time up.</b> Correct answer: <b>"+esc(tQ.correct)+"</b>"+expandWhy(tQ)+
-      "<p class='muted'>Tap <b>↻</b> near the timer to re-enter this question, or <b>Next</b> to continue.</p>";
+      "<p class='muted'>Tap <b>↻</b> to retry, or use the buttons below.</p>"+
+      '<div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+      '<button type="button" class="primary" id="telasContinueBtn" style="text-align:center;min-height:44px">Next question</button>'+
+      '<button type="button" class="danger" id="telasExitBtn2" style="text-align:center;min-height:44px">Exit</button></div>';
   }
   if($("telasOpts"))$("telasOpts").querySelectorAll("button").forEach(function(x){
     if(x.getAttribute("data-v")===tQ.correct)x.classList.add("correct");
@@ -5896,6 +5909,12 @@ function onTelasTimeout(){
     re.classList.remove("hidden");
     re.onclick=function(e){if(e){e.preventDefault();e.stopPropagation();}telasReenter();};
   }
+  setTimeout(function(){
+    var c=$("telasContinueBtn"), x=$("telasExitBtn2");
+    if(c){c.onclick=function(e){if(e)e.stopPropagation();telasAdvance();};}
+    if(x){x.onclick=function(e){if(e)e.stopPropagation();telasGoHome();};}
+    try{bindTelasControls();}catch(e){}
+  },0);
   if($("telasTimer"))$("telasTimer").textContent="00:00";
   if($("telasQTimer"))$("telasQTimer").textContent="Time up · ↻ to retry";
   try{scheduleReview(tQ.stem,{ok:false,correct:tQ.correct,why:tQ.why,c:tQ.c});}catch(e){}
@@ -5948,8 +5967,8 @@ function ensureCourseBank(course, target){
       stem="In a "+course.toLowerCase()+" clinical encounter (item "+n+"), applying safe practice, which statement is most appropriate?";
     }else{
       qType="scenario";
-      stem="Scenario "+n+" ("+course+"): a patient needs decisions aligned with core "+course.toLowerCase()+" practice. Which principle should guide you first?";
-      follow={stem:"Follow-up "+n+": after applying that principle, what next?",opts:shuffle(["Reassess response and escalate if still unstable","Stop monitoring because the first step always works","Discharge immediately without safety-net","Order unrelated tests only and leave"]),correct:"Reassess response and escalate if still unstable",why:"Reassessment closes the loop.",roast:"One action without review is incomplete."};
+      stem="Scenario "+n+" — "+course+": A patient arrives with a mixed picture (vitals may be abnormal, history incomplete, and resources limited). You must prioritise safe clinical reasoning. Which principle should guide your first decisions?";
+      follow={stem:"Follow-up "+n+": The patient is only partly improved after your first action. What is the most appropriate next step?",opts:shuffle(["Reassess ABCs/response, refine the diagnosis, and escalate if still unstable","Assume the problem is solved and stop monitoring","Discharge home immediately without safety-net advice","Order only unrelated tests and leave the bedside"]),correct:"Reassess ABCs/response, refine the diagnosis, and escalate if still unstable",why:"Scenarios need a closed loop: act, reassess, escalate.",roast:"One action without review is incomplete care."};
     }
     var opts=shuffle([prin,w1,w2,w3]);
     var item={c:course,stem:stem,opts:opts,correct:prin,why:"Core "+course+" practice principle for repeated drilling.",roast:"Return to this "+course+" principle until automatic.",qType:qType};
@@ -6079,7 +6098,6 @@ if("serviceWorker" in navigator && (location.protocol==="https:"||location.hostn
   }catch(e){}
 }
 try{refreshDueBox();refreshWeakMap();}catch(e){}
-if($("weakMap"))$("weakMap").onclick=function(){setMode("telas");};
 
 var telasPauseIv=null, telasBetween=false;
 function clearTelasPause(){
@@ -6152,15 +6170,15 @@ function telasAdvance(){
       if($("telasOpts"))$("telasOpts").innerHTML=tQ.opts.map(function(o){return '<button type="button" class="opt-btn" data-v="'+String(o).replace(/"/g,"&quot;")+'">'+o+"</button>";}).join("");
       bindOpts();
       try{startQuestionCountdown(tQ);}catch(e){}
-    }, 10, "Follow-up");
+    }, 5, "Follow-up");
     return;
   }
   tPhase="main";
   tLocked=false;
-  if(tMode==="strat"){startBetweenPause(function(){loadStrat();});return;}
-  if(tMode==="shift"){startBetweenPause(function(){if(shiftState)loadShiftCase();});return;}
-  if(tMode==="due"){startBetweenPause(function(){loadDue();});return;}
-  startBetweenPause(function(){loadT();});
+  if(tMode==="strat"){startBetweenPause(function(){loadStrat();},3,"Next");return;}
+  if(tMode==="shift"){startBetweenPause(function(){if(shiftState)loadShiftCase();},3,"Next");return;}
+  if(tMode==="due"){startBetweenPause(function(){loadDue();},3,"Next");return;}
+  startBetweenPause(function(){loadT();},3,"Next question");
 }
 function bindTelasControls(){
   function wire(id, fn){
@@ -6179,21 +6197,22 @@ function bindTelasControls(){
       var t=e.target; if(!t)return;
       var btn=t.id?t:(t.closest?t.closest("button"):null);
       if(!btn||!btn.id)return;
-      if(btn.id==="telasNext"||btn.id==="telasNextFixed"){e.preventDefault();e.stopPropagation();telasAdvance();}
-      if(btn.id==="telasExit"||btn.id==="telasExitFixed"){e.preventDefault();e.stopPropagation();telasGoHome();}
+      if(btn.id==="telasNext"||btn.id==="telasNextFixed"||btn.id==="telasContinueBtn"){e.preventDefault();e.stopPropagation();telasAdvance();}
+      if(btn.id==="telasExit"||btn.id==="telasExitFixed"||btn.id==="telasExitBtn2"){e.preventDefault();e.stopPropagation();telasGoHome();}
       if(btn.id==="telasReentry"){e.preventDefault();e.stopPropagation();telasReenter();}
     },true);
     document.addEventListener("touchend",function(e){
       var t=e.target; if(!t)return;
       var btn=t.id?t:(t.closest?t.closest("button"):null);
       if(!btn||!btn.id)return;
-      if(btn.id==="telasNext"||btn.id==="telasNextFixed"){e.preventDefault();telasAdvance();}
-      if(btn.id==="telasExit"||btn.id==="telasExitFixed"){e.preventDefault();telasGoHome();}
+      if(btn.id==="telasNext"||btn.id==="telasNextFixed"||btn.id==="telasContinueBtn"){e.preventDefault();telasAdvance();}
+      if(btn.id==="telasExit"||btn.id==="telasExitFixed"||btn.id==="telasExitBtn2"){e.preventDefault();telasGoHome();}
       if(btn.id==="telasReentry"){e.preventDefault();telasReenter();}
     },{capture:true,passive:false});
   }
 }
 bindTelasControls();
+document.addEventListener("DOMContentLoaded",function(){try{bindTelasControls();}catch(e){}});
 
 function bindAiAms(){
   var a=$("btnAiLit"), b=$("btnAms");
@@ -6216,11 +6235,5 @@ try{
   }
 }catch(e){}
 </script>
-
-<div id="telasFixedBar" aria-label="Telas controls">
-  <button type="button" id="telasNextFixed" class="primary">Next</button>
-  <button type="button" id="telasScoreFixed"><span id="tScoreFixed">0</span>/<span id="tTotalFixed">0</span></button>
-  <button type="button" id="telasExitFixed" class="danger">Exit</button>
-</div>
 </body>
 </html>
